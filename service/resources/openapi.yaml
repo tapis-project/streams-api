@@ -40,20 +40,10 @@ paths:
                   result:
                     type: array
                     items:
-                       properties:
-                        $ref: '#/components/schemas/BasicResult'
-                        geolocation: 
-                          type: object
-                          properties:
-                            
-          description: Id of the resource.
-        resource_owner:
-          type: string
-          description: Owner of the resource
-                         
-                          
-                          
-                        
+                      allOf:
+                         - $ref: '#/components/schemas/BasicResult'
+                         - $ref: '#/components/schemas/GeoLocation'
+
 
 
     post:
@@ -153,7 +143,20 @@ components:
           type: string
           description: Whether the request was a success or failure.
           enum: [success, failure]
-
+  
+    GeoLocation: 
+      type: object
+      properties:
+          long: 
+              type: number
+              description: longitude
+          lat:
+              type: number
+              description: latitude
+          elv:
+              type: number
+              description: elevation 
+              
     NewTokenRequest:
       type: object
       properties:
