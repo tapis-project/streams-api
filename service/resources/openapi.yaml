@@ -38,7 +38,23 @@ paths:
                   - $ref: '#/components/schemas/BasicResponse'
                 properties:
                   result:
-                    $ref: '#/components/schemas/NewTokenResponse'
+                    type: array
+                    items:
+                       properties:
+                        $ref: '#/components/schemas/BasicResult'
+                        geolocation: 
+                          type: object
+                          properties:
+                            
+          description: Id of the resource.
+        resource_owner:
+          type: string
+          description: Owner of the resource
+                         
+                          
+                          
+                        
+
 
     post:
       tags:
@@ -106,6 +122,37 @@ components:
           type: string
           description: Whether the request was a success or failure.
           enum: [success, failure]
+          
+    BasicResult:
+      type: object
+      properties:
+        resource_name:
+          type: string
+          description: Name of the resource.
+        resource_id:
+          type: string
+          description: Id of the resource.
+        resource_owner:
+          type: string
+          description: Owner of the resource
+        resource_type:
+          type: string
+          description: Type of the resource
+       
+        
+    SiteInfo:
+      type: object
+      properties:
+        version:
+          type: string
+          description: Version of the API
+        message:
+          type: string
+          description: Brief description of the response
+        status:
+          type: string
+          description: Whether the request was a success or failure.
+          enum: [success, failure]
 
     NewTokenRequest:
       type: object
@@ -137,16 +184,7 @@ components:
           description: JSON object of additional claims to add to the standard claims issued with the token. Note - standard claims cannot be modified through this parameter.
       required: [token_type, token_tenant_id, token_username]
 
-    NewTokenResponse:
-      type: object
-      properties:
-        access_token:
-          type: string
-          description: The generated access token.
-        refresh_token:
-          type: string
-          description: The generated refresh token.
-
+    
     RefreshTokenRequest:
       type: object
       properties:
