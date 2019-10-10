@@ -53,10 +53,8 @@ paths:
                     type: array
                     items:
                       allOf:
-                         - $ref: '#/components/schemas/BasicResult'
+                         - $ref: '#/components/schemas/SiteInfo'
                          - $ref: '#/components/schemas/GeoLocation'
-
-
 
     post:
       tags:
@@ -86,7 +84,99 @@ paths:
                       allOf:
                          - $ref: '#/components/schemas/SiteInfo'
                          - $ref: '#/components/schemas/GeoLocation'
+  
+  /variables:
+    get:
+      tags:
+       - Variables
+      summary: Get variables.
+      description: Get variables.
+      operationId: get_variables
+      x-swagger-router-controller: connexContr
+      parameters:
+      - name: limit
+        in: query
+        description: limit the number of records returned.
+        schema:
+          type: integer
+      - name: offset
+        in: query
+        description: index (offset) to start list.
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BasicResponse'
+                properties:
+                  result:
+                    type: array
+                    items:
+                      allOf:
+                         - $ref: '#/components/schemas/VarInfo'
+                        
+    post:
+      tags:
+      - Sites
+      summary: Create variable (single or bulk).
+      description: Create variable (single or bulk).
+      operationId: create_variable
+      x-swagger-router-controller: connexContr
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewVariable'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BasicResponse'
+                properties:
+                 result:
+                    type: array
+                    items:
+                      allOf:
+                         - $ref: '#/components/schemas/VarInfo'
+                         
+    # Could not find examples of PATCH
+      
 
+  /variables/{variable_id}:
+    get:
+      tags:
+      - Variables
+      summary: Get variable details
+      description: Get details of a specific variable by its id
+      operationId: getVariable
+      parameters:
+      - name: variable_id
+        in: path
+        description: Unique ID of variable
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BasicResponse'
+                properties:
+                  result:
+                    $ref: '#/components/schemas/VarInfo'
+                
+ 
 components:
   schemas:
     BasicResponse:
@@ -136,7 +226,36 @@ components:
           type: string
           description: The typ of resource.
           enum: [site]
-  
+          
+    VarInfo:
+      type: object
+      properties:
+        name:
+          type: string
+          description: The name of variable.
+        variable_id:
+          type: string
+          description: The unique identifier for variable.
+        owner:
+          type: string
+          description: The owner for variable.
+        instrument_id:  
+          type: string
+          description: The instrument id to which variable belongs.
+        shortname:  
+          type: string
+          description: The shortname of variable.
+        unit:  
+          type: string
+          description: The unit to measure property of variable.
+        unit_abbrev:
+          type: string
+          description: The unit abbrevation to measure variable.
+        measured_property:
+          type: string
+          description: The property measured by variable.
+        
+          
     GeoLocation: 
       type: object
       properties:
@@ -174,6 +293,38 @@ components:
           type: number
           description: Elevation of site.
       required: [resource_type, site_name, lat, lon, elevation]
+
+
+    NewVariable:
+      type: object
+      properties:
+        resource_type:
+          type: string
+          enum: [variable]
+          description: Type of resource(site) to be generated.
+        var_name:
+          type: string
+          description: Variable name.
+        shortname:
+          type: string
+          description: Shortname of variable.
+        unit:  
+          type: string
+          description: The unit to measure property of variable
+        unit_abbrev:
+          type: string
+          description: The unit abbrevation to measure the property of variable.
+        measured_property:
+          type: string
+          description: Property measured by the variable type
+        format:
+          type: string
+          description: text for single variable creation and file for bulk variable creation
+          enum: [text, file]
+        storage_system: 
+          type: string
+          description: Storage system name for file format 
+      required: [resource_type, var_name, unit, unit_abbrev, format]
 
     
    
