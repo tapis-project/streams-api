@@ -337,6 +337,35 @@ paths:
                       allOf:
                          - $ref: '#/components/schemas/MeasurementInfo'
 
+  /measurements/{measurement-uuid}:
+    delete:
+      tags:
+        - Measurements
+      summary: Delete measurments.
+      description: Delete measurements.
+      operationId: delete_measurements
+      x-swagger-router-controller: connexContr
+      parameters:
+        - name: measurement-uuid
+          in: path
+          description: limit the number of records returned.
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BasicResponse'
+                properties:
+                  result:
+                    type: array
+                    items:
+                      allOf:
+                         - $ref: '#/components/schemas/MeasurementInfo'
 
 components:
   schemas:
