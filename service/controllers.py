@@ -91,3 +91,29 @@ class VariableResource(Resource):
 
     def delete(self, variable_id):
         logger.debug("top of DELETE /variables/{variable_id}")
+
+class MeasurementsResource(Resource):
+    """
+    Work with Measurements objects
+    """
+
+    def get(self):
+        logger.debug("top of GET /measurements")
+
+    def post(self):
+        logger.debug("top of POST /measurements")
+
+
+class MeasurementResource(Resource):
+    """
+    Work with Measurements objects
+    """
+
+    def get(self, measurement_id):
+        logger.debug("top of GET /measurements/{measurement_id}")
+
+    def put(self, measurement_id):
+        logger.debug("top of PUT /measurements/{measurement_id}")
+
+    def delete(self, measurement_id):
+        logger.debug("top of DELETE /measurements/{measurement_id}")
