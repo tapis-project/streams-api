@@ -3,7 +3,7 @@ from flask_migrate import Migrate
 from common.utils import TapisApi, handle_error, flask_errors_dict
 
 from service.auth import authn_and_authz
-from service.controllers import SitesResource, SiteResource, InstrumentsResource, InstrumentResource
+from service.controllers import SitesResource, SiteResource, InstrumentsResource, InstrumentResource, VariablesResource, VariableResource
 from service.models import app
 
 # authentication and authorization ---
@@ -29,6 +29,9 @@ api.add_resource(SiteResource, '/sites/<site_id>')
 
 api.add_resource(InstrumentsResource, '/instruments')
 api.add_resource(InstrumentResource, '/instruments/<instrument_id>')
+
+api.add_resource(VariablesResource, '/variables')
+api.add_resource(VariableResource, '/variables/<variable_id>')
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', debug=True)
