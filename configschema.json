@@ -1,0 +1,7 @@
+{
+  "$id": "http://github.com/tapis-project/streams-api/configschema.json",
+  "$schema": "http://json-schema.org/schema#",
+  "properties": {
+    
+  }
+}
