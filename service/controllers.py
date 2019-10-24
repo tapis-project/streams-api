@@ -39,3 +39,29 @@ class SiteResource(Resource):
 
     def delete(self, site_id):
         logger.debug("top of DELETE /sites/{site_id}")
+
+class InstrumentsResource(Resource):
+    """
+    Work with Instruments objects
+    """
+
+    def get(self):
+        logger.debug("top of GET /instruments")
+
+    def post(self):
+        logger.debug("top of POST /instruments")
+
+
+class InstrumentResource(Resource):
+    """
+    Work with Instruments objects
+    """
+
+    def get(self, instrument_id):
+        logger.debug("top of GET /instruments/{instrument_id}")
+
+    def put(self, instrument_id):
+        logger.debug("top of PUT /instruments/{instrument_id}")
+
+    def delete(self, instrument_id):
+        logger.debug("top of DELETE /instruments/{instrument_id}")
