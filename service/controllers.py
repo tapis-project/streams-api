@@ -117,3 +117,29 @@ class MeasurementResource(Resource):
 
     def delete(self, measurement_id):
         logger.debug("top of DELETE /measurements/{measurement_id}")
+
+class StreamsResource(Resource):
+    """
+    Work with Streams objects
+    """
+
+    def get(self):
+        logger.debug("top of GET /streams")
+
+    def post(self):
+        logger.debug("top of POST /streams")
+
+
+class StreamResource(Resource):
+    """
+    Work with Streams objects
+    """
+
+    def get(self, stream_id):
+        logger.debug("top of GET /streams/{stream_id}")
+
+    def put(self, stream_id):
+        logger.debug("top of PUT /streams/{stream_id}")
+
+    def delete(self, stream_id):
+        logger.debug("top of DELETE /streams/{stream_id}")
