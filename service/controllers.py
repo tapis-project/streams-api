@@ -7,7 +7,7 @@ from openapi_core.wrappers.flask import FlaskOpenAPIRequest
 import sqlalchemy
 
 from common import utils, errors
-from service.models import db, LDAPConnection, TenantOwner, Tenant
+#from service.models import db, LDAPConnection, TenantOwner, Tenant
 
 # get the logger instance -
 from common.logs import get_logger
