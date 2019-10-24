@@ -1,8 +1,8 @@
 # inherit from the flaskbase
-FROM: tapis/flaskbase
+FROM tapis/flaskbase
 
 # set the name of the api, for use by
-ENV TAPIS_API <api_name>
+ENV TAPIS_API streams
 
 # install additional requirements for the service
 COPY requirements.txt /home/tapis/requirements.txt
