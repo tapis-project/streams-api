@@ -65,3 +65,29 @@ class InstrumentResource(Resource):
 
     def delete(self, instrument_id):
         logger.debug("top of DELETE /instruments/{instrument_id}")
+
+class VariablesResource(Resource):
+    """
+    Work with Variables objects
+    """
+
+    def get(self):
+        logger.debug("top of GET /variables")
+
+    def post(self):
+        logger.debug("top of POST /variables")
+
+
+class VariableResource(Resource):
+    """
+    Work with Variables objects
+    """
+
+    def get(self, variable_id):
+        logger.debug("top of GET /variables/{variable_id}")
+
+    def put(self, variable_id):
+        logger.debug("top of PUT /variables/{variable_id}")
+
+    def delete(self, variable_id):
+        logger.debug("top of DELETE /variables/{variable_id}")
