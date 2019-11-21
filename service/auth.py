@@ -2,11 +2,11 @@ from flask import g, request
 
 from common import auth
 from common import errors as common_errors
+from common.config import conf
 
 # get the logger instance -
 from common.logs import get_logger
 logger = get_logger(__name__)
-
 
 def authn_and_authz():
     """
@@ -25,15 +25,21 @@ def authentication():
     # authorization.
     # we always try to call the primary tapis authentication function to add authentication information to the
     # thread-local. If it fails due to a missing token, we then check if there is a p
-    try:
-        auth.authentication()
-    except common_errors.NoTokenError as e:
-        logger.debug(f"Caught NoTokenError: {e}")
-        g.no_token = True
-        # for retrieval and informational methods, allow the request (with possibly limited information)
-        if request.method == 'GET' or request.method == 'OPTIONS' or request.method == 'HEAD':
-            return True
-        raise e
+    if conf.local_dev == 'true':
+        return true
+    else:
+        try:
+            auth.authentication()
+        except common_errors.NoTokenError as e:
+            logger.debug(f"Caught NoTokenError: {e}")
+            g.no_token = True
+            # for retrieval and informational methods, allow the request (with possibly limited information)
+
+            if request.method == 'GET' or request.method == 'PUT' or request.method == 'DELETE' or request.method == 'GET' or request.method == 'HEAD' or request.method == 'POST':
+                return True
+            raise e
+
+
 
 
 def authorization():

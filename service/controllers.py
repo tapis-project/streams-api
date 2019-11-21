@@ -5,7 +5,7 @@ from openapi_core.shortcuts import RequestValidator
 from openapi_core.wrappers.flask import FlaskOpenAPIRequest
 # import psycopg2
 import sqlalchemy
-
+import chords
 from common import utils, errors
 #from service.models import db, LDAPConnection, TenantOwner, Tenant
 
@@ -20,10 +20,14 @@ class SitesResource(Resource):
     """
 
     def get(self):
-        logger.debug("top of GET /sites")
+        resp = chords.fetch_sites()
+        logger.debug(resp)
+        return resp
 
     def post(self):
-        logger.debug("top of POST /sites")
+        resp = chords.create_site()
+        logger.debug(resp)
+        return resp
 
 
 class SiteResource(Resource):
@@ -32,13 +36,19 @@ class SiteResource(Resource):
     """
 
     def get(self, site_id):
-        logger.debug("top of GET /sites/{site_id}")
+        resp = chords.fetch_site(site_id)
+        logger.debug(resp)
+        return resp
 
     def put(self, site_id):
-        logger.debug("top of PUT /sites/{site_id}")
+        resp = chords.update_site(site_id)
+        logger.debug(resp)
+        return resp
 
     def delete(self, site_id):
-        logger.debug("top of DELETE /sites/{site_id}")
+        resp = chords.delete_site(site_id)
+        logger.debug(resp)
+        return resp
 
 class InstrumentsResource(Resource):
     """
