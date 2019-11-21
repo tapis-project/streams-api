@@ -12,9 +12,9 @@ def fetch_sites():
     chords_uri = "http://"+conf.chords_url+"/sites.json";
     getData = {}
     headers = {
-        'Content-Type': 'application/x-www-form-urlencoded',
+        'Content-Type': 'application/json',
     }
-    res = requests.post(chords_uri, data=getData, headers=headers,verify=False)
+    res = requests.get(chords_uri, data=getData, headers=headers,verify=False)
     resp = json.loads(res.content)
     return resp
 
