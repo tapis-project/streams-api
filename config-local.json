@@ -3,5 +3,9 @@
   "tenants": ["dev"],
   "use_sk": false,
   "log_level": "DEBUG",
-  "show_traceback": false
+  "show_traceback": false,
+  "dev_token": "sometoken",
+  "local_dev":true,
+  "chords_url":"",
+  "chords_api_key":""
 }

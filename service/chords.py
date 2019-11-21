@@ -1,5 +1,7 @@
 import datetime
 import enum
+import requests
+import json
 from flask import g, Flask
 
 from common.config import conf
@@ -7,7 +9,14 @@ app = Flask(__name__)
 
 def fetch_sites():
     #GET get a site from chords service
-    return "sites fetched"
+    chords_uri = "http://"+conf.chords_url+"/sites.json";
+    getData = {}
+    headers = {
+        'Content-Type': 'application/x-www-form-urlencoded',
+    }
+    res = requests.post(chords_uri, data=getData, headers=headers,verify=False)
+    resp = json.loads(res.content)
+    return resp
 
 def fetch_site(site_id):
     #GET get a site from chords service
