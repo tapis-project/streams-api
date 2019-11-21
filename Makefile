@@ -17,13 +17,13 @@ cwd=$(shell pwd)
 build.api:
 	cd $(cwd); touch service.log; chmod a+w; docker build -t tapis/$(api)-api .;
 
-build.migrations:
-	cd $(cwd); docker build -f Dockerfile-migrations -t tapis/$(api)-api-migrations .
+# build.migrations:
+# 	cd $(cwd); docker build -f Dockerfile-migrations -t tapis/$(api)-api-migrations .
+#
+# build.test:
+# 	cd $(cwd); docker build -t tapis/$(api)-api-tests -f Dockerfile-tests .;
 
-build.test:
-	cd $(cwd); docker build -t tapis/$(api)-api-tests -f Dockerfile-tests .;
-
-build: build.api build.migrations build.test
+build: build.api #build.migrations build.test
 
 # ----- run tests; this will initially wipe the local installation
 test: build clean init_dbs migrate.upgrade
@@ -34,8 +34,8 @@ down:
 	docker-compose down
 
 # ----- wipe the local environment by removing all data and containers
-clean: down
-	docker volume rm $(api)-api_pgdata
+# clean: down
+# 	docker volume rm $(api)-api_pgdata
 
 # ----- start databases
 run_dbs: build.api down
