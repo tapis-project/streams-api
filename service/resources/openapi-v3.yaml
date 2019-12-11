@@ -728,6 +728,43 @@ paths:
                  result:
                   $ref: '#/components/schemas/Creek'
 
+  /units:
+    get:
+      tags:
+       - Units
+      summary: List units.
+      description: List units.
+      operationId: list_units
+      x-swagger-router-controller: connexContr
+      parameters:
+      - name: query
+        in: query
+        description: a formated query string for units.
+        schema:
+          type: string
+      - name: limit
+        in: query
+        description: limit the number of records returned.
+        schema:
+          type: integer
+      - name: offset
+        in: query
+        description: index (offset) to start list.
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BasicResponse'
+                properties:
+                   result:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Unit'
 
 components:
   schemas:
@@ -862,6 +899,23 @@ components:
             - $ref: "#/components/schemas/Notification"
             - $ref: "#/components/schemas/Application"
             - $ref: "#/components/schemas/Callback"
+
+
+    Unit:
+      type: object
+      properties:
+        name:
+          type: string
+          description: The name of unit.
+        abbrevation:
+          type: string
+          description: The abbrevation for the unit
+        ontology:
+          type: string
+          description: Name of the ontology this unit belongs too.
+        category:
+          type: string
+          description: category of unit.
 
 
 
