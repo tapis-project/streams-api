@@ -29,6 +29,11 @@ paths:
       operationId: list_sites
       x-swagger-router-controller: connexContr
       parameters:
+      - name: query
+        in: query
+        description: a formated query string for sites.
+        schema:
+          type: string
       - name: limit
         in: query
         description: limit the number of records returned.
@@ -292,6 +297,8 @@ paths:
                 $ref: '#/components/schemas/BasicResponse'
 
 
+
+
   /instruments:
     get:
       tags:
@@ -300,6 +307,11 @@ paths:
       description: List instruments
       operationId: list_instruments
       parameters:
+        - name: query
+          in: query
+          description: a formated query string for instruments.
+          schema:
+            type: string
         - name: limit
           in: query
           description: limit the number of records returned
@@ -324,6 +336,7 @@ paths:
                     items:
                       $ref: '#/components/schemas/Instrument'
 
+
         '400':
           description: Input error.
           content:
@@ -343,6 +356,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/BasicResponse'
+
+
 
 
     post:
@@ -370,6 +385,7 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/Instrument'
+
 
         '400':
           description: Input error.
@@ -568,6 +584,11 @@ paths:
       operationId: list_variables
       x-swagger-router-controller: connexContr
       parameters:
+      - name: query
+        in: query
+        description: a formated query string for variables.
+        schema:
+          type: string
       - name: limit
         in: query
         description: limit the number of records returned.
@@ -833,6 +854,11 @@ paths:
       operationId: list_measurements
       x-swagger-router-controller: connexContr
       parameters:
+        - name: query
+          in: query
+          description: a formated query string for measurements.
+          schema:
+            type: string
         - name: limit
           in: query
           description: limit the number of records returned.
@@ -940,8 +966,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/BasicResponse'
-
-
   /creeks:
     get:
       tags:
@@ -951,6 +975,11 @@ paths:
       operationId: list_creeks
       x-swagger-router-controller: connexContr
       parameters:
+      - name: query
+        in: query
+        description: a formated query string for creeks.
+        schema:
+          type: string
       - name: limit
         in: query
         description: limit the number of records returned.
@@ -1071,6 +1100,7 @@ paths:
                   result:
                     $ref: '#/components/schemas/Creek'
 
+
         '400':
           description: Input error.
           content:
@@ -1097,6 +1127,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/BasicResponse'
+
 
 
     put:
@@ -1213,6 +1244,81 @@ paths:
                 $ref: '#/components/schemas/BasicResponse'
 
 
+  /units:
+    get:
+      tags:
+       - Units
+      summary: List units.
+      description: List units.
+      operationId: list_units
+      x-swagger-router-controller: connexContr
+      parameters:
+      - name: query
+        in: query
+        description: a formated query string for units.
+        schema:
+          type: string
+      - name: limit
+        in: query
+        description: limit the number of records returned.
+        schema:
+          type: integer
+      - name: offset
+        in: query
+        description: index (offset) to start list.
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BasicResponse'
+                properties:
+                   result:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Unit'
+
+  /measured_properties:
+    get:
+      tags:
+       - Measured_Properties
+      summary: List measured_properties.
+      description: List measured_properties.
+      operationId: list_measured_properties
+      x-swagger-router-controller: connexContr
+      parameters:
+      - name: query
+        in: query
+        description: a formated query string for units.
+        schema:
+          type: string
+      - name: limit
+        in: query
+        description: limit the number of records returned.
+        schema:
+          type: integer
+      - name: offset
+        in: query
+        description: index (offset) to start list.
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BasicResponse'
+                properties:
+                   result:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/MeasuredProperty'
 
 components:
   schemas:
@@ -1349,6 +1455,34 @@ components:
             - $ref: "#/components/schemas/Callback"
 
 
+    Unit:
+      type: object
+      properties:
+        name:
+          type: string
+          description: The name of unit.
+        abbrevation:
+          type: string
+          description: The abbrevation for the unit
+        ontology:
+          type: string
+          description: Name of the ontology this unit belongs too.
+        category:
+          type: string
+          description: category of unit.
+
+    MeasuredProperty:
+      type: object
+      properties:
+        label:
+          type: string
+          description: The label of property.
+        url:
+          type: string
+          description: The url for the properties ontology
+        ontology:
+          type: string
+          description: Name of the ontology this unit belongs too.
 
     NewSite:
       type: object
