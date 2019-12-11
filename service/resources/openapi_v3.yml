@@ -32,7 +32,7 @@ paths:
       parameters:
       - name: query
         in: query
-        description: a MongoDB formated query string for sites.
+        description: a formated query string for sites.
         schema:
           type: string
       - name: limit
@@ -175,6 +175,11 @@ paths:
       tags:
       - Instruments
       parameters:
+        - name: query
+          in: query
+          description: a formated query string for instruments.
+          schema:
+            type: string
         - in: query
           name: limit
           description: limit the number of records returned
@@ -326,6 +331,11 @@ paths:
       operationId: get_variables
       x-swagger-router-controller: connexContr
       parameters:
+      - name: query
+        in: query
+        description: a formated query string for variables.
+        schema:
+          type: string
       - name: limit
         in: query
         description: limit the number of records returned.
@@ -497,9 +507,14 @@ paths:
             type: string
         - name: geojson
           in: query
-          description: geojson polygon to spatiall search
+          description: geojson polygon to spatial search
           schema:
             type: object
+        - name: query
+          in: query
+          description: a formated query string for measurements.
+          schema:
+            type: string
       responses:
         '200':
           description: OK
