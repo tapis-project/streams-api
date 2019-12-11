@@ -52,6 +52,26 @@ paths:
                     type: array
                     items:
                        $ref: '#/components/schemas/Site'
+        '400':
+          description: Input error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
+
+        '401':
+          description: Not authorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
+
 
     post:
       tags:
@@ -80,6 +100,29 @@ paths:
                     items:
                       $ref: '#/components/schemas/Site'
 
+        '400':
+          description: Input error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
+
+        '401':
+          description: Not authorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
+
+
+
+
   /sites/{site_uuid}:
     get:
       tags:
@@ -106,6 +149,35 @@ paths:
                 properties:
                   result:
                     $ref: '#/components/schemas/Site'
+
+        '400':
+          description: Input error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
+
+        '401':
+          description: Not authorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
+        '404':
+          description: Site not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
+
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
+
+
 
     put:
       tags:
@@ -138,6 +210,33 @@ paths:
                 properties:
                  result:
                   $ref: '#/components/schemas/Site'
+        '400':
+          description: Input error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
+
+        '401':
+          description: Not authorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
+        '404':
+          description: Site not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
+
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
+
 
     delete:
       tags:
@@ -154,8 +253,8 @@ paths:
           schema:
             type: string
       responses:
-        '201':
-          description: Updated
+        '200':
+          description: Site Deleted
           content:
             application/json:
               schema:
@@ -164,7 +263,35 @@ paths:
                 properties:
                  result:
                   $ref: '#/components/schemas/Site'
-                  
+
+        '400':
+          description: Input error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
+
+        '401':
+          description: Not authorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
+        '404':
+          description: Site not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
+
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
+
+
   /instruments:
     get:
       tags:
@@ -196,7 +323,7 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/Instrument'
- 
+
     post:
       tags:
         - Instruments
@@ -209,7 +336,7 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/NewInstRequest'
-      responses: 
+      responses:
         '201':
           description: Created
           content:
@@ -222,8 +349,8 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/Instrument'
- 
- 
+
+
   /instruments/{instrument_uuid}:
     get:
       tags:
@@ -249,7 +376,7 @@ paths:
                 properties:
                   result:
                      $ref: "#/components/schemas/Instrument"
-                        
+
     put:
       tags:
         - Instruments
@@ -259,7 +386,7 @@ paths:
       #x-swagger-router-controller: connexContr
       parameters:
         - name: instrument_uuid
-          in: path 
+          in: path
           description: Unique ID of instrument generated by Tapis
           required: true
           schema:
@@ -283,8 +410,8 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/Instrument'
- 
-                        
+
+
     delete:
       tags:
       - Instruments
@@ -293,8 +420,8 @@ paths:
       operationId: delete_instrument
       #x-swagger-router-controller: connexContr
       parameters:
-        - name: instrument_uuid 
-          in: path 
+        - name: instrument_uuid
+          in: path
           description: Unique ID of instrument generated by Tapis
           required: true
           schema:
@@ -310,7 +437,7 @@ paths:
                 properties:
                   result:
                     $ref: '#/components/schemas/Instrument'
-                    
+
   /variables:
     get:
       tags:
@@ -343,7 +470,7 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/Variable'
-                      
+
     post:
       tags:
       - Variables
@@ -396,7 +523,7 @@ paths:
                 properties:
                   result:
                     $ref: '#/components/schemas/Variable'
-    
+
     put:
       tags:
       - Variables
@@ -427,11 +554,11 @@ paths:
                   - $ref: '#/components/schemas/BasicResponse'
                 properties:
                  result:
-                  $ref: '#/components/schemas/Variable'                
-                  
+                  $ref: '#/components/schemas/Variable'
+
     delete:
       tags:
-      - Variables 
+      - Variables
       summary: Delete a variable (single or bulk)
       description: Delete a variable (single or bulk)
       operationId: delete_variable
@@ -502,7 +629,7 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/Measurement'
-                         
+
     post:
       tags:
       - Measurements
@@ -529,36 +656,7 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/Measurement'
-                         
-  /measurements/{measurement_uuid}:
-    delete:
-      tags:
-        - Measurements
-      summary: Delete measurments.
-      description: Delete measurements.
-      operationId: delete_measurements
-      x-swagger-router-controller: connexContr
-      parameters:
-        - name: measurement_uuid
-          in: path
-          description: measurement_uuid to be deleted
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/BasicResponse'
-                properties:
-                 result:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/Measurement'
-  
+
   /creeks:
     get:
       tags:
@@ -595,8 +693,8 @@ paths:
     post:
       tags:
       - Creeks
-      summary: Create creeks. 
-      description: Create creeks. 
+      summary: Create creeks.
+      description: Create creeks.
       operationId: create_creek
       x-swagger-router-controller: connexContr
       requestBody:
@@ -644,7 +742,7 @@ paths:
                 properties:
                   result:
                     $ref: '#/components/schemas/Creek'
-    
+
     put:
       tags:
       - Creeks
@@ -675,8 +773,8 @@ paths:
                   - $ref: '#/components/schemas/BasicResponse'
                 properties:
                  result:
-                  $ref: '#/components/schemas/Creek'                
-                  
+                  $ref: '#/components/schemas/Creek'
+
     delete:
       tags:
       - Creeks
@@ -820,7 +918,7 @@ components:
           description: For continous query it needs frequency, group by time.RESAMPLE EVERY <interval> FOR <interval>
         triggers:
           type: array
-          items: 
+          items:
             type: object
           description: Each object in triggers array evaluates one variable using some mathematical function.
         query_type:
@@ -838,7 +936,7 @@ components:
             - $ref: "#/components/schemas/Application"
             - $ref: "#/components/schemas/Callback"
 
-   
+
 
     NewSite:
       type: object
@@ -898,7 +996,7 @@ components:
       type: array
       items:
         $ref: '#/components/schemas/NewInst'
-        
+
     NewInst:
       type: object
       properties:
@@ -925,12 +1023,12 @@ components:
           type: string
           description: user metadata on instruments
       required: [resource_type, site_id, instrument_name, description]
-      
+
     UpdateInstRequest:
       type: array
       items:
         $ref: '#/components/schemas/UpdateInstRequest'
-    
+
     UpdateInst:
       type: object
       properties:
@@ -959,8 +1057,8 @@ components:
         metadata:
           type: string
           description: user metadata on instruments
-      required: [resource_type, instrument_uuid, site_id, instrument_name, description]  
-    
+      required: [resource_type, instrument_uuid, site_id, instrument_name, description]
+
     Instrument:
       type: object
       properties:
@@ -978,8 +1076,8 @@ components:
         instrument_id:
           type: string
           description: The unique identifier for instrument for a tenant
-        owner:    
-          type: string  
+        owner:
+          type: string
           description: Owner of the instrument
         site_id:
           type: string
@@ -995,11 +1093,11 @@ components:
         metadata:
           type: string
           description: User entered metadata for the instruments
-    
+
     NewVarRequest:
       type: array
       items:
-        $ref: '#/components/schemas/NewVariable'   
+        $ref: '#/components/schemas/NewVariable'
 
     NewVariable:
       type: object
@@ -1010,15 +1108,15 @@ components:
         shortname:
           type: string
           description: Shortname of variable.
-        unit:
-          type: string
-          description: The unit to measure property of variable
+        unit_id:
+          type: number
+          description: The Id of the unit to measure property of variable
         unit_abbrev:
           type: string
           description: The unit abbrevation to measure the property of variable.
-        measured_property:
-          type: string
-          description: Property measured by the variable type
+        measured_property_id:
+          type: number
+          description: Id of the Property measured by the variable type
         format:
           type: string
           description: text for single variable creation and file for bulk variable creation
@@ -1040,7 +1138,7 @@ components:
       additionalProperties:
         type: string
       required: [datetime, instument_id]
-      
+
     NewCreek:
       type: object
       properties:
@@ -1052,7 +1150,7 @@ components:
           description: For continous query it needs frequency, group by time.RESAMPLE EVERY <interval> FOR <interval>
         triggers:
           type: array
-          items: 
+          items:
             type: object
           description: Each object in triggers array evaluates one variable using some mathematical function.
         query_type:
@@ -1063,18 +1161,17 @@ components:
           type: string
           description: Type of action
           enum: [actor, callback, application, notifications]
-          
-    
+
+
 
     Actor:
      type: object
-     
+
     Notification:
      type: object
-     
+
     Callback:
      type: object
-     
-    Application: 
+
+    Application:
      type: object
-     
