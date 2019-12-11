@@ -57,6 +57,26 @@ paths:
                     type: array
                     items:
                        $ref: '#/components/schemas/Site'
+        '400':
+          description: Input error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
+
+        '401':
+          description: Not authorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
+
 
     post:
       tags:
@@ -85,6 +105,29 @@ paths:
                     items:
                       $ref: '#/components/schemas/Site'
 
+        '400':
+          description: Input error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
+
+        '401':
+          description: Not authorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
+
+
+
+
   /sites/{site_uuid}:
     get:
       tags:
@@ -111,6 +154,34 @@ paths:
                 properties:
                   result:
                     $ref: '#/components/schemas/Site'
+        '400':
+          description: Input error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
+
+        '401':
+          description: Not authorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
+        '404':
+          description: Site not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
+
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
+
+
 
     put:
       tags:
@@ -144,6 +215,34 @@ paths:
                  result:
                   $ref: '#/components/schemas/Site'
 
+        '400':
+          description: Input error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
+
+        '401':
+          description: Not authorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
+        '404':
+          description: Site not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
+
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
+
+
     delete:
       tags:
       - Sites
@@ -159,8 +258,8 @@ paths:
           schema:
             type: string
       responses:
-        '201':
-          description: Updated
+        '200':
+          description: Site Deleted
           content:
             application/json:
               schema:
@@ -169,6 +268,36 @@ paths:
                 properties:
                  result:
                   $ref: '#/components/schemas/Site'
+
+        '400':
+          description: Input error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
+
+        '401':
+          description: Not authorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
+        '404':
+          description: Site not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
+
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
+
+
+
 
   /instruments:
     get:
@@ -207,6 +336,30 @@ paths:
                     items:
                       $ref: '#/components/schemas/Instrument'
 
+
+        '400':
+          description: Input error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
+
+        '401':
+          description: Not authorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
+
+
+
+
     post:
       tags:
         - Instruments
@@ -234,6 +387,26 @@ paths:
                       $ref: '#/components/schemas/Instrument'
 
 
+        '400':
+          description: Input error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
+
+        '401':
+          description: Not authorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
+
   /instruments/{instrument_uuid}:
     get:
       tags:
@@ -259,6 +432,33 @@ paths:
                 properties:
                   result:
                      $ref: "#/components/schemas/Instrument"
+
+        '400':
+          description: Input error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
+
+        '401':
+          description: Not authorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
+        '404':
+          description: Site not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
+
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
 
     put:
       tags:
@@ -294,6 +494,34 @@ paths:
                     items:
                       $ref: '#/components/schemas/Instrument'
 
+        '400':
+          description: Input error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
+
+        '401':
+          description: Not authorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
+        '404':
+          description: Instrument not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
+
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
+
+
 
     delete:
       tags:
@@ -320,6 +548,32 @@ paths:
                 properties:
                   result:
                     $ref: '#/components/schemas/Instrument'
+        '400':
+          description: Input error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
+
+        '401':
+          description: Not authorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
+        '404':
+          description: Instrument not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
+
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
 
   /variables:
     get:
@@ -358,6 +612,26 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/Variable'
+        '400':
+          description: Input error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
+
+        '401':
+          description: Not authorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
+
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
 
     post:
       tags:
@@ -386,6 +660,26 @@ paths:
                     items:
                       $ref: '#/components/schemas/Variable'
 
+        '400':
+           description: Input error.
+           content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
+
+        '401':
+           description: Not authorized.
+           content:
+             application/json:
+               schema:
+                 $ref: '#/components/schemas/BasicResponse'
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
+
   /variables/{variable_uuid}:
     get:
       tags:
@@ -411,6 +705,33 @@ paths:
                 properties:
                   result:
                     $ref: '#/components/schemas/Variable'
+
+        '400':
+          description: Input error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
+
+        '401':
+          description: Not authorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
+        '404':
+          description: Variable not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
+
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
 
     put:
       tags:
@@ -444,6 +765,33 @@ paths:
                  result:
                   $ref: '#/components/schemas/Variable'
 
+        '400':
+          description: Input error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
+
+        '401':
+          description: Not authorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
+        '404':
+          description: Variable not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
+
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
+
     delete:
       tags:
       - Variables
@@ -469,6 +817,33 @@ paths:
                 properties:
                  result:
                   $ref: '#/components/schemas/Variable'
+
+        '400':
+          description: Input error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
+
+        '401':
+          description: Not authorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
+        '404':
+          description: Variable not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
+
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
 
   /measurements:
     get:
@@ -523,6 +898,27 @@ paths:
                     items:
                       $ref: '#/components/schemas/Measurement'
 
+        '400':
+          description: Input error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
+
+        '401':
+          description: Not authorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
+
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
+
     post:
       tags:
       - Measurements
@@ -550,35 +946,26 @@ paths:
                     items:
                       $ref: '#/components/schemas/Measurement'
 
-  /measurements/{measurement_uuid}:
-    delete:
-      tags:
-        - Measurements
-      summary: Delete measurments.
-      description: Delete measurements.
-      operationId: delete_measurements
-      x-swagger-router-controller: connexContr
-      parameters:
-        - name: measurement_uuid
-          in: path
-          description: measurement_uuid to be deleted
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: OK
+        '400':
+          description: Input error.
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/BasicResponse'
-                properties:
-                 result:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/Measurement'
+                $ref: '#/components/schemas/BasicResponse'
 
+        '401':
+          description: Not authorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
+
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
   /creeks:
     get:
       tags:
@@ -617,6 +1004,28 @@ paths:
                     items:
                       $ref: '#/components/schemas/Creek'
 
+        '400':
+          description: Input error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
+
+        '401':
+          description: Not authorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
+
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
+
+
     post:
       tags:
       - Creeks
@@ -643,6 +1052,27 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/Creek'
+        '400':
+          description: Input error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
+
+        '401':
+          description: Not authorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
+
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
+
 
   /creeks/{creek_uuid}:
     get:
@@ -669,6 +1099,36 @@ paths:
                 properties:
                   result:
                     $ref: '#/components/schemas/Creek'
+
+
+        '400':
+          description: Input error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
+
+        '401':
+          description: Not authorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
+        '404':
+          description: Creek not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
+
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
+
+
 
     put:
       tags:
@@ -702,6 +1162,34 @@ paths:
                  result:
                   $ref: '#/components/schemas/Creek'
 
+        '400':
+          description: Input error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
+
+        '401':
+          description: Not authorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
+        '404':
+          description: Creek not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
+
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
+
+
     delete:
       tags:
       - Creeks
@@ -727,6 +1215,34 @@ paths:
                 properties:
                  result:
                   $ref: '#/components/schemas/Creek'
+
+        '400':
+          description: Input error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
+
+        '401':
+          description: Not authorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
+        '404':
+          description: Creek not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
+
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasicResponse'
+
 
   /units:
     get:
@@ -968,7 +1484,6 @@ components:
           type: string
           description: Name of the ontology this unit belongs too.
 
-
     NewSite:
       type: object
       properties:
@@ -1139,15 +1654,15 @@ components:
         shortname:
           type: string
           description: Shortname of variable.
-        unit:
-          type: string
-          description: The unit to measure property of variable
+        unit_id:
+          type: number
+          description: The Id of the unit to measure property of variable
         unit_abbrev:
           type: string
           description: The unit abbrevation to measure the property of variable.
-        measured_property:
-          type: string
-          description: Property measured by the variable type
+        measured_property_id:
+          type: number
+          description: Id of the Property measured by the variable type
         format:
           type: string
           description: text for single variable creation and file for bulk variable creation
