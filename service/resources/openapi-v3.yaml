@@ -766,6 +766,44 @@ paths:
                     items:
                       $ref: '#/components/schemas/Unit'
 
+  /measured_properties:
+    get:
+      tags:
+       - Measured_Properties
+      summary: List measured_properties.
+      description: List measured_properties.
+      operationId: list_measured_properties
+      x-swagger-router-controller: connexContr
+      parameters:
+      - name: query
+        in: query
+        description: a formated query string for units.
+        schema:
+          type: string
+      - name: limit
+        in: query
+        description: limit the number of records returned.
+        schema:
+          type: integer
+      - name: offset
+        in: query
+        description: index (offset) to start list.
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BasicResponse'
+                properties:
+                   result:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/MeasuredProperty'
+
 components:
   schemas:
     BasicResponse:
@@ -917,6 +955,18 @@ components:
           type: string
           description: category of unit.
 
+    MeasuredProperty:
+      type: object
+      properties:
+        label:
+          type: string
+          description: The label of property.
+        url:
+          type: string
+          description: The url for the properties ontology
+        ontology:
+          type: string
+          description: Name of the ontology this unit belongs too.
 
 
     NewSite:
