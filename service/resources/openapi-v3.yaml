@@ -1473,7 +1473,7 @@ components:
         measured_property:
           type: string
           description: The property measured by variable.
-        resource-type:
+        resource_type:
           type: string
           description: The type of resource.
           enum: [variable]
@@ -1581,7 +1581,8 @@ components:
         elevation:
           type: number
           description: Elevation of site.
-      required: [resource-type, site-name, lat, lon, elevation]
+      required: [resource_type, site_
+      name, lat, lon, elevation]
 
     UpdateSite:
       type: object
@@ -1594,7 +1595,7 @@ components:
           type: string
           pattern: "^[a-zA-Z0-9-]*$"
           description: The unique identifier for the tenant.
-        resource-type:
+        resource_type:
           type: string
           enum: [site]
           description: Type of resource(site) to be generated.
@@ -1610,7 +1611,7 @@ components:
         elevation:
           type: number
           description: Elevation of site.
-      required: [site-uuid, site-id, resource-type, site-name, lat, lon, elevation]
+      required: [site-uuid, site-id, resource_type, site_name, lat, lon, elevation]
 
     NewInstRequest:
       type: array
