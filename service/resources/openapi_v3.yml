@@ -1744,7 +1744,7 @@ components:
         storage_system:
           type: string
           description: Storage system name for file format
-      required: [resource_type, var_name, unit, unit_abbrev, format]
+      required: [var_name, unit_id, unit_abbrev, format]
 
     NewMeasurement:
       type: object
