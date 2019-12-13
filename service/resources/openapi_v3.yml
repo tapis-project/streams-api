@@ -964,7 +964,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-                
+
   /creeks:
     get:
       tags:
@@ -1386,7 +1386,7 @@ components:
           type: string
           description: Whether the request was a success or failure.
           enum: [success]
-          
+
     ErrorResponse:
       type: object
       properties:
@@ -1581,8 +1581,7 @@ components:
         elevation:
           type: number
           description: Elevation of site.
-      required: [resource_type, site_
-      name, lat, lon, elevation]
+      required: [resource_type, site_name, lat, lon, elevation]
 
     UpdateSite:
       type: object
