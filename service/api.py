@@ -24,20 +24,20 @@ api.handle_exception = handle_error
 api.handle_user_exception = handle_error
 
 # Add resources
-api.add_resource(SitesResource, '/sites')
-api.add_resource(SiteResource, '/sites/<site_id>')
+api.add_resource(SitesResource, '/v3/streams/sites')
+api.add_resource(SiteResource, '/v3/streams/sites/<site_id>')
 
-api.add_resource(InstrumentsResource, '/instruments')
-api.add_resource(InstrumentResource, '/instruments/<instrument_id>')
+api.add_resource(InstrumentsResource, '/v3/streams/instruments')
+api.add_resource(InstrumentResource, '/v3/streams/instruments/<instrument_id>')
 
-api.add_resource(VariablesResource, '/variables')
-api.add_resource(VariableResource, '/variables/<variable_id>')
+api.add_resource(VariablesResource, '/v3/streams/variables')
+api.add_resource(VariableResource, '/v3/streams/variables/<variable_id>')
 
-api.add_resource(MeasurementsResource, '/measurements')
-api.add_resource(MeasurementResource, '/measurements/<measurement_id>')
+api.add_resource(MeasurementsResource, '/v3/streams/measurements')
+api.add_resource(MeasurementResource, '/v3/streams/measurements/<measurement_id>')
 
-api.add_resource(StreamsResource, '/streams')
-api.add_resource(StreamResource, '/streams/<stream_id>')
+api.add_resource(StreamsResource, '/v3/streams/streams')
+api.add_resource(StreamResource, '/v3/streams/streams/<stream_id>')
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', debug=True)
