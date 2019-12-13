@@ -1610,7 +1610,7 @@ components:
         elevation:
           type: number
           description: Elevation of site.
-      required: [site-uuid, site-id, resource_type, site_name, lat, lon, elevation]
+      required: [site_uuid, site_id, resource_type, site_name, lat, lon, elevation]
 
     NewInstRequest:
       type: array
