@@ -56,10 +56,14 @@ class InstrumentsResource(Resource):
     """
 
     def get(self):
+        resp = chords.fetch_instruments()
         logger.debug("top of GET /instruments")
+        return resp
 
     def post(self):
-        logger.debug("top of POST /instruments")
+        resp = chords.create_instruments()
+	    logger.debug("top of POST /instruments")
+        return resp
 
 
 class InstrumentResource(Resource):
@@ -68,13 +72,19 @@ class InstrumentResource(Resource):
     """
 
     def get(self, instrument_id):
+        resp = chords.fetch_instrument()
         logger.debug("top of GET /instruments/{instrument_id}")
+        return resp
 
     def put(self, instrument_id):
-        logger.debug("top of PUT /instruments/{instrument_id}")
+        resp = chords.update_instrument
+	    logger.debug("top of PUT /instruments/{instrument_id}")
+        return resp
 
     def delete(self, instrument_id):
+        resp = chords.delete_instrument
         logger.debug("top of DELETE /instruments/{instrument_id}")
+        return resp
 
 class VariablesResource(Resource):
     """
