@@ -29,6 +29,11 @@ paths:
       operationId: list_sites
       x-swagger-router-controller: connexContr
       parameters:
+      - name: query
+        in: query
+        description: a formated query string for sites.
+        schema:
+          type: string
       - name: limit
         in: query
         description: limit the number of records returned.
@@ -52,6 +57,26 @@ paths:
                     type: array
                     items:
                        $ref: '#/components/schemas/Site'
+        '400':
+          description: Input error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+        '401':
+          description: Not authorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
 
     post:
       tags:
@@ -80,6 +105,29 @@ paths:
                     items:
                       $ref: '#/components/schemas/Site'
 
+        '400':
+          description: Input error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+        '401':
+          description: Not authorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+
+
+
   /sites/{site_uuid}:
     get:
       tags:
@@ -106,6 +154,34 @@ paths:
                 properties:
                   result:
                     $ref: '#/components/schemas/Site'
+        '400':
+          description: Input error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+        '401':
+          description: Not authorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Site not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+
 
     put:
       tags:
@@ -139,6 +215,34 @@ paths:
                  result:
                   $ref: '#/components/schemas/Site'
 
+        '400':
+          description: Input error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+        '401':
+          description: Not authorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Site not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+
     delete:
       tags:
       - Sites
@@ -154,8 +258,8 @@ paths:
           schema:
             type: string
       responses:
-        '201':
-          description: Updated
+        '200':
+          description: Site Deleted
           content:
             application/json:
               schema:
@@ -164,7 +268,37 @@ paths:
                 properties:
                  result:
                   $ref: '#/components/schemas/Site'
-                  
+
+        '400':
+          description: Input error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+        '401':
+          description: Not authorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Site not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+
+
+
   /instruments:
     get:
       tags:
@@ -173,6 +307,11 @@ paths:
       description: List instruments
       operationId: list_instruments
       parameters:
+        - name: query
+          in: query
+          description: a formated query string for instruments.
+          schema:
+            type: string
         - name: limit
           in: query
           description: limit the number of records returned
@@ -196,7 +335,31 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/Instrument'
- 
+
+
+        '400':
+          description: Input error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+        '401':
+          description: Not authorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+
+
+
     post:
       tags:
         - Instruments
@@ -209,7 +372,7 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/NewInstRequest'
-      responses: 
+      responses:
         '201':
           description: Created
           content:
@@ -222,8 +385,28 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/Instrument'
- 
- 
+
+
+        '400':
+          description: Input error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+        '401':
+          description: Not authorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
   /instruments/{instrument_uuid}:
     get:
       tags:
@@ -249,7 +432,34 @@ paths:
                 properties:
                   result:
                      $ref: "#/components/schemas/Instrument"
-                        
+
+        '400':
+          description: Input error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+        '401':
+          description: Not authorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Site not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
     put:
       tags:
         - Instruments
@@ -259,7 +469,7 @@ paths:
       #x-swagger-router-controller: connexContr
       parameters:
         - name: instrument_uuid
-          in: path 
+          in: path
           description: Unique ID of instrument generated by Tapis
           required: true
           schema:
@@ -283,8 +493,34 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/Instrument'
- 
-                        
+
+        '400':
+          description: Input error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+        '401':
+          description: Not authorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Instrument not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
     delete:
       tags:
       - Instruments
@@ -293,8 +529,8 @@ paths:
       operationId: delete_instrument
       #x-swagger-router-controller: connexContr
       parameters:
-        - name: instrument_uuid 
-          in: path 
+        - name: instrument_uuid
+          in: path
           description: Unique ID of instrument generated by Tapis
           required: true
           schema:
@@ -310,7 +546,33 @@ paths:
                 properties:
                   result:
                     $ref: '#/components/schemas/Instrument'
-                    
+        '400':
+          description: Input error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+        '401':
+          description: Not authorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Instrument not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
   /variables:
     get:
       tags:
@@ -320,6 +582,11 @@ paths:
       operationId: list_variables
       x-swagger-router-controller: connexContr
       parameters:
+      - name: query
+        in: query
+        description: a formated query string for variables.
+        schema:
+          type: string
       - name: limit
         in: query
         description: limit the number of records returned.
@@ -343,7 +610,27 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/Variable'
-                      
+        '400':
+          description: Input error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+        '401':
+          description: Not authorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
     post:
       tags:
       - Variables
@@ -371,6 +658,26 @@ paths:
                     items:
                       $ref: '#/components/schemas/Variable'
 
+        '400':
+           description: Input error.
+           content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+        '401':
+           description: Not authorized.
+           content:
+             application/json:
+               schema:
+                 $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
   /variables/{variable_uuid}:
     get:
       tags:
@@ -396,7 +703,34 @@ paths:
                 properties:
                   result:
                     $ref: '#/components/schemas/Variable'
-    
+
+        '400':
+          description: Input error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+        '401':
+          description: Not authorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Variable not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
     put:
       tags:
       - Variables
@@ -427,11 +761,38 @@ paths:
                   - $ref: '#/components/schemas/BasicResponse'
                 properties:
                  result:
-                  $ref: '#/components/schemas/Variable'                
-                  
+                  $ref: '#/components/schemas/Variable'
+
+        '400':
+          description: Input error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+        '401':
+          description: Not authorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Variable not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
     delete:
       tags:
-      - Variables 
+      - Variables
       summary: Delete a variable (single or bulk)
       description: Delete a variable (single or bulk)
       operationId: delete_variable
@@ -455,6 +816,33 @@ paths:
                  result:
                   $ref: '#/components/schemas/Variable'
 
+        '400':
+          description: Input error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+        '401':
+          description: Not authorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Variable not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
   /measurements:
     get:
       tags:
@@ -464,6 +852,11 @@ paths:
       operationId: list_measurements
       x-swagger-router-controller: connexContr
       parameters:
+        - name: query
+          in: query
+          description: a formated query string for measurements.
+          schema:
+            type: string
         - name: limit
           in: query
           description: limit the number of records returned.
@@ -474,12 +867,12 @@ paths:
           description: index (offset) to start list.
           schema:
             type: integer
-        - name: start-date
+        - name: start_date
           in: query
           description: start date of measurements
           schema:
             type: string
-        - name: end-date
+        - name: end_date
           in: query
           description: end date of measurements
           schema:
@@ -502,7 +895,28 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/Measurement'
-                         
+
+        '400':
+          description: Input error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+        '401':
+          description: Not authorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
     post:
       tags:
       - Measurements
@@ -529,36 +943,28 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/Measurement'
-                         
-  /measurements/{measurement_uuid}:
-    delete:
-      tags:
-        - Measurements
-      summary: Delete measurments.
-      description: Delete measurements.
-      operationId: delete_measurements
-      x-swagger-router-controller: connexContr
-      parameters:
-        - name: measurement_uuid
-          in: path
-          description: measurement_uuid to be deleted
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: OK
+
+        '400':
+          description: Input error.
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/BasicResponse'
-                properties:
-                 result:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/Measurement'
-  
+                $ref: '#/components/schemas/ErrorResponse'
+
+        '401':
+          description: Not authorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
   /creeks:
     get:
       tags:
@@ -568,6 +974,11 @@ paths:
       operationId: list_creeks
       x-swagger-router-controller: connexContr
       parameters:
+      - name: query
+        in: query
+        description: a formated query string for creeks.
+        schema:
+          type: string
       - name: limit
         in: query
         description: limit the number of records returned.
@@ -592,11 +1003,33 @@ paths:
                     items:
                       $ref: '#/components/schemas/Creek'
 
+        '400':
+          description: Input error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+        '401':
+          description: Not authorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+
     post:
       tags:
       - Creeks
-      summary: Create creeks. 
-      description: Create creeks. 
+      summary: Create creeks.
+      description: Create creeks.
       operationId: create_creek
       x-swagger-router-controller: connexContr
       requestBody:
@@ -618,6 +1051,27 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/Creek'
+        '400':
+          description: Input error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+        '401':
+          description: Not authorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
 
   /creeks/{creek_uuid}:
     get:
@@ -644,7 +1098,37 @@ paths:
                 properties:
                   result:
                     $ref: '#/components/schemas/Creek'
-    
+
+
+        '400':
+          description: Input error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+        '401':
+          description: Not authorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Creek not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+
+
     put:
       tags:
       - Creeks
@@ -675,8 +1159,36 @@ paths:
                   - $ref: '#/components/schemas/BasicResponse'
                 properties:
                  result:
-                  $ref: '#/components/schemas/Creek'                
-                  
+                  $ref: '#/components/schemas/Creek'
+
+        '400':
+          description: Input error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+        '401':
+          description: Not authorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Creek not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+
     delete:
       tags:
       - Creeks
@@ -703,6 +1215,161 @@ paths:
                  result:
                   $ref: '#/components/schemas/Creek'
 
+        '400':
+          description: Input error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+        '401':
+          description: Not authorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Creek not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+
+  /units:
+    get:
+      tags:
+       - Units
+      summary: List units.
+      description: List units.
+      operationId: list_units
+      x-swagger-router-controller: connexContr
+      parameters:
+      - name: query
+        in: query
+        description: a formated query string for units.
+        schema:
+          type: string
+      - name: limit
+        in: query
+        description: limit the number of records returned.
+        schema:
+          type: integer
+      - name: offset
+        in: query
+        description: index (offset) to start list.
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BasicResponse'
+                properties:
+                   result:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Unit'
+        '400':
+          description: Input error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+        '401':
+          description: Not authorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Creek not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /measured_properties:
+    get:
+      tags:
+       - Measured_Properties
+      summary: List measured_properties.
+      description: List measured_properties.
+      operationId: list_measured_properties
+      x-swagger-router-controller: connexContr
+      parameters:
+      - name: query
+        in: query
+        description: a formated query string for units.
+        schema:
+          type: string
+      - name: limit
+        in: query
+        description: limit the number of records returned.
+        schema:
+          type: integer
+      - name: offset
+        in: query
+        description: index (offset) to start list.
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BasicResponse'
+                properties:
+                   result:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/MeasuredProperty'
+        '400':
+          description: Input error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+        '401':
+          description: Not authorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Creek not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
 components:
   schemas:
@@ -718,7 +1385,21 @@ components:
         status:
           type: string
           description: Whether the request was a success or failure.
-          enum: [success, failure]
+          enum: [success]
+
+    ErrorResponse:
+      type: object
+      properties:
+        version:
+          type: string
+          description: Version of the API
+        message:
+          type: string
+          description: Brief description of the response
+        status:
+          type: string
+          description: Whether the request was a success or failure.
+          enum: [failure]
 
     BasicResult:
       type: object
@@ -742,13 +1423,16 @@ components:
         name:
           type: string
           description: Site name
-        site-id:
+        site_id:
           type: string
           description: The unique identifier for site
+        site_uuid:
+          type: string
+          description: The site uuid generated by Tapis
         owner:
           type: string
           description: The owner for site
-        resource-type:
+        resource_type:
           type: string
           description: The type of resource.
           enum: [site]
@@ -789,7 +1473,7 @@ components:
         measured_property:
           type: string
           description: The property measured by variable.
-        resource-type:
+        resource_type:
           type: string
           description: The type of resource.
           enum: [variable]
@@ -812,6 +1496,12 @@ components:
         name:
           type: string
           description: The name of creek.
+        creek_uuid:
+          type: string
+          description: The creek uuid generated by Tapis.
+        creek_id:
+          type: string
+          description: The unique identifier for creek.
         owner:
           type: string
           description: The owner for creek.
@@ -820,17 +1510,17 @@ components:
           description: For continous query it needs frequency, group by time.RESAMPLE EVERY <interval> FOR <interval>
         triggers:
           type: array
-          items: 
+          items:
             type: object
           description: Each object in triggers array evaluates one variable using some mathematical function.
         query_type:
           type: string
           description: Type of query
           enum: [triggers, continous]
-        resource-type:
+        resource_type:
           type: string
           description: The type of resource.
-          enum: [stream]
+          enum: [creek]
         action:
           oneOf:
             - $ref: "#/components/schemas/Actor"
@@ -838,16 +1528,44 @@ components:
             - $ref: "#/components/schemas/Application"
             - $ref: "#/components/schemas/Callback"
 
-   
+
+    Unit:
+      type: object
+      properties:
+        name:
+          type: string
+          description: The name of unit.
+        abbrevation:
+          type: string
+          description: The abbrevation for the unit
+        ontology:
+          type: string
+          description: Name of the ontology this unit belongs too.
+        category:
+          type: string
+          description: category of unit.
+
+    MeasuredProperty:
+      type: object
+      properties:
+        label:
+          type: string
+          description: The label of property.
+        url:
+          type: string
+          description: The url for the properties ontology
+        ontology:
+          type: string
+          description: Name of the ontology this unit belongs too.
 
     NewSite:
       type: object
       properties:
-        site-id:
+        site_id:
           type: string
           pattern: "^[a-zA-Z0-9-]*$"
           description: The unique identifier for the tenant.
-        resource-type:
+        resource_type:
           type: string
           enum: [site]
           description: Type of resource(site) to be generated.
@@ -863,12 +1581,12 @@ components:
         elevation:
           type: number
           description: Elevation of site.
-      required: [resource-type, site-name, lat, lon, elevation]
+      required: [resource_type, site_name, lat, lon, elevation]
 
     UpdateSite:
       type: object
       properties:
-        site-uuid:
+        site_uuid:
           type: string
           pattern: "^[a-zA-Z0-9-]*$"
           description: The unique identifier generated by Tapis.
@@ -876,11 +1594,11 @@ components:
           type: string
           pattern: "^[a-zA-Z0-9-]*$"
           description: The unique identifier for the tenant.
-        resource-type:
+        resource_type:
           type: string
           enum: [site]
           description: Type of resource(site) to be generated.
-        site-name:
+        site_name:
           type: string
           description: Resource name.
         lat:
@@ -892,13 +1610,13 @@ components:
         elevation:
           type: number
           description: Elevation of site.
-      required: [site-uuid, site-id, resource-type, site-name, lat, lon, elevation]
+      required: [site_uuid, site_id, resource_type, site_name, lat, lon, elevation]
 
     NewInstRequest:
       type: array
       items:
         $ref: '#/components/schemas/NewInst'
-        
+
     NewInst:
       type: object
       properties:
@@ -925,12 +1643,12 @@ components:
           type: string
           description: user metadata on instruments
       required: [resource_type, site_id, instrument_name, description]
-      
+
     UpdateInstRequest:
       type: array
       items:
-        $ref: '#/components/schemas/UpdateInstRequest'
-    
+        $ref: '#/components/schemas/UpdateInst'
+
     UpdateInst:
       type: object
       properties:
@@ -959,15 +1677,15 @@ components:
         metadata:
           type: string
           description: user metadata on instruments
-      required: [resource_type, instrument_uuid, site_id, instrument_name, description]  
-    
+      required: [resource_type, instrument_uuid, site_id, instrument_name, description]
+
     Instrument:
       type: object
       properties:
         name:
           type: string
           description: Instrument name
-        resource-type:
+        resource_type:
           type: string
           description: The type of resource.
           enum: [instrument]
@@ -978,8 +1696,8 @@ components:
         instrument_id:
           type: string
           description: The unique identifier for instrument for a tenant
-        owner:    
-          type: string  
+        owner:
+          type: string
           description: Owner of the instrument
         site_id:
           type: string
@@ -995,11 +1713,11 @@ components:
         metadata:
           type: string
           description: User entered metadata for the instruments
-    
+
     NewVarRequest:
       type: array
       items:
-        $ref: '#/components/schemas/NewVariable'   
+        $ref: '#/components/schemas/NewVariable'
 
     NewVariable:
       type: object
@@ -1010,15 +1728,15 @@ components:
         shortname:
           type: string
           description: Shortname of variable.
-        unit:
-          type: string
-          description: The unit to measure property of variable
+        unit_id:
+          type: number
+          description: The Id of the unit to measure property of variable
         unit_abbrev:
           type: string
           description: The unit abbrevation to measure the property of variable.
-        measured_property:
-          type: string
-          description: Property measured by the variable type
+        measured_property_id:
+          type: number
+          description: Id of the Property measured by the variable type
         format:
           type: string
           description: text for single variable creation and file for bulk variable creation
@@ -1026,7 +1744,7 @@ components:
         storage_system:
           type: string
           description: Storage system name for file format
-      required: [resource_type, var_name, unit, unit_abbrev, format]
+      required: [var_name, unit_id, unit_abbrev, format]
 
     NewMeasurement:
       type: object
@@ -1037,10 +1755,10 @@ components:
         datetime:
           type: string
           description: The Datatime of the measurement
-      additionalProperties:
-        type: string
-      required: [datetime, instument_id]
-      
+        additionalProperties:
+          type: string
+          required: [datetime, instument_id]
+
     NewCreek:
       type: object
       properties:
@@ -1052,7 +1770,7 @@ components:
           description: For continous query it needs frequency, group by time.RESAMPLE EVERY <interval> FOR <interval>
         triggers:
           type: array
-          items: 
+          items:
             type: object
           description: Each object in triggers array evaluates one variable using some mathematical function.
         query_type:
@@ -1063,18 +1781,17 @@ components:
           type: string
           description: Type of action
           enum: [actor, callback, application, notifications]
-          
-    
+
+
 
     Actor:
      type: object
-     
+
     Notification:
      type: object
-     
+
     Callback:
      type: object
-     
-    Application: 
+
+    Application:
      type: object
-     
