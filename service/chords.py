@@ -1,9 +1,9 @@
-    import datetime
+import datetime
 import enum
 import requests
 import json
 from flask import g, Flask
-
+from models import ChordsSite, ChordsIntrument, ChordsVariable, ChordsMeasurement
 from common.config import conf
 app = Flask(__name__)
 
@@ -12,7 +12,7 @@ app = Flask(__name__)
 #Can fetch all the site in JSON from CHORDS
 #TODO - will need to filter the output based on the user permission either in here
 # or post the return
-def get_sites():
+def list_sites():
     #GET get a site from chords service
     chords_uri = "http://"+conf.chords_url+"/sites.json";
     getData = {}

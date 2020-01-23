@@ -20,7 +20,7 @@ class SitesResource(Resource):
     """
 
     def get(self):
-        resp = chords.fetch_sites()
+        resp = chords.list_sites()
         logger.debug(resp)
         return resp
 
@@ -37,7 +37,7 @@ class SiteResource(Resource):
     """
 
     def get(self, site_id):
-        resp = chords.fetch_site(site_id)
+        resp = chords.get_site(site_id)
         logger.debug(resp)
         return resp
 
