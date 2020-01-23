@@ -4,7 +4,7 @@ from flask_restful import Resource
 from openapi_core.shortcuts import RequestValidator
 from openapi_core.wrappers.flask import FlaskOpenAPIRequest
 # import psycopg2
-import sqlalchemy
+#import sqlalchemy
 import chords
 from common import utils, errors
 #from service.models import db, LDAPConnection, TenantOwner, Tenant
@@ -25,7 +25,8 @@ class SitesResource(Resource):
         return resp
 
     def post(self):
-        resp = chords.create_site()
+        logger.debug(request.args.get('name'))
+        resp = chords.create_site(request.args.get('name'))
         logger.debug(resp)
         return resp
 

@@ -6,6 +6,6 @@
   "show_traceback": false,
   "dev_token": "sometoken",
   "local_dev":true,
-  "chords_url":"",
-  "chords_api_key":""
+  "chords_url":"agavetest.its.hawaii.edu",
+  "chords_api_key":"P78M3u6ex5-4Hfvz6ALs"
 }
