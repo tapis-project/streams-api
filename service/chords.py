@@ -23,7 +23,7 @@ def list_sites():
     logger.debug("IN CHORDS LIST SITES")
     chords_uri = conf.chords_url+"/sites.json";
     getData = {'email':conf.chords_user_email,
-               'api_key': conf.chords_api_key,}
+               'api_key': conf.chords_api_key}
     headers = {
         'Content-Type':'application/x-www-form-urlencoded'
     }
@@ -86,78 +86,108 @@ def update_site(id, req_args):
 def delete_site(id):
     chords_uri = conf.chords_url+"/sites/"+id+".json";
     deleteData = {'email':conf.chords_user_email,
-                  'api_key': conf.chords_api_key,}
+                  'api_key': conf.chords_api_key}
     headers = {
         'Content-Type':'application/x-www-form-urlencoded'
     }
     res = requests.delete(chords_uri, data=deleteData, headers=headers,verify=False)
-    logger.debug(res)
+    logger.debug(res.status_code)
     #Chords returns a 204 so we can only return the response
-    resp={'msg':'complete'}
+    resp=res.status_code
     return resp
-#
-# #Instruments endpoints supported in chords
-#
-# #Can fetch all the instruments in JSON from CHORDS
-# #TODO - will need to filter the output based on the user permission either in here
-# # or post the return
-# def get_instruments():
-#     #GET get a instrument from chords service
-#     chords_uri = "http://"+conf.chords_url+"/instruments.json";
-#     getData = {}
-#     headers = {
-#         'Content-Type': 'application/json',
-#     }
-#     res = requests.get(chords_uri, data=getData, headers=headers,verify=False)
-#     resp = json.loads(res.content)
-#     return resp
-#
-# #fetch a specific instrument by its id from CHORDS
-# def get_instrument(id):
-#     #GET get a instrument from chords service
-#     chords_uri = "http://"+conf.chords_url+"/instruments/"+id+".json";
-#     getData = {}
-#     headers = {
-#         'Content-Type': 'application/json',
-#     }
-#     res = requests.get(chords_uri, data=getData, headers=headers,verify=False)
-#     resp = json.loads(res.content)
-#     return resp
-#
-# #create a new instrument in CHORDS
-# def create_site(instrument:ChordsIntrument):
-#     #TODO validate the instrument has all properties requirement and fields are correct
-#     chords_uri = "http://"+conf.chords_url+"/instruments";
-#     postData = instrument
-#     headers = {
-#         'Content-Type': 'application/json',
-#     }
-#     res = requests.post(chords_uri, data=postData, headers=headers,verify=False)
-#     resp = json.loads(res.content)
-#     return resp
-#
-# #update a instrument in CHORDS
-# def update_instrument(instrument:ChordsIntrument):
-#     #TODO validate the instrument has all properties requirement and fields are correct
-#     chords_uri = "http://"+conf.chords_url+"/instruments";
-#     putData = site
-#     headers = {
-#         'Content-Type': 'application/json',
-#     }
-#     res = requests.put(chords_uri, data=putData, headers=headers,verify=False)
-#     resp = json.loads(res.content)
-#     return resp
-#
-# #delete a instrument from CHORDS
-# def delete_instrument(instrument_id):
-#     chords_uri = "http://"+conf.chords_url+"/instruments/"+id;
-#     headers = {
-#         'Content-Type': 'application/json',
-#     }
-#     res = requests.delete(chords_uri, headers=headers,verify=False)
-#     resp = json.loads(res.content)
-#     return resp
-#
+
+#Instruments endpoints supported in chords
+
+#Can fetch all the instruments in JSON from CHORDS
+#TODO - will need to filter the output based on the user permission either in here
+# or post the return
+def list_instruments():
+    #GET get a instrument from chords service
+    chords_uri = conf.chords_url+"/instruments.json";
+    getData = {'email':conf.chords_user_email,
+               'api_key': conf.chords_api_key}
+    headers = {
+        'Content-Type':'application/x-www-form-urlencoded'
+    }
+    res = requests.get(chords_uri, data=getData, headers=headers,verify=False)
+    logger.debug(res.content)
+    resp = json.loads(res.content)
+    return resp
+
+#fetch a specific instrument by its id from CHORDS
+def get_instrument(id):
+    #GET get a instrument from chords service
+    chords_uri = conf.chords_url+"/instruments/"+id+".json";
+    getData = {'email':conf.chords_user_email,
+               'api_key': conf.chords_api_key}
+    headers = {
+        'Content-Type':'application/x-www-form-urlencoded'
+    }
+    res = requests.get(chords_uri, data=getData, headers=headers,verify=False)
+    resp = json.loads(res.content)
+    return resp
+
+#create a new instrument in CHORDS
+def create_instrument(req_args):
+    #TODO validate the instrument has all properties requirement and fields are correct
+    chords_uri = conf.chords_url+"/instruments.json";
+    postData = {'email':conf.chords_user_email,
+                'api_key': conf.chords_api_key,
+                'instrument[site_id]':req_args.get('site_id'),
+                'instrument[name]': req_args.get('name'),
+                'instrument[sensor_id]': req_args.get('sensor_id'),
+                'instrument[topic_category_id]': req_args.get('topic_category_id'),
+                'instrument[description]': req_args.get('description'),
+                'instrument[display_points]': req_args.get('display_points'),
+                'instrument[plot_offset_value]': req_args.get('plot_offset_value'),
+                'instrument[plot_offset_units]': req_args.get('plot_offset_units'),
+                'instrument[sample_rate_seconds]': req_args.get('sample_rate_seconds')
+                }
+    headers = {
+        'Content-Type':'application/x-www-form-urlencoded'
+    }
+    res = requests.post(chords_uri, data=postData, headers=headers,verify=False)
+    logger.debug(res.content)
+    resp = json.loads(res.content)
+    return resp
+
+#update a instrument in CHORDS
+def update_instrument(id, req_args):
+    #TODO validate the instrument has all properties requirement and fields are correct
+    chords_uri = conf.chords_url+"/instruments/"+id+".json";
+    putData = {'email':conf.chords_user_email,
+                'api_key': conf.chords_api_key,
+                'instrument[site_id]':req_args.get('site_id'),
+                'instrument[name]': req_args.get('name'),
+                'instrument[sensor_id]': req_args.get('sensor_id'),
+                'instrument[topic_category_id]': req_args.get('topic_category_id'),
+                'instrument[description]': req_args.get('description'),
+                'instrument[display_points]': req_args.get('display_points'),
+                'instrument[plot_offset_value]': req_args.get('plot_offset_value'),
+                'instrument[plot_offset_units]': req_args.get('plot_offset_units'),
+                'instrument[sample_rate_seconds]': req_args.get('sample_rate_seconds')
+                }
+    headers = {
+        'Content-Type':'application/x-www-form-urlencoded'
+    }
+    res = requests.put(chords_uri, data=putData, headers=headers,verify=False)
+    resp = json.loads(res.content)
+    return resp
+
+#delete a instrument from CHORDS
+def delete_instrument(id):
+    chords_uri = conf.chords_url+"/instruments/"+id+".json";
+    deleteData = {'email':conf.chords_user_email,
+                  'api_key': conf.chords_api_key}
+    headers = {
+        'Content-Type':'application/x-www-form-urlencoded'
+    }
+    res = requests.delete(chords_uri, data=deleteData, headers=headers,verify=False)
+    logger.debug(res.status_code)
+    resp={'msg':res.status_code}
+    #resp = json.loads(res.content)
+    return resp
+
 # #variable endpoints supported in chords
 #
 # #Can fetch all the variables in JSON from CHORDS

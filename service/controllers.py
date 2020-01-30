@@ -26,10 +26,7 @@ class SitesResource(Resource):
         return resp
 
     def post(self):
-        #new_site = ChordsSite(request.args.get('name'))
-        #new_site = request.args.get('name')
         resp = chords.create_site(request.args)
-        logger.debug("AFTER REQUEST")
         logger.debug(resp)
         return resp
 
@@ -46,7 +43,7 @@ class SiteResource(Resource):
         return resp
 
     def put(self, site_id):
-        resp = chords.update_site(site_id)
+        resp = chords.update_site(site_id, request.args)
         logger.debug(resp)
         return resp
 
@@ -61,10 +58,14 @@ class InstrumentsResource(Resource):
     """
 
     def get(self):
-        logger.debug("top of GET /instruments")
+        resp = chords.list_instruments()
+        logger.debug(resp)
+        return resp
 
     def post(self):
-        logger.debug("top of POST /instruments")
+        resp = chords.create_instrument(request.args)
+        logger.debug(resp)
+        return resp
 
 
 class InstrumentResource(Resource):
@@ -73,13 +74,19 @@ class InstrumentResource(Resource):
     """
 
     def get(self, instrument_id):
-        logger.debug("top of GET /instruments/{instrument_id}")
+        resp = chords.get_instrument(instrument_id)
+        logger.debug(resp)
+        return resp
 
     def put(self, instrument_id):
-        logger.debug("top of PUT /instruments/{instrument_id}")
+        resp = chords.update_instrument(instrument_id, request.args)
+        logger.debug(resp)
+        return resp
 
     def delete(self, instrument_id):
-        logger.debug("top of DELETE /instruments/{instrument_id}")
+        resp = chords.delete_instrument(instrument_id)
+        logger.debug(resp)
+        return resp
 
 class VariablesResource(Resource):
     """
