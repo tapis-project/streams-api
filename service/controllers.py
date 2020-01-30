@@ -6,6 +6,7 @@ from openapi_core.wrappers.flask import FlaskOpenAPIRequest
 # import psycopg2
 #import sqlalchemy
 import chords
+#from models import ChordsSite
 from common import utils, errors
 #from service.models import db, LDAPConnection, TenantOwner, Tenant
 
@@ -25,10 +26,13 @@ class SitesResource(Resource):
         return resp
 
     def post(self):
-        logger.debug(request.args.get('name'))
-        resp = chords.create_site(request.args.get('name'))
+        #new_site = ChordsSite(request.args.get('name'))
+        #new_site = request.args.get('name')
+        resp = chords.create_site(request.args)
+        logger.debug("AFTER REQUEST")
         logger.debug(resp)
         return resp
+
 
 
 class SiteResource(Resource):
