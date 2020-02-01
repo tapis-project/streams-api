@@ -190,65 +190,80 @@ def delete_instrument(id):
 
 # #variable endpoints supported in chords
 #
-# #Can fetch all the variables in JSON from CHORDS
-# #TODO - will need to filter the output based on the user permission either in here
-# # or post the return
-# def get_variables():
-#     #GET get all variables from chords service
-#     chords_uri = "http://"+conf.chords_url+"/variables.json";
-#     getData = {}
-#     headers = {
-#         'Content-Type': 'application/json',
-#     }
-#     res = requests.get(chords_uri, data=getData, headers=headers,verify=False)
-#     resp = json.loads(res.content)
-#     return resp
-#
-# #fetch a specific variable by its id from CHORDS
-# def get_variable(id):
-#     #GET get a instrument from chords service
-#     chords_uri = "http://"+conf.chords_url+"/variables/"+id+".json";
-#     getData = {}
-#     headers = {
-#         'Content-Type': 'application/json',
-#     }
-#     res = requests.get(chords_uri, data=getData, headers=headers,verify=False)
-#     resp = json.loads(res.content)
-#     return resp
-#
-# #create a new variable in CHORDS
-# def create_variable(variable:ChordsVariable):
-#     #TODO validate the variable has all properties requirement and fields are correct
-#     chords_uri = "http://"+conf.chords_url+"/variables";
-#     postData = variable
-#     headers = {
-#         'Content-Type': 'application/json',
-#     }
-#     res = requests.post(chords_uri, data=postData, headers=headers,verify=False)
-#     resp = json.loads(res.content)
-#     return resp
-#
-# #update a variable in CHORDS
-# def update_variable(variable:ChordsVariable):
-#     #TODO validate the variable has all properties requirement and fields are correct
-#     chords_uri = "http://"+conf.chords_url+"/variables";
-#     putData = variable
-#     headers = {
-#         'Content-Type': 'application/json',
-#     }
-#     res = requests.put(chords_uri, data=putData, headers=headers,verify=False)
-#     resp = json.loads(res.content)
-#     return resp
-#
-# #delete a variable from CHORDS
-# def delete_variable(variable_id):
-#     chords_uri = "http://"+conf.chords_url+"/variables/"+id;
-#     headers = {
-#         'Content-Type': 'application/json',
-#     }
-#     res = requests.delete(chords_uri, headers=headers,verify=False)
-#     resp = json.loads(res.content)
-#     return resp
+#Can fetch all the variables in JSON from CHORDS
+#TODO - will need to filter the output based on the user permission either in here
+# or post the return
+def list_variables():
+    #GET get all variables from chords service
+    chords_uri = conf.chords_url+"/vars.json";
+    getData = {'email':conf.chords_user_email,
+                  'api_key': conf.chords_api_key}
+    headers = {
+        'Content-Type':'application/x-www-form-urlencoded'
+    }
+    res = requests.get(chords_uri, data=getData, headers=headers,verify=False)
+    resp = json.loads(res.content)
+    return resp
+
+#fetch a specific variable by its id from CHORDS
+def get_variable(id):
+    #GET get a instrument from chords service
+    chords_uri = conf.chords_url+"/vars/"+id+".json";
+    getData = {'email':conf.chords_user_email,
+                  'api_key': conf.chords_api_key}
+    headers = {
+        'Content-Type':'application/x-www-form-urlencoded'
+    }
+    res = requests.get(chords_uri, data=getData, headers=headers,verify=False)
+    resp = json.loads(res.content)
+    return resp
+
+#create a new variable in CHORDS
+def create_variable(req_args):
+    #TODO validate the variable has all properties requirement and fields are correct
+    chords_uri = conf.chords_url+"/vars.json";
+    postData = {'email':conf.chords_user_email,
+                  'api_key': conf.chords_api_key,
+                  'var[name]':req_args.get('name'),
+                  'var[instrument_id]': req_args.get('instrument_id'),
+                  'var[shortname]': req_args.get('shortname'),
+                  'var[commit]': 'Create Variable'}
+    headers = {
+        'Content-Type':'application/x-www-form-urlencoded'
+    }
+    res = requests.post(chords_uri, data=postData, headers=headers,verify=False)
+    resp = json.loads(res.content)
+    return resp
+
+#update a variable in CHORDS
+def update_variable(id,req_args):
+    #TODO validate the variable has all properties requirement and fields are correct
+    chords_uri = conf.chords_url+"/vars/"+id+".json";
+    putData = {'email':conf.chords_user_email,
+                  'api_key': conf.chords_api_key,
+                  'var[name]':req_args.get('name'),
+                  'var[instrument_id]': req_args.get('instrument_id'),
+                  'var[shortname]': req_args.get('shortname')
+                  }
+    headers = {
+        'Content-Type':'application/x-www-form-urlencoded'
+    }
+    res = requests.put(chords_uri, data=putData, headers=headers,verify=False)
+    resp = json.loads(res.content)
+    return resp
+
+#delete a variable from CHORDS
+def delete_variable(id):
+    chords_uri =    conf.chords_url+"/vars/"+id+".json";
+    deleteData={'email':conf.chords_user_email,
+                  'api_key': conf.chords_api_key}
+    headers = {
+        'Content-Type':'application/x-www-form-urlencoded'
+    }
+    res = requests.delete(chords_uri, data=deleteData, headers=headers,verify=False)
+    logger.debug(res.status_code)
+    resp={'msg':res.status_code}
+    return resp
 #
 # #measurement endpoints supported in chords
 #

@@ -94,10 +94,16 @@ class VariablesResource(Resource):
     """
 
     def get(self):
-        logger.debug("top of GET /variables")
+        resp = chords.list_variables()
+        logger.debug(resp)
+        return resp
+
 
     def post(self):
-        logger.debug("top of POST /variables")
+        resp = chords.create_variable(request.args)
+        logger.debug(resp)
+        return resp
+
 
 
 class VariableResource(Resource):
@@ -106,13 +112,19 @@ class VariableResource(Resource):
     """
 
     def get(self, variable_id):
-        logger.debug("top of GET /variables/{variable_id}")
+        resp = chords.get_variable(variable_id)
+        logger.debug(resp)
+        return resp
 
     def put(self, variable_id):
-        logger.debug("top of PUT /variables/{variable_id}")
+        resp = chords.update_variable(variable_id,request.args)
+        logger.debug(resp)
+        return resp
 
     def delete(self, variable_id):
-        logger.debug("top of DELETE /variables/{variable_id}")
+        resp = chords.delete_variable(variable_id)
+        logger.debug(resp)
+        return resp
 
 class MeasurementsResource(Resource):
     """
