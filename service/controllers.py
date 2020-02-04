@@ -6,7 +6,7 @@ from openapi_core.wrappers.flask import FlaskOpenAPIRequest
 # import psycopg2
 #import sqlalchemy
 import chords
-#from models import ChordsSite
+from models import ChordsSite
 from common import utils, errors
 #from service.models import db, LDAPConnection, TenantOwner, Tenant
 
@@ -26,7 +26,11 @@ class SitesResource(Resource):
         return resp
 
     def post(self):
-        resp = chords.create_site(request.args)
+        postSite = ChordsSite(request.args.get('name'),
+                              request.args.get('lat'),
+                              request.args.get('long'),
+                              request.args.get('elevation'))
+        resp = chords.create_site(postSite)
         logger.debug(resp)
         return resp
 
@@ -43,7 +47,11 @@ class SiteResource(Resource):
         return resp
 
     def put(self, site_id):
-        resp = chords.update_site(site_id, request.args)
+        putSite = ChordsSite(request.args.get('name'),
+                              request.args.get('lat'),
+                              request.args.get('long'),
+                              request.args.get('elevation'))
+        resp = chords.update_site(site_id, putSite)
         logger.debug(resp)
         return resp
 
@@ -130,7 +138,7 @@ class MeasurementsResource(Resource):
     """
     Work with Measurements objects
     """
-
+    #
     def get(self):
         logger.debug("top of GET /measurements")
 
