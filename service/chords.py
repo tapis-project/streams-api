@@ -267,34 +267,45 @@ def delete_variable(id):
 #
 # #measurement endpoints supported in chords
 #
-# #Can fetch all the measurments in JSON from CHORDS
-# #TODO - will need to filter the output based on the user permission either in here
-# # or post the return
-# def get_measurements():
-#     #GET get all variables from chords service
-#     chords_uri = "http://"+conf.chords_url+"api/v1/data";
-#     #start, end, instruments
-#     getData = {}
-#     headers = {
-#         'Content-Type': 'application/json',
-#     }
-#     res = requests.get(chords_uri, data=getData, headers=headers,verify=False)
-#     resp = json.loads(res.content)
-#     return resp
+#Can fetch all the measurments in JSON from CHORDS
+#TODO - will need to filter the output based on the user permission either in here
+# or post the return
+def get_measurements():
+    #GET get all variables from chords service
+    chords_uri = "http://"+conf.chords_url+"api/v1/data.json";
+    #start, end, instruments
+    getData = {'email':conf.chords_user_email,
+                  'api_key': conf.chords_api_key}
+    headers = {
+        'Content-Type':'application/x-www-form-urlencoded'
+    }
+    res = requests.get(chords_uri, data=getData, headers=headers,verify=False)
+    resp = json.loads(res.content)
+    return resp
 #
-# #create a new measurement in CHORDS
-# def create_measurement(measurement:ChordsMeasurement):
-#     #TODO validate the measurement has all properties requirement and fields are correct
-#     chords_uri = "http://"+conf.chords_url+"/measurements/url_create?";
-#     #need api_key, instrument_id, at and variable shortnames
-#     postData = measurement
-#     headers = {
-#         'Content-Type': 'application/json',
-#     }
-#     #CHORDS uses a GET method to create a new measurement
-#     res = requests.get(chords_uri, data=postData, headers=headers,verify=False)
-#     resp = json.loads(res.content)
-#     return resp
+#create a new measurement in CHORDS
+def create_measurement(req_args):
+    #TODO validate the measurement has all properties requirement and fields are correct
+    chords_uri = conf.chords_url+"/measurements/url_create.json?";
+    #need api_key, instrument_id, at and variable shortnames
+    #measurement_data =Object.assign({}, {email:chords_email,api_key: chords_api_token,instrument_id: response2['result']['value']['chords_id'], at: req.query.at || new Date().toISOString()},req.query.vars)
+    postData = {'email':conf.chords_user_email,
+                'api_key': conf.chords_api_key,
+                'instrument_id' : req_args.get('instrument_id')
+                }
+    for itm in req_args.getlist('vars[]'):
+        vars = json.loads(itm)
+        for k in vars:
+            postData[k]=vars[k]
+    logger.debug(postData)
+    headers = {
+        'Content-Type':'application/x-www-form-urlencoded'
+    }
+    #CHORDS uses a GET method to create a new measurement
+    res = requests.get(chords_uri, data=postData, headers=headers,verify=False)
+    logger.debug(res.content)
+    resp = json.loads(res.content)
+    return resp
 #
 #
 # #delete a variable from CHORDS
