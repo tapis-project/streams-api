@@ -3,7 +3,7 @@ import enum
 import requests
 import json
 from flask import g, Flask
-#from models import ChordsSite, ChordsIntrument, ChordsVariable, ChordsMeasurement
+from models import ChordsSite#, ChordsIntrument, ChordsVariable, ChordsMeasurement
 from common.config import conf
 app = Flask(__name__)
 
@@ -17,10 +17,9 @@ logger = get_logger(__name__)
 
 #Can fetch all the site in JSON from CHORDS
 #TODO - will need to filter the output based on the user permission either in here
-# or post the return
+# or post  return of results
 def list_sites():
     #GET get a site from chords service
-    logger.debug("IN CHORDS LIST SITES")
     chords_uri = conf.chords_url+"/sites.json";
     getData = {'email':conf.chords_user_email,
                'api_key': conf.chords_api_key}
@@ -28,7 +27,9 @@ def list_sites():
         'Content-Type':'application/x-www-form-urlencoded'
     }
     res = requests.get(chords_uri, data=getData, headers=headers,verify=False)
-    resp = json.loads(res.content)
+    resp={}
+    resp['results'] = json.loads(res.content)
+    resp['status'] = res.status_code
     return resp
 
 #fetch a specific site by its id from CHORDS
@@ -41,45 +42,51 @@ def get_site(id):
         'Content-Type':'application/x-www-form-urlencoded'
     }
     res = requests.get(chords_uri, data=getData, headers=headers,verify=False)
-    resp = json.loads(res.content)
+    resp={}
+    resp['results'] = json.loads(res.content)
+    resp['status'] = res.status_code
     return resp
 
 #create a new site in CHORDS
-def create_site(req_args):
+def create_site(site:ChordsSite):
     #TODO validate the site has all properties requirement and fields are correct
     chords_uri = conf.chords_url+"/sites.json"
     postData = {'email':conf.chords_user_email,
                 'api_key': conf.chords_api_key,
-                'site[name]':req_args.get('name'),
-                'site[lat]': req_args.get('lat'),
-                'site[lon]': req_args.get('long'),
-                'site[elevation]': req_args.get('elevation'),
+                'site[name]':site.name,
+                'site[lat]': site.lat,
+                'site[lon]': site.long,
+                'site[elevation]': site.elevation
                 }
     headers = {
          'Content-Type':'application/x-www-form-urlencoded'
     }
     res = requests.post(chords_uri, data=postData, headers=headers,verify=False)
     logger.debug(res.content)
-    resp =json.loads(res.content)
+    resp={}
+    resp['results'] = json.loads(res.content)
+    resp['status'] = res.status_code
     return resp
 #
 # #update a site in CHORDS
-def update_site(id, req_args):
+def update_site(id, site:ChordsSite):
     #TODO validate the site has all properties requirement and fields are correct
     chords_uri = conf.chords_url+"/sites/"+id+".json"
     postData = {'email':conf.chords_user_email,
                 'api_key': conf.chords_api_key,
-                'site[name]':req_args.get('name'),
-                'site[lat]': req_args.get('lat'),
-                'site[lon]': req_args.get('long'),
-                'site[elevation]': req_args.get('elevation'),
+                'site[name]':site.name,
+                'site[lat]': site.lat,
+                'site[lon]': site.long,
+                'site[elevation]': site.elevation
                 }
     headers = {
          'Content-Type':'application/x-www-form-urlencoded'
     }
     res = requests.put(chords_uri, data=postData, headers=headers,verify=False)
     logger.debug(res.content)
-    resp =json.loads(res.content)
+    resp={}
+    resp['results'] = json.loads(res.content)
+    resp['status'] = res.status_code
     return resp
 #
 # #delete a site from CHORDS
@@ -93,7 +100,8 @@ def delete_site(id):
     res = requests.delete(chords_uri, data=deleteData, headers=headers,verify=False)
     logger.debug(res.status_code)
     #Chords returns a 204 so we can only return the response
-    resp=res.status_code
+    resp={}
+    resp['status'] = res.status_code
     return resp
 
 #Instruments endpoints supported in chords
