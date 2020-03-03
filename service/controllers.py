@@ -4,8 +4,9 @@ from flask_restful import Resource
 from openapi_core.shortcuts import RequestValidator
 from openapi_core.wrappers.flask import FlaskOpenAPIRequest
 # import psycopg2
-import sqlalchemy
+#import sqlalchemy
 import chords
+from models import ChordsSite
 from common import utils, errors
 #from service.models import db, LDAPConnection, TenantOwner, Tenant
 
@@ -20,14 +21,19 @@ class SitesResource(Resource):
     """
 
     def get(self):
-        resp = chords.fetch_sites()
+        resp = chords.list_sites()
         logger.debug(resp)
         return resp
 
     def post(self):
-        resp = chords.create_site()
+        postSite = ChordsSite(request.args.get('name'),
+                              request.args.get('lat'),
+                              request.args.get('long'),
+                              request.args.get('elevation'))
+        resp = chords.create_site(postSite)
         logger.debug(resp)
         return resp
+
 
 
 class SiteResource(Resource):
@@ -36,12 +42,16 @@ class SiteResource(Resource):
     """
 
     def get(self, site_id):
-        resp = chords.fetch_site(site_id)
+        resp = chords.get_site(site_id)
         logger.debug(resp)
         return resp
 
     def put(self, site_id):
-        resp = chords.update_site(site_id)
+        putSite = ChordsSite(request.args.get('name'),
+                              request.args.get('lat'),
+                              request.args.get('long'),
+                              request.args.get('elevation'))
+        resp = chords.update_site(site_id, putSite)
         logger.debug(resp)
         return resp
 
@@ -56,10 +66,24 @@ class InstrumentsResource(Resource):
     """
 
     def get(self):
+<<<<<<< HEAD
+        resp = chords.fetch_instruments()
         logger.debug("top of GET /instruments")
+        return resp
 
     def post(self):
-        logger.debug("top of POST /instruments")
+        resp = chords.create_instruments()
+	    logger.debug("top of POST /instruments")
+=======
+        resp = chords.list_instruments()
+        logger.debug(resp)
+        return resp
+
+    def post(self):
+        resp = chords.create_instrument(request.args)
+        logger.debug(resp)
+>>>>>>> chords
+        return resp
 
 
 class InstrumentResource(Resource):
@@ -68,13 +92,34 @@ class InstrumentResource(Resource):
     """
 
     def get(self, instrument_id):
+<<<<<<< HEAD
+        resp = chords.fetch_instrument()
         logger.debug("top of GET /instruments/{instrument_id}")
+        return resp
 
     def put(self, instrument_id):
-        logger.debug("top of PUT /instruments/{instrument_id}")
+        resp = chords.update_instrument
+	    logger.debug("top of PUT /instruments/{instrument_id}")
+        return resp
 
     def delete(self, instrument_id):
+        resp = chords.delete_instrument
         logger.debug("top of DELETE /instruments/{instrument_id}")
+=======
+        resp = chords.get_instrument(instrument_id)
+        logger.debug(resp)
+        return resp
+
+    def put(self, instrument_id):
+        resp = chords.update_instrument(instrument_id, request.args)
+        logger.debug(resp)
+        return resp
+
+    def delete(self, instrument_id):
+        resp = chords.delete_instrument(instrument_id)
+        logger.debug(resp)
+>>>>>>> chords
+        return resp
 
 class VariablesResource(Resource):
     """
@@ -82,10 +127,16 @@ class VariablesResource(Resource):
     """
 
     def get(self):
-        logger.debug("top of GET /variables")
+        resp = chords.list_variables()
+        logger.debug(resp)
+        return resp
+
 
     def post(self):
-        logger.debug("top of POST /variables")
+        resp = chords.create_variable(request.args)
+        logger.debug(resp)
+        return resp
+
 
 
 class VariableResource(Resource):
@@ -94,24 +145,37 @@ class VariableResource(Resource):
     """
 
     def get(self, variable_id):
-        logger.debug("top of GET /variables/{variable_id}")
+        resp = chords.get_variable(variable_id)
+        logger.debug(resp)
+        return resp
 
     def put(self, variable_id):
-        logger.debug("top of PUT /variables/{variable_id}")
+        resp = chords.update_variable(variable_id,request.args)
+        logger.debug(resp)
+        return resp
 
     def delete(self, variable_id):
-        logger.debug("top of DELETE /variables/{variable_id}")
+        resp = chords.delete_variable(variable_id)
+        logger.debug(resp)
+        return resp
 
 class MeasurementsResource(Resource):
     """
     Work with Measurements objects
     """
-
+    #
     def get(self):
         logger.debug("top of GET /measurements")
 
+    #at the moment expects some like
+    #http://localhost:5000/v3/streams/measurements?instrument_id=1&vars[]={"somename":1.0}&vars[]={"other":2.0}
+    #will need to adjust when openAPI def is final for measurement
     def post(self):
-        logger.debug("top of POST /measurements")
+        logger.debug(request.args)
+        #expects instrument_id=1&vars[]={"somename":1.0}&vars[]={"other":2.0} in the request.args
+        resp = chords.create_measurement(request.args)
+        logger.debug(resp)
+        return resp
 
 
 class MeasurementResource(Resource):
