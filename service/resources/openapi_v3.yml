@@ -2273,7 +2273,7 @@ components:
         metadata:
           type: object
           description: User defined metadata for the site
-      required: [site_name, lat, lon, elevation]
+      required: [site_name, latitude, longitude, elevation]
 
     Instrument:
       type: object
