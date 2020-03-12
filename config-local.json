@@ -6,6 +6,10 @@
   "show_traceback": false,
   "dev_token": "sometoken",
   "local_dev":true,
-  "chords_url":"agavetest.its.hawaii.edu",
-  "chords_api_key":"P78M3u6ex5-4Hfvz6ALs"
+  "chords_url":"http://192.168.56.1",
+  "chords_api_key":"",
+  "chords_user_email":"admin@chordsrt.com",
+  "influxdb_host":"192.168.56.1",
+  "influxdb_port":"8086",
+  "influxdb_database":"mydb"
 }
