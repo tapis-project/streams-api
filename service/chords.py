@@ -226,40 +226,6 @@ def get_variable(id):
     resp = json.loads(res.content)
     return resp
 
-<<<<<<< HEAD
-def delete_site(site_id):
-    #DELETE to chords servive to remove site
-    return "site deleted" + site_id
-
-def fetch_instruments():
-    #GET get instruments from chords service
-    chords_uri = "http://"+conf.chords_url+"/instruments.json";
-    getData = {}
-    headers = {
-        'Content-Type': 'application/json',
-    }
-    res = requests.get(chords_uri,data=getData,headers=headers,verify=False)
-    resp = json.loads(res.content)
-    return resp
-
-def fetch_instrument():
-    #GET get a instrument from chords service
-    return "instrument fetched" + inst_id
-    
-def create_instruments(inst_id):
-    # POST to chords service to create a new instruments
-    return "instrument created" + inst_id
-
-def update_instrument(inst_id):
-   # PUT to chords service to update the instrument information
-   return "instrument updated" + inst_id
-
-def delete_instrument(inst_id):
-   # DELETE to chords service to remove instrument
-   return "instrument deleted" + inst_id
-
-
-=======
 #create a new variable in CHORDS
 def create_variable(req_args):
     #TODO validate the variable has all properties requirement and fields are correct
@@ -359,4 +325,3 @@ def create_measurement(req_args):
 #     res = requests.delete(chords_uri, headers=headers,verify=False)
 #     resp = json.loads(res.content)
 #     return resp
->>>>>>> chords

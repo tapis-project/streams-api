@@ -6,6 +6,7 @@ from openapi_core.wrappers.flask import FlaskOpenAPIRequest
 # import psycopg2
 #import sqlalchemy
 import chords
+import influx
 from models import ChordsSite
 from common import utils, errors
 #from service.models import db, LDAPConnection, TenantOwner, Tenant
@@ -26,10 +27,11 @@ class SitesResource(Resource):
         return resp
 
     def post(self):
-        postSite = ChordsSite(request.args.get('name'),
+        postSite = ChordsSite("",request.args.get('name'),
                               request.args.get('lat'),
                               request.args.get('long'),
-                              request.args.get('elevation'))
+                              request.args.get('elevation'),
+                              request.args.get('description'))
         resp = chords.create_site(postSite)
         logger.debug(resp)
         return resp
@@ -47,10 +49,12 @@ class SiteResource(Resource):
         return resp
 
     def put(self, site_id):
-        putSite = ChordsSite(request.args.get('name'),
+        putSite = ChordsSite(site_id,
+                              request.args.get('name'),
                               request.args.get('lat'),
                               request.args.get('long'),
-                              request.args.get('elevation'))
+                              request.args.get('elevation'),
+                              request.args.get('description'))
         resp = chords.update_site(site_id, putSite)
         logger.debug(resp)
         return resp
@@ -66,15 +70,6 @@ class InstrumentsResource(Resource):
     """
 
     def get(self):
-<<<<<<< HEAD
-        resp = chords.fetch_instruments()
-        logger.debug("top of GET /instruments")
-        return resp
-
-    def post(self):
-        resp = chords.create_instruments()
-	    logger.debug("top of POST /instruments")
-=======
         resp = chords.list_instruments()
         logger.debug(resp)
         return resp
@@ -82,7 +77,6 @@ class InstrumentsResource(Resource):
     def post(self):
         resp = chords.create_instrument(request.args)
         logger.debug(resp)
->>>>>>> chords
         return resp
 
 
@@ -92,20 +86,6 @@ class InstrumentResource(Resource):
     """
 
     def get(self, instrument_id):
-<<<<<<< HEAD
-        resp = chords.fetch_instrument()
-        logger.debug("top of GET /instruments/{instrument_id}")
-        return resp
-
-    def put(self, instrument_id):
-        resp = chords.update_instrument
-	    logger.debug("top of PUT /instruments/{instrument_id}")
-        return resp
-
-    def delete(self, instrument_id):
-        resp = chords.delete_instrument
-        logger.debug("top of DELETE /instruments/{instrument_id}")
-=======
         resp = chords.get_instrument(instrument_id)
         logger.debug(resp)
         return resp
@@ -118,7 +98,6 @@ class InstrumentResource(Resource):
     def delete(self, instrument_id):
         resp = chords.delete_instrument(instrument_id)
         logger.debug(resp)
->>>>>>> chords
         return resp
 
 class VariablesResource(Resource):
@@ -217,3 +196,17 @@ class StreamResource(Resource):
 
     def delete(self, stream_id):
         logger.debug("top of DELETE /streams/{stream_id}")
+
+class InfluxResource(Resource):
+    def get(self):
+        logger.debug(request.args)
+        #expects instrument_id=1&vars[]={"somename":1.0}&vars[]={"other":2.0} in the request.args
+        resp = influx.query_measuremnts(request.args)
+        logger.debug(resp)
+        return resp
+    def post(self):
+        logger.debug(request.args)
+        #expects instrument_id=1&vars[]={"somename":1.0}&vars[]={"other":2.0} in the request.args
+        resp = influx.create_measurement(request.args)
+        logger.debug(resp)
+        return resp
