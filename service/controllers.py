@@ -200,10 +200,12 @@ class StreamResource(Resource):
 class InfluxResource(Resource):
     def get(self):
         logger.debug(request.args)
+        field_list = request.args.getlist('fields[]')
         #expects instrument_id=1&vars[]={"somename":1.0}&vars[]={"other":2.0} in the request.args
-        resp = influx.query_measuremnts(request.args)
+        resp = influx.query_measurments(field_list)
         logger.debug(resp)
         return resp
+
     def post(self):
         logger.debug(request.args)
         #expects instrument_id=1&vars[]={"somename":1.0}&vars[]={"other":2.0} in the request.args
