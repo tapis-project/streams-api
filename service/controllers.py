@@ -198,6 +198,9 @@ class StreamResource(Resource):
         logger.debug("top of DELETE /streams/{stream_id}")
 
 class InfluxResource(Resource):
+
+    #Expect fields[] parameters 
+    #EXAMPLE: fields[]={"inst":1}&fields[]={"var":1}
     def get(self):
         logger.debug(request.args)
         field_list = request.args.getlist('fields[]')

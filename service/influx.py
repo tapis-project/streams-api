@@ -23,6 +23,7 @@ def create_measurement(payload):
     result = influx_client.write_points(payload)
     return result
 
+#expects a list of fields {key:value} to build and AND query to influxdb to fetch CHORDS measurments
 def query_measurments(query_field_list):
     #logger.debug(query.get('q'))
     base_query = "SELECT * FROM \"tsdata\" WHERE "
