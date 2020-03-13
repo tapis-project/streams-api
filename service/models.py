@@ -24,5 +24,5 @@ class ChordsVariable():
     def ___init__(self, id):
         self.id = id
 
-class ChordsMeasurement():
-    def __init__(self):
+# class ChordsMeasurement():
+#     def __init__(self):
