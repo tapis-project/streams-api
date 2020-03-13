@@ -11,5 +11,7 @@
   "chords_user_email":"admin@chordsrt.com",
   "influxdb_host":"192.168.56.1",
   "influxdb_port":"8086",
-  "influxdb_database":"mydb"
+  "influxdb_database":"chords_ts_production",
+  "influxdb_username":"admin",
+  "influxdb_password":"chords_ec_demo"
 }

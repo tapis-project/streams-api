@@ -199,7 +199,7 @@ class StreamResource(Resource):
 
 class InfluxResource(Resource):
 
-    #Expect fields[] parameters 
+    #Expect fields[] parameters
     #EXAMPLE: fields[]={"inst":1}&fields[]={"var":1}
     def get(self):
         logger.debug(request.args)
@@ -212,6 +212,6 @@ class InfluxResource(Resource):
     def post(self):
         logger.debug(request.args)
         #expects instrument_id=1&vars[]={"somename":1.0}&vars[]={"other":2.0} in the request.args
-        resp = influx.create_measurement(request.args)
+        resp = influx.create_measurement(request.args.get('site_id'), request.args.get('inst_id'), request.args.get('var_id'),  float(request.args.get('value')), request.args.get('timestamp'), )
         logger.debug(resp)
         return resp

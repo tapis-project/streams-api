@@ -19,8 +19,22 @@ def create_database(database_name):
     result = influx_client.create_database(database_name)
     return result
 
-def create_measurement(payload):
-    result = influx_client.write_points(payload)
+def create_measurement(site_id,inst_id,var_id,value, timestamp):
+    json_body = [
+        {
+            "measurement": "tsdata",
+            "tags": {
+                "site": site_id,
+                "inst": inst_id,
+                "var": var_id
+            },
+            "time": timestamp,
+            "fields": {
+                "value": value
+            }
+        }
+    ]
+    result = influx_client.write_points(json_body)
     return result
 
 #expects a list of fields {key:value} to build and AND query to influxdb to fetch CHORDS measurments
