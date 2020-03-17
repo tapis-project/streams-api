@@ -3,7 +3,7 @@ from flask_migrate import Migrate
 from common.utils import TapisApi, handle_error, flask_errors_dict
 
 from service.auth import authn_and_authz
-from service.controllers import SitesResource, SiteResource, InstrumentsResource, InstrumentResource, VariablesResource, VariableResource, MeasurementsResource, MeasurementResource, StreamsResource, StreamResource, InfluxResource
+from service.controllers import ProjectsResource, ProjectResource, SitesResource, SiteResource, InstrumentsResource, InstrumentResource, VariablesResource, VariableResource, MeasurementsResource, MeasurementResource, StreamsResource, StreamResource, InfluxResource
 from service.models import app
 
 # authentication and authorization ---
@@ -24,8 +24,11 @@ api.handle_exception = handle_error
 api.handle_user_exception = handle_error
 
 # Add resources
-api.add_resource(SitesResource, '/v3/streams/sites')
-api.add_resource(SiteResource, '/v3/streams/sites/<site_id>')
+api.add_resource(ProjectsResource, '/v3/streams/projects')
+api.add_resource(ProjectResource, '/v3/streams/projects/<project_id>')
+
+api.add_resource(SitesResource, '/v3/streams/projects/<project_id>/sites')
+api.add_resource(SiteResource, '/v3/streams/projects/<project_id>/sites/<site_id>')
 
 api.add_resource(InstrumentsResource, '/v3/streams/instruments')
 api.add_resource(InstrumentResource, '/v3/streams/instruments/<instrument_id>')

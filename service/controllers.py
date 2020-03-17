@@ -16,22 +16,50 @@ from common.logs import get_logger
 logger = get_logger(__name__)
 
 
+class ProjectsResource(Resource):
+    """
+    Work with Project objects
+    """
+    def get(self):
+        return ""
+
+    def post(self):
+        return ""
+
+class ProjectResource(Resource):
+    """
+    Work with Project objects
+    """
+
+    def get(self, project_id):
+        return ""
+
+    def put(self, project_id):
+        return ""
+
+    def delete(self, project_id):
+        return ""
+
 class SitesResource(Resource):
     """
     Work with Sites objects
     """
 
-    def get(self):
+    #TODO metadata integration - need to use query, limit and offset
+    def get(self, project_id):
         resp = chords.list_sites()
         logger.debug(resp)
         return resp
 
-    def post(self):
-        postSite = ChordsSite("",request.args.get('name'),
-                              request.args.get('lat'),
-                              request.args.get('long'),
-                              request.args.get('elevation'),
-                              request.args.get('description'))
+    def post(self, project_id):
+        logger.debug('omg')
+        logger.debug(request.json)
+        body = request.json
+        postSite = ChordsSite("",body['site_name'],
+                                body['latitude'],
+                                body['longitude'],
+                                body['elevation'],
+                                body['description'])
         resp = chords.create_site(postSite)
         logger.debug(resp)
         return resp
@@ -43,23 +71,24 @@ class SiteResource(Resource):
     Work with Sites objects
     """
 
-    def get(self, site_id):
+    def get(self, project_id, site_id):
         resp = chords.get_site(site_id)
         logger.debug(resp)
         return resp
 
-    def put(self, site_id):
+    def put(self, project_id, site_id):
+        body = request.json
         putSite = ChordsSite(site_id,
-                              request.args.get('name'),
-                              request.args.get('lat'),
-                              request.args.get('long'),
-                              request.args.get('elevation'),
-                              request.args.get('description'))
+                              body['site_name'],
+                              body['latitude'],
+                              body['longitude'],
+                              body['elevation'],
+                              body['description'])
         resp = chords.update_site(site_id, putSite)
         logger.debug(resp)
         return resp
 
-    def delete(self, site_id):
+    def delete(self, project_id, site_id):
         resp = chords.delete_site(site_id)
         logger.debug(resp)
         return resp
