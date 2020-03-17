@@ -58,6 +58,7 @@ def create_site(site:ChordsSite):
                 'site[lon]': site.long,
                 'site[elevation]': site.elevation
                 }
+    logger.debug(postData)
     headers = {
          'Content-Type':'application/x-www-form-urlencoded'
     }
