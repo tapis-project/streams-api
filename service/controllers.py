@@ -235,16 +235,20 @@ class MeasurementsResource(Resource):
     Work with Measurements objects
     """
     #
-    def get(self):
+    def get(self, project_id, site_id, instrument_id):
         logger.debug("top of GET /measurements")
+        resp = chords.get_measurements(instrument_id)
+        logger.debug(resp)
+        return resp
 
     #at the moment expects some like
     #http://localhost:5000/v3/streams/measurements?instrument_id=1&vars[]={"somename":1.0}&vars[]={"other":2.0}
     #will need to adjust when openAPI def is final for measurement
-    def post(self):
-        logger.debug(request.args)
+    def post(self, project_id, site_id, instrument_id):
+        body = request.json
+        logger.debug(body)
         #expects instrument_id=1&vars[]={"somename":1.0}&vars[]={"other":2.0} in the request.args
-        resp = chords.create_measurement(request.args)
+        resp = chords.create_measurement(body)
         logger.debug(resp)
         return resp
 

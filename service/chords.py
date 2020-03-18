@@ -280,9 +280,9 @@ def delete_variable(id):
 #Can fetch all the measurments in JSON from CHORDS
 #TODO - will need to filter the output based on the user permission either in here
 # or post the return
-def get_measurements():
+def get_measurements(instrument_id):
     #GET get all variables from chords service
-    chords_uri = "http://"+conf.chords_url+"api/v1/data.json";
+    chords_uri = conf.chords_url+"/instruments/"+ instrument_id +".json"#"api/v1/data.json";
     #start, end, instruments
     getData = {'email':conf.chords_user_email,
                   'api_key': conf.chords_api_key}
@@ -294,15 +294,16 @@ def get_measurements():
     return resp
 #
 #create a new measurement in CHORDS
-def create_measurement(req_args):
+def create_measurement(json_body):
     #TODO validate the measurement has all properties requirement and fields are correct
     chords_uri = conf.chords_url+"/measurements/url_create.json?";
     getData = {'email':conf.chords_user_email,
                 'api_key': conf.chords_api_key,
-                'instrument_id' : req_args.get('instrument_id')
+                'instrument_id' : json_body['instrument_id'],
+                'at': json_body['datetime']
                 }
-    for itm in req_args.getlist('vars[]'):
-        vars = json.loads(itm)
+    for itm in json_body['vars']:
+        vars = itm #json.loads(itm)
         for k in vars:
             getData[k]=vars[k]
     logger.debug(chords_uri)
