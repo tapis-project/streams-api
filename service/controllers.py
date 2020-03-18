@@ -7,7 +7,7 @@ from openapi_core.wrappers.flask import FlaskOpenAPIRequest
 #import sqlalchemy
 import chords
 import influx
-from models import ChordsSite
+from models import ChordsSite, ChordsIntrument
 from common import utils, errors
 #from service.models import db, LDAPConnection, TenantOwner, Tenant
 
@@ -98,13 +98,34 @@ class InstrumentsResource(Resource):
     Work with Instruments objects
     """
 
-    def get(self):
+    def get(self,project_id,site_id):
         resp = chords.list_instruments()
         logger.debug(resp)
         return resp
 
-    def post(self):
-        resp = chords.create_instrument(request.args)
+    #TODO support bulk create operations
+    def post(self, project_id, site_id):
+        logger.debug(type(request.json))
+        logger.debug(request.json)
+        #TODO loop through list objects to support buld operations
+        if type(request.json) is dict:
+            body = request.json
+        else:
+            body = request.json[0]
+        logger.debug('before ChordsInstrument assignment')
+        #id, site_id, name, sensor_id, topic_category_id, description, display_points, plot_offset_value, plot_offset_units, sample_rate_seconds):
+
+        postInst = ChordsIntrument("",site_id,
+                                    body['inst_name'],
+                                    "",
+                                    "",
+                                    body['inst_description'],
+                                    "",
+                                    "",
+                                    "",
+                                    "")
+        logger.debug('after ChordsInstrument assignment')
+        resp = chords.create_instrument(postInst)
         logger.debug(resp)
         return resp
 
@@ -114,17 +135,33 @@ class InstrumentResource(Resource):
     Work with Instruments objects
     """
 
-    def get(self, instrument_id):
+    def get(self, project_id, site_id, instrument_id):
         resp = chords.get_instrument(instrument_id)
         logger.debug(resp)
         return resp
 
-    def put(self, instrument_id):
-        resp = chords.update_instrument(instrument_id, request.args)
+    def put(self, project_id, site_id, instrument_id):
+        logger.debug(type(request.json))
+        logger.debug(request.json)
+        #TODO loop through list objects to support buld operations
+        if type(request.json) is dict:
+            body = request.json
+        else:
+            body = request.json[0]
+        putInst = ChordsIntrument(instrument_id,site_id,
+                                    body['inst_name'],
+                                    "",
+                                    "",
+                                    body['inst_description'],
+                                    "",
+                                    "",
+                                    "",
+                                    "")
+        resp = chords.update_instrument(instrument_id, putInst)
         logger.debug(resp)
         return resp
 
-    def delete(self, instrument_id):
+    def delete(self, project_id, site_id, instrument_id):
         resp = chords.delete_instrument(instrument_id)
         logger.debug(resp)
         return resp
@@ -134,13 +171,24 @@ class VariablesResource(Resource):
     Work with Variables objects
     """
 
-    def get(self):
+    def get(self, project_id, site_id, instrument_id):
         resp = chords.list_variables()
         logger.debug(resp)
         return resp
 
 
-    def post(self):
+    def post(self, project_id, site_id, instrument_id):
+        body = request.json
+        postInst = ChordsIntrument(instrument_id,site_id,
+                                    body['inst_name'],
+                                    "",
+                                    "",
+                                    body['inst_description'],
+                                    "",
+                                    "",
+                                    "",
+                                    "")
+
         resp = chords.create_variable(request.args)
         logger.debug(resp)
         return resp
@@ -152,17 +200,17 @@ class VariableResource(Resource):
     Work with Variables objects
     """
 
-    def get(self, variable_id):
+    def get(self, project_id, site_id, instrument_id, variable_id):
         resp = chords.get_variable(variable_id)
         logger.debug(resp)
         return resp
 
-    def put(self, variable_id):
+    def put(self,project_id, site_id, instrument_id,  variable_id):
         resp = chords.update_variable(variable_id,request.args)
         logger.debug(resp)
         return resp
 
-    def delete(self, variable_id):
+    def delete(self, project_id, site_id, instrument_id, variable_id):
         resp = chords.delete_variable(variable_id)
         logger.debug(resp)
         return resp

@@ -3,7 +3,7 @@ import enum
 import requests
 import json
 from flask import g, Flask
-from models import ChordsSite#, ChordsIntrument, ChordsVariable, ChordsMeasurement
+from models import ChordsSite, ChordsIntrument, ChordsVariable#, ChordsMeasurement
 from common.config import conf
 app = Flask(__name__)
 
@@ -137,21 +137,22 @@ def get_instrument(id):
     return resp
 
 #create a new instrument in CHORDS
-def create_instrument(req_args):
+def create_instrument(instrument:ChordsIntrument):
     #TODO validate the instrument has all properties requirement and fields are correct
     chords_uri = conf.chords_url+"/instruments.json";
     postData = {'email':conf.chords_user_email,
                 'api_key': conf.chords_api_key,
-                'instrument[site_id]':req_args.get('site_id'),
-                'instrument[name]': req_args.get('name'),
-                'instrument[sensor_id]': req_args.get('sensor_id'),
-                'instrument[topic_category_id]': req_args.get('topic_category_id'),
-                'instrument[description]': req_args.get('description'),
-                'instrument[display_points]': req_args.get('display_points'),
-                'instrument[plot_offset_value]': req_args.get('plot_offset_value'),
-                'instrument[plot_offset_units]': req_args.get('plot_offset_units'),
-                'instrument[sample_rate_seconds]': req_args.get('sample_rate_seconds')
+                'instrument[site_id]':instrument.site_id,
+                'instrument[name]':instrument.name,
+                'instrument[sensor_id]': instrument.sensor_id,
+                'instrument[topic_category_id]': instrument.topic_category_id,
+                'instrument[description]': instrument.description,
+                'instrument[display_points]': instrument.display_points,
+                'instrument[plot_offset_value]': instrument.plot_offset_value,
+                'instrument[plot_offset_units]': instrument.plot_offset_units,
+                'instrument[sample_rate_seconds]': instrument.sample_rate_seconds
                 }
+    logger.debug(postData)
     headers = {
         'Content-Type':'application/x-www-form-urlencoded'
     }
@@ -161,20 +162,20 @@ def create_instrument(req_args):
     return resp
 
 #update a instrument in CHORDS
-def update_instrument(id, req_args):
+def update_instrument(id, instrument:ChordsIntrument):
     #TODO validate the instrument has all properties requirement and fields are correct
     chords_uri = conf.chords_url+"/instruments/"+id+".json";
     putData = {'email':conf.chords_user_email,
                 'api_key': conf.chords_api_key,
-                'instrument[site_id]':req_args.get('site_id'),
-                'instrument[name]': req_args.get('name'),
-                'instrument[sensor_id]': req_args.get('sensor_id'),
-                'instrument[topic_category_id]': req_args.get('topic_category_id'),
-                'instrument[description]': req_args.get('description'),
-                'instrument[display_points]': req_args.get('display_points'),
-                'instrument[plot_offset_value]': req_args.get('plot_offset_value'),
-                'instrument[plot_offset_units]': req_args.get('plot_offset_units'),
-                'instrument[sample_rate_seconds]': req_args.get('sample_rate_seconds')
+                'instrument[site_id]':instrument.site_id,
+                'instrument[name]':instrument.name,
+                'instrument[sensor_id]': instrument.sensor_id,
+                'instrument[topic_category_id]': instrument.topic_category_id,
+                'instrument[description]': instrument.description,
+                'instrument[display_points]': instrument.display_points,
+                'instrument[plot_offset_value]': instrument.plot_offset_value,
+                'instrument[plot_offset_units]': instrument.plot_offset_units,
+                'instrument[sample_rate_seconds]': instrument.sample_rate_seconds
                 }
     headers = {
         'Content-Type':'application/x-www-form-urlencoded'
