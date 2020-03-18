@@ -7,7 +7,7 @@ from openapi_core.wrappers.flask import FlaskOpenAPIRequest
 #import sqlalchemy
 import chords
 import influx
-from models import ChordsSite, ChordsIntrument
+from models import ChordsSite, ChordsIntrument, ChordsVariable
 from common import utils, errors
 #from service.models import db, LDAPConnection, TenantOwner, Tenant
 
@@ -178,18 +178,20 @@ class VariablesResource(Resource):
 
 
     def post(self, project_id, site_id, instrument_id):
-        body = request.json
-        postInst = ChordsIntrument(instrument_id,site_id,
-                                    body['inst_name'],
-                                    "",
-                                    "",
-                                    body['inst_description'],
-                                    "",
-                                    "",
-                                    "",
+        logger.debug(type(request.json))
+        logger.debug(request.json)
+        #TODO loop through list objects to support buld operations
+        if type(request.json) is dict:
+            body = request.json
+        else:
+            body = request.json[0]
+        # id, name, instrument_id, shortname, commit
+        postInst = ChordsVariable("",instrument_id,
+                                    body['var_name'],
+                                    body['shortname'],
                                     "")
-
-        resp = chords.create_variable(request.args)
+        logger.debug(postInst)
+        resp = chords.create_variable(postInst)
         logger.debug(resp)
         return resp
 
@@ -206,7 +208,20 @@ class VariableResource(Resource):
         return resp
 
     def put(self,project_id, site_id, instrument_id,  variable_id):
-        resp = chords.update_variable(variable_id,request.args)
+        logger.debug(type(request.json))
+        logger.debug(request.json)
+        #TODO loop through list objects to support buld operations
+        if type(request.json) is dict:
+            body = request.json
+        else:
+            body = request.json[0]
+        # id, name, instrument_id, shortname, commit
+        putInst = ChordsVariable(variable_id,instrument_id,
+                                    body['var_name'],
+                                    body['shortname'],
+                                    "")
+        logger.debug(putInst)
+        resp = chords.update_variable(variable_id,putInst)
         logger.debug(resp)
         return resp
 

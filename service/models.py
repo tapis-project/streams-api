@@ -30,10 +30,10 @@ class ChordsIntrument:
         self.sample_rate_seconds=sample_rate_seconds
 
 class ChordsVariable:
-    def ___init__(self, id, name, instrument_id, shortname, commit):
+    def __init__(self, id, instrument_id, name, shortname, commit):
         self.id = id
-        self.name=name
         self.instrument_id=instrument_id
+        self.name=name
         self.shortname=shortname
         self.commit=commit
 

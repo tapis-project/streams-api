@@ -229,14 +229,14 @@ def get_variable(id):
     return resp
 
 #create a new variable in CHORDS
-def create_variable(req_args):
+def create_variable(variable:ChordsVariable):
     #TODO validate the variable has all properties requirement and fields are correct
     chords_uri = conf.chords_url+"/vars.json";
     postData = {'email':conf.chords_user_email,
                   'api_key': conf.chords_api_key,
-                  'var[name]':req_args.get('name'),
-                  'var[instrument_id]': req_args.get('instrument_id'),
-                  'var[shortname]': req_args.get('shortname'),
+                  'var[name]':variable.name,
+                  'var[instrument_id]': variable.instrument_id,
+                  'var[shortname]': variable.shortname,
                   'var[commit]': 'Create Variable'}
     headers = {
         'Content-Type':'application/x-www-form-urlencoded'
@@ -246,14 +246,14 @@ def create_variable(req_args):
     return resp
 
 #update a variable in CHORDS
-def update_variable(id,req_args):
+def update_variable(id,variable:ChordsVariable):
     #TODO validate the variable has all properties requirement and fields are correct
     chords_uri = conf.chords_url+"/vars/"+id+".json";
     putData = {'email':conf.chords_user_email,
                   'api_key': conf.chords_api_key,
-                  'var[name]':req_args.get('name'),
-                  'var[instrument_id]': req_args.get('instrument_id'),
-                  'var[shortname]': req_args.get('shortname')
+                  'var[name]': variable.name,
+                  'var[instrument_id]':  variable.instrument_id,
+                  'var[shortname]':  variable.shortname
                   }
     headers = {
         'Content-Type':'application/x-www-form-urlencoded'

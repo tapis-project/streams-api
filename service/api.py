@@ -36,8 +36,8 @@ api.add_resource(InstrumentResource, '/v3/streams/projects/<project_id>/sites/<s
 api.add_resource(VariablesResource, '/v3/streams/projects/<project_id>/sites/<site_id>/instruments/<instrument_id>/variables')
 api.add_resource(VariableResource, '/v3/streams/projects/<project_id>/sites/<site_id>/instruments/<instrument_id>/variables/<variable_id>')
 
-api.add_resource(MeasurementsResource, '/v3/streams/measurements')
-api.add_resource(MeasurementResource, '/v3/streams/measurements/<measurement_id>')
+api.add_resource(MeasurementsResource, '/v3/streams/projects/<project_id>/sites/<site_id>/instruments/<instrument_id>/measurements')
+api.add_resource(MeasurementResource, '/v3/streams/projects/<project_id>/sites/<site_id>/instruments/<instrument_id>/measurements/<measurement_id>')
 
 api.add_resource(StreamsResource, '/v3/streams/streams')
 api.add_resource(StreamResource, '/v3/streams/streams/<stream_id>')
