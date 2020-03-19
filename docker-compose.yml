@@ -41,7 +41,8 @@ services:
   # CHORDS Rails application: nginx + rails + CHORDS rails code
   app:
     container_name: chords_app
-    image: ncareol/chords:${DOCKER_TAG}
+    image: scleveland/chords:api
+    #${DOCKER_TAG}
     volumes:
       - mysql-data:/var/lib/mysql
       - /var/run/docker.sock:/var/run/docker.sock
@@ -160,7 +161,7 @@ services:
   # Grafana graphing server. It draws data from influxdb.
   grafana:
     container_name: chords_grafana
-    image: ncareol/grafana:5.2.1
+    image: ncareol/grafana:6.0.2
     # Note: GF_ variables are used by grafana, meaning that
     # you should not create your own variables beginning with GF_.
     environment:
@@ -188,19 +189,7 @@ services:
     user: "104"
     links:
       - influxdb
-  streams:
-      container_name: streams-api
-      image: tapis/streams-api
-      ports:
-          - "5000:5000"
-      volumes:
-          - ./config-local.json:/home/tapis/config.json
-          - ./service.log:/home/tapis/service.log
-      depends_on:
-          - app
-          - mysql
-          - influxdb
-          - kapacitor
+
 volumes:
   # CHORDS Rails meta-data
   mysql-data:
