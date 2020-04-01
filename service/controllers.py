@@ -118,12 +118,12 @@ class InstrumentsResource(Resource):
         postInst = ChordsIntrument("",site_id,
                                     body['inst_name'],
                                     "",
-                                    "",
+                                    "1",
                                     body['inst_description'],
-                                    "",
-                                    "",
-                                    "",
-                                    "")
+                                    "120",
+                                    "1",
+                                    "weeks",
+                                    "60")
         logger.debug('after ChordsInstrument assignment')
         resp = chords.create_instrument(postInst)
         logger.debug(resp)
