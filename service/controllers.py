@@ -80,7 +80,8 @@ class SiteResource(Resource):
     """
 
     def get(self, project_id, site_id):
-        resp = chords.get_site(site_id)
+        #resp = chords.get_site(site_id)
+        resp = meta.get_site(project_id,site_id)
         logger.debug(resp)
         return resp
 
