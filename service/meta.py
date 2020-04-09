@@ -11,6 +11,7 @@ from tapy.dyna import DynaTapy
 from common.logs import get_logger
 logger = get_logger(__name__)
 
+#pull out tenant from JWT
 t = DynaTapy(base_url=conf.tapis_base_url, username=conf.streams_user, account_type=conf.streams_account_type, tenant_id=conf.tapis_tenant)
 t.get_tokens()
 
@@ -30,7 +31,11 @@ def list_sites(project_id):
     return resp
 
 def get_site(project_id, site_id):
-    return ""
+    resp={}
+    result = t.meta.listDocuments(db=conf.streamd_db,collection=project_id,filter='{"site_id":'+site_id+'}')
+    str = result.decode('utf-8')
+    resp['results'] = json.loads(str)
+    return resp
 
 def create_site(project_id, site_id, body):
     logger.debug("IN CREATE SITE META")
