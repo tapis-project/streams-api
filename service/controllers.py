@@ -7,6 +7,7 @@ from openapi_core.wrappers.flask import FlaskOpenAPIRequest
 #import sqlalchemy
 import chords
 import influx
+import meta
 from models import ChordsSite, ChordsIntrument, ChordsVariable
 from common import utils, errors
 #from service.models import db, LDAPConnection, TenantOwner, Tenant
@@ -47,7 +48,8 @@ class SitesResource(Resource):
 
     #TODO metadata integration - need to use query, limit and offset
     def get(self, project_id):
-        resp = chords.list_sites()
+        resp = meta.list_sites(project_id)
+        #resp = chords.list_sites()
         logger.debug(resp)
         return resp
 
