@@ -21,7 +21,7 @@ class ChordsIntrument:
         self.id = id
         self.site_id=site_id
         self.name=name
-        self.sensor_id=sensor_id
+        #self.sensor_id=sensor_id
         self.topic_category_id=topic_category_id
         self.description=description
         self.display_points=display_points
