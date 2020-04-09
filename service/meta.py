@@ -19,13 +19,28 @@ t.get_tokens()
 # t.meta.listDocuments(db='StreamsTACCDB',collection='Proj1')
 # result, debug = t.meta.listCollectionNames(db='StreamsTACCDB', _tapis_debug=True)
 
+def create_project():
+    return ""
+
 def list_sites(project_id):
     resp={}
     result = t.meta.listDocuments(db=conf.streamd_db,collection=project_id)
     str = result.decode('utf-8')
-#    json_result = json.dumps(str)
     resp['results'] = json.loads(str)
     return resp
 
 def get_site(project_id, site_id):
     return ""
+
+def create_site(project_id, site_id, body):
+    logger.debug("IN CREATE SITE META")
+    resp={}
+    req_body = body
+    req_body['site_id'] = site_id
+    result, bug =t.meta.createDocument(db='StreamsTACCDB', collection=project_id, request_body=req_body, _tapis_debug=True)
+    logger.debug(bug)
+    logger.debug(result)
+    #str = result.decode('utf-8')
+    #resp['results'] = json.loads(str)
+    resp['status'] = bug.response.status_code
+    return resp

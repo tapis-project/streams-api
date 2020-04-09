@@ -54,6 +54,7 @@ class SitesResource(Resource):
         return resp
 
     def post(self, project_id):
+        #need to add check for project permission & project exists before chords insertion
         logger.debug('omg')
         logger.debug(request.json)
         body = request.json
@@ -63,6 +64,11 @@ class SitesResource(Resource):
                                 body['elevation'],
                                 body['description'])
         resp = chords.create_site(postSite)
+        if resp['status'] == 201:
+            meta_resp = meta.create_site(project_id, resp['results']['id'],body)
+            #resp['results']=meta_resp['results']
+            resp['status'] = meta_resp['status']
+            logger.debug(meta_resp['status'])
         logger.debug(resp)
         return resp
 
