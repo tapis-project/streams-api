@@ -6,10 +6,14 @@ from service.auth import authn_and_authz
 from service.controllers import ProjectsResource, ProjectResource, SitesResource, SiteResource, InstrumentsResource, InstrumentResource, VariablesResource, VariableResource, MeasurementsResource, MeasurementResource, StreamsResource, StreamResource, InfluxResource
 from service.models import app
 
+from common.logs import get_logger
+logger = get_logger(__name__)
+
 # authentication and authorization ---
 @app.before_request
 def authnz_for_authenticator():
     authn_and_authz()
+    logger.debug("Authorization complete")
 
 # db and migrations ----
 #db.init_app(app)
@@ -39,10 +43,11 @@ api.add_resource(VariableResource, '/v3/streams/projects/<project_id>/sites/<sit
 api.add_resource(MeasurementsResource, '/v3/streams/projects/<project_id>/sites/<site_id>/instruments/<instrument_id>/measurements')
 api.add_resource(MeasurementResource, '/v3/streams/projects/<project_id>/sites/<site_id>/instruments/<instrument_id>/measurements/<measurement_id>')
 
-api.add_resource(StreamsResource, '/v3/streams/streams')
-api.add_resource(StreamResource, '/v3/streams/streams/<stream_id>')
+#api.add_resource(StreamsResource, '/v3/streams/projects/<project_id>/channels')
+#api.add_resource(StreamResource, '/v3/streams/channels/<channels_id>')
 
 api.add_resource(InfluxResource, '/influx')
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', debug=True)
