@@ -3,6 +3,7 @@ import requests
 import json
 from flask import g, Flask
 from common.config import conf
+import datetime
 app = Flask(__name__)
 
 from common import utils, errors
@@ -20,32 +21,102 @@ t.get_tokens()
 # t.meta.listDocuments(db='StreamsTACCDB',collection='Proj1')
 # result, debug = t.meta.listCollectionNames(db='StreamsTACCDB', _tapis_debug=True)
 
-def create_project():
-    return ""
+#List projects a user has permission to read
+def list_projects():
+    result= t.meta.listDocuments(db='StreamsTACCDB',collection='streams_project_metadata',filter='{"permissions.users":"'+g.username+'"}')
+    logger.debug(result)
+    if len(result.decode('utf-8')) > 0:
+        message = "Projects found"
+    else:
+        raise errors.ResourceError(msg=f'No Projects found')
+    logger.debug(result)
+    return json.loads(result.decode('utf-8')), message
+
+#TODO delete project metadata document if collection creation fails
+def create_project(body):
+    logger.debug("IN CREATE PROJECT META")
+    results=''
+    #create project metadata record
+    req_body = body
+    req_body['project_id'] = body['project_name'].replace(" ", "")
+    req_body['permissions']={'users':[g.username]}
+    #Check if project_id exists - if so add something to id to unique it.
+    result, bug =t.meta.createDocument(db=conf.stream_db, collection='streams_project_metadata', request_body=req_body, _tapis_debug=True)
+    if bug.response.status_code == 201:
+        logger.debug('Created project metadata')
+        #create project collection
+        col_result, col_bug =t.meta.createCollection(db=conf.stream_db,collection=body['project_id'], _tapis_debug=True)
+        logger.debug(col_bug.response.status_code)
+        logger.debug(col_result)
+        if col_bug.response.status_code == 201:
+            message = "Project Created"
+            results=''
+        else:
+            #should remove project metadata record if this fails
+            raise errors.ResourceError(msg=f'Project Creation Failed')
+            results=bug.response
+    else:
+        raise errors.ResourceError(msg=f'Project Creation Failed')
+        results =bug.response
+    return results, message
 
 def list_sites(project_id):
-    resp={}
-    result = t.meta.listDocuments(db=conf.streamd_db,collection=project_id)
-    str = result.decode('utf-8')
-    resp['results'] = json.loads(str)
-    return resp
+    logger.debug("Before")
+    result = t.meta.listDocuments(db='StreamsTACCDB',collection=project_id)
+    logger.debug("After")
+    if len(result) > 0 :
+        message = "Sites found"
+    else:
+        raise errors.ResourceError(msg=f'No Site found')
+    logger.debug(result)
+    return json.loads(result.decode('utf-8')), message
 
 def get_site(project_id, site_id):
-    resp={}
-    result = t.meta.listDocuments(db=conf.streamd_db,collection=project_id,filter='{"site_id":'+site_id+'}')
-    str = result.decode('utf-8')
-    resp['results'] = json.loads(str)
-    return resp
+    logger.debug('In GET Site')
+    result = t.meta.listDocuments(db=conf.stream_db,collection=project_id,filter='{"site_id":'+str(site_id)+'}')
+    if len(result.decode('utf-8')) > 0:
+        message = "Site found."
+    else:
+        raise errors.ResourceError(msg=f'No Site found')
+    return json.loads(result.decode('utf-8')), message
 
 def create_site(project_id, site_id, body):
     logger.debug("IN CREATE SITE META")
     resp={}
     req_body = body
     req_body['site_id'] = site_id
-    result, bug =t.meta.createDocument(db='StreamsTACCDB', collection=project_id, request_body=req_body, _tapis_debug=True)
-    logger.debug(bug)
+    req_body['created_at'] = str(datetime.datetime.now())
+    result, bug =t.meta.createDocument(db=conf.stream_db, collection=project_id, request_body=req_body, _tapis_debug=True)
+    logger.debug(bug.response.status_code)
     logger.debug(result)
-    #str = result.decode('utf-8')
-    #resp['results'] = json.loads(str)
-    resp['status'] = bug.response.status_code
-    return resp
+    if bug.response.status_code == 201:
+        message = "Site Created."
+    else:
+        #remove site from Chords
+        message = "Site Failed to Create."
+        result = ''
+    logger.debug(message)
+    return result.decode('utf-8'), message
+
+def update_site(project_id, site_id, put_body):
+    logger.debug("IN Update SITE META")
+    site, get_bug = get_site(project_id,site_id)
+    req_body = put_body
+    req_body['site_id'] = site_id
+    req_body['last_updated'] = str(datetime.datetime.now())
+    logger.debug(put_body)
+    result={}
+    message=""
+    if len(site) > 0:
+        result, put_bug =t.meta.replaceDocument(db=conf.stream_db, collection=project_id, docId=site[0]['_id']['$oid'], request_body=put_body, _tapis_debug=True)
+        logger.debug(put_bug.response.status_code)
+        if put_bug.response.status_code == 200:
+            result = ''
+            message = 'Site Updated'
+    else:
+        raise errors.ResourceError(msg=f'No Site found')
+    return result, message
+
+
+def delete_site(project_id, site_id):
+    return ""

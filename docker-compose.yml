@@ -39,11 +39,11 @@ version: '2'
 
 services:
   # CHORDS Rails application: nginx + rails + CHORDS rails code
-  streams:
-    container_name: streamsapi
-    image: tapis/streams-api:latest
-    ports:
-      - 5000:5000 
+  #streams:
+  #  container_name: streamsapi
+  #  image: tapis/streams-api:latest
+  #  ports:
+  #    - 5000:5000
   app:
     container_name: chords_app
     image: scleveland/chords:api
