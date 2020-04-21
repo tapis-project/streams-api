@@ -23,6 +23,7 @@ t.get_tokens()
 
 #List projects a user has permission to read
 def list_projects():
+    #get user role with permission ?
     result= t.meta.listDocuments(db='StreamsTACCDB',collection='streams_project_metadata',filter='{"permissions.users":"'+g.username+'"}')
     logger.debug(result)
     if len(result.decode('utf-8')) > 0:
@@ -76,45 +77,52 @@ def get_site(project_id, site_id):
     result = t.meta.listDocuments(db=conf.stream_db,collection=project_id,filter='{"site_id":'+str(site_id)+'}')
     if len(result.decode('utf-8')) > 0:
         message = "Site found."
+        result = json.loads(result.decode('utf-8'))[0]
     else:
         raise errors.ResourceError(msg=f'No Site found')
-    return json.loads(result.decode('utf-8')), message
+        result = ''
+    return result, message
 
+#TODO need to validate required fields and GEOJSON field
 def create_site(project_id, site_id, body):
     logger.debug("IN CREATE SITE META")
     resp={}
     req_body = body
     req_body['site_id'] = site_id
     req_body['created_at'] = str(datetime.datetime.now())
+    #TODO validate fields
     result, bug =t.meta.createDocument(db=conf.stream_db, collection=project_id, request_body=req_body, _tapis_debug=True)
     logger.debug(bug.response.status_code)
     logger.debug(result)
     if bug.response.status_code == 201:
         message = "Site Created."
+        #fetch site document to serve back
+        result, site_bug = get_site(project_id, site_id)
     else:
         #remove site from Chords
         message = "Site Failed to Create."
         result = ''
     logger.debug(message)
-    return result.decode('utf-8'), message
+    return result, message
 
 def update_site(project_id, site_id, put_body):
     logger.debug("IN Update SITE META")
-    site, get_bug = get_site(project_id,site_id)
-    req_body = put_body
-    req_body['site_id'] = site_id
-    req_body['last_updated'] = str(datetime.datetime.now())
-    logger.debug(put_body)
-    result={}
-    message=""
-    if len(site) > 0:
-        result, put_bug =t.meta.replaceDocument(db=conf.stream_db, collection=project_id, docId=site[0]['_id']['$oid'], request_body=put_body, _tapis_debug=True)
+    #fetch site first and then replace existing fields/add fields to current site document
+    site_result, site_bug = get_site(project_id, site_id)
+    if len(site_result) > 0:
+        for field in put_body:
+            site_result[field] = put_body[field]
+        site_result['last_updated'] = str(datetime.datetime.now())
+        logger.debug(site_result)
+        result={}
+        message=""
+        result, put_bug =t.meta.replaceDocument(db=conf.stream_db, collection=project_id, docId=site_result['_id']['$oid'], request_body=site_result, _tapis_debug=True)
         logger.debug(put_bug.response.status_code)
         if put_bug.response.status_code == 200:
-            result = ''
+            result = site_result
             message = 'Site Updated'
     else:
-        raise errors.ResourceError(msg=f'No Site found')
+        raise errors.ResourceError(msg=f'Site Does Not Exist For Site ID:'+str(site_id))
     return result, message
 
 
