@@ -41,16 +41,20 @@ def create_project(body):
     req_body = body
     req_body['project_id'] = body['project_name'].replace(" ", "")
     req_body['permissions']={'users':[g.username]}
+    logger.debug(req_body)
     #Check if project_id exists - if so add something to id to unique it.
     result, bug =t.meta.createDocument(db=conf.stream_db, collection='streams_project_metadata', request_body=req_body, _tapis_debug=True)
     if bug.response.status_code == 201:
         logger.debug('Created project metadata')
         #create project collection
         col_result, col_bug =t.meta.createCollection(db=conf.stream_db,collection=body['project_id'], _tapis_debug=True)
-        logger.debug(col_bug.response.status_code)
+        logger.debug("Status_Code: " + str(col_bug.response.status_code))
         logger.debug(col_result)
         if col_bug.response.status_code == 201:
             message = "Project Created"
+            #create location index
+            #res = t.meta.createIndex(db=conf.stream_db,collection=body['project_id'], indexName='{"location" : "2dsphere"}')
+            #logger.debug(res)
             results=''
         else:
             #should remove project metadata record if this fails
@@ -77,6 +81,7 @@ def get_site(project_id, site_id):
     result = t.meta.listDocuments(db=conf.stream_db,collection=project_id,filter='{"site_id":'+str(site_id)+'}')
     if len(result.decode('utf-8')) > 0:
         message = "Site found."
+        #result should be an object not an array
         result = json.loads(result.decode('utf-8'))[0]
     else:
         raise errors.ResourceError(msg=f'No Site found')
@@ -105,6 +110,8 @@ def create_site(project_id, site_id, body):
     logger.debug(message)
     return result, message
 
+#TODO validate field
+#DO WE STRIP OUT Instruments field from put_body?
 def update_site(project_id, site_id, put_body):
     logger.debug("IN Update SITE META")
     #fetch site first and then replace existing fields/add fields to current site document
@@ -113,6 +120,7 @@ def update_site(project_id, site_id, put_body):
         for field in put_body:
             site_result[field] = put_body[field]
         site_result['last_updated'] = str(datetime.datetime.now())
+        #validate fields
         logger.debug(site_result)
         result={}
         message=""
@@ -128,3 +136,31 @@ def update_site(project_id, site_id, put_body):
 
 def delete_site(project_id, site_id):
     return ""
+
+def list_instruments(project_id, site_id):
+    site_result, site_bug = get_site(project_id,site_id)
+    if len(site_result) > 0:
+        result = site_result['instruments']
+        message = "Instruments Found"
+    else:
+        message ="Site Not Found - No Instruments Exist"
+    return result, message
+
+def create_instrument(project_id, site_id, post_body):
+    site_result, site_bug = get_site(project_id,site_id)
+    if len(site_result) > 0:
+        inst_body = post_body
+        inst_body['created_at'] = str(datetime.datetime.now())
+        site_result['instruments'].append(inst_body)
+        logger.debug("ADD INSTRUMENT")
+        logger.debug(site_result)
+        result, put_bug =t.meta.replaceDocument(db=conf.stream_db, collection=project_id, docId=site_result['_id']['$oid'], request_body=site_result, _tapis_debug=True)
+        logger.debug(put_bug.response.status_code)
+        if put_bug.response.status_code == 200:
+            result = inst_body
+            message = "Instrument Created"
+        else:
+            message = "Instrument Failed to Create"
+    else:
+        message ="Site Not Found - Cannote Create Instrument"
+    return result, message

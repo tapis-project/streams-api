@@ -170,7 +170,7 @@ def get_instrument(id):
     logger.debug(res)
     return json.loads(res.content.decode('utf-8')), message
 
-'''
+
 #create a new instrument in CHORDS
 def create_instrument(instrument:ChordsIntrument):
     #TODO validate the instrument has all properties requirement and fields are correct
@@ -196,7 +196,7 @@ def create_instrument(instrument:ChordsIntrument):
     logger.debug(message)
     logger.debug(res)
     return json.loads(res.content.decode('utf-8')), message
-'''
+
 
 #update a instrument in CHORDS
 def update_instrument(id, instrument:ChordsIntrument):
@@ -381,4 +381,3 @@ def create_measurement(json_body):
 #     res = requests.delete(chords_uri, headers=headers,verify=False)
 #     resp = json.loads(res.content)
 #     return resp
-

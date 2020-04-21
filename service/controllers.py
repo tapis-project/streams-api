@@ -141,6 +141,7 @@ class InstrumentsResource(Resource):
     def post(self, project_id, site_id):
         logger.debug(type(request.json))
         logger.debug(request.json)
+        result={}
         #TODO loop through list objects to support build operations
         if type(request.json) is dict:
             body = request.json
@@ -159,8 +160,17 @@ class InstrumentsResource(Resource):
                                     "weeks",
                                     "60")
         logger.debug('after ChordsInstrument assignment')
-        result, msg = chords.create_instrument(postInst)
-        return utils.ok(result=result, msg=f'Instrument created')
+        chord_result, chord_msg = chords.create_instrument(postInst)
+        if chord_msg == "Instrument created":
+            body['instrument_id'] = chord_result['id']
+            inst_result, inst_msg = meta.create_instrument(project_id, site_id, body)
+            logger.debug(inst_msg)
+            if len(inst_result) >0:
+                result = inst_result
+                message = inst_msg
+        else:
+            message = chord_msg
+        return utils.ok(result=result, msg=message)
 
 
 class InstrumentResource(Resource):
@@ -168,7 +178,8 @@ class InstrumentResource(Resource):
     Work with Instruments objects
     """
     def get(self, project_id, site_id, instrument_id):
-        result,msg = chords.get_instrument(instrument_id)
+        #result,msg = chords.get_instrument(instrument_id)
+        result,msg = meta.get_instruments(project_id, site_id)
         logger.debug(site_id)
         return utils.ok(result=result, msg=msg)
 
