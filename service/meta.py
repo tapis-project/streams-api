@@ -137,6 +137,23 @@ def update_site(project_id, site_id, put_body):
 def delete_site(project_id, site_id):
     return ""
 
+def get_instrument(project_id, site_id, instrument_id):
+    result = {}
+    site_result, site_bug = get_site(project_id,site_id)
+    if len(site_result) > 0:
+        logger.debug("Site  FOUND")
+        for inst in site_result['instruments']:
+            logger.debug(inst)
+            if str(inst['instrument_id']) == str(instrument_id):
+                logger.debug("INSTRUMENT FOUND")
+                result = inst
+                message = "Instrument Found"
+        if len(result) == 0:
+            message = "Instrument Not Found"
+    else:
+        message ="Site Not Found - Instrument Does Not Exist"
+    return result, message
+
 def list_instruments(project_id, site_id):
     site_result, site_bug = get_site(project_id,site_id)
     if len(site_result) > 0:

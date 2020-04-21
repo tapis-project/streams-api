@@ -119,7 +119,9 @@ class InstrumentsResource(Resource):
     Work with Instruments objects
     """
     def get(self,project_id,site_id):
-        result,msg = chords.list_instruments()
+        #result,msg = chords.list_instruments()
+        result,msg = meta.get_instruments(project_id, site_id)
+        logger.debug(site_id)
         '''
         #logic to filter instruments based on site id
         filtered_res = []
@@ -179,8 +181,7 @@ class InstrumentResource(Resource):
     """
     def get(self, project_id, site_id, instrument_id):
         #result,msg = chords.get_instrument(instrument_id)
-        result,msg = meta.get_instruments(project_id, site_id)
-        logger.debug(site_id)
+        result,msg = meta.get_instrument(project_id, site_id,instrument_id)
         return utils.ok(result=result, msg=msg)
 
 
