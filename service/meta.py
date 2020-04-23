@@ -216,6 +216,7 @@ def update_instrument(project_id, site_id, instrument_id, put_body, remove_instr
                         logger.debug("INT REM FALSE")
                         #add vars from current instrument so they are not removed
                         inst_body['instrument_id'] = instrument_id
+                        inst_body['chords_id'] = inst['chords_id']
                         if 'variables' in inst:
                             inst_body['variables'] = inst['variables']
                         updated_instruments.append(inst_body)

@@ -194,7 +194,9 @@ class InstrumentResource(Resource):
             body = request.json
         else:
             body = request.json[0]
-        putInst = ChordsIntrument(instrument_id,site_id,
+
+        result, msg = meta.update_instrument(project_id, site_id, instrument_id, body)
+        putInst = ChordsIntrument(int(result['chords_id']),site_id,
                                     body['inst_name'],
                                     "",
                                     "",
@@ -203,8 +205,7 @@ class InstrumentResource(Resource):
                                     "",
                                     "",
                                     "")
-        chord_result, chord_msg = chords.update_instrument(instrument_id, putInst)
-        result, msg = meta.update_instrument(project_id, site_id, instrument_id, body)
+        chord_result, chord_msg = chords.update_instrument(str(result['chords_id']), putInst)
         return utils.ok(result=result, msg=msg)
 
 
