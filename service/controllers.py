@@ -202,12 +202,14 @@ class InstrumentResource(Resource):
                                     "",
                                     "",
                                     "")
-        result, msg = chords.update_instrument(instrument_id, putInst)
+        chord_result, chord_msg = chords.update_instrument(instrument_id, putInst)
+        result, msg = meta.update_instrument(project_id, site_id, instrument_id, body)
         return utils.ok(result=result, msg=msg)
 
 
     def delete(self, project_id, site_id, instrument_id):
-        result,msg = chords.delete_instrument(instrument_id)
+        chord_result,chord_msg = chords.delete_instrument(instrument_id)
+        result, msg = meta.update_instrument(project_id, site_id, instrument_id, {},True)
         return utils.ok(result="null", msg=msg)
 
 
@@ -217,7 +219,8 @@ class VariablesResource(Resource):
     """
 
     def get(self, project_id, site_id, instrument_id):
-        result,msg = chords.list_variables()
+        #result,msg = chords.list_variables()
+        result, msg = meta.list_variables(project_id, site_id, instrument_id)
         logger.debug(instrument_id)
         return utils.ok(result=result, msg=msg)
 
@@ -236,7 +239,8 @@ class VariablesResource(Resource):
                                     body['shortname'],
                                     "")
         logger.debug(postInst)
-        result, msg = chords.create_variable(postInst)
+        chord_result, chord_msg = chords.create_variable(postInst)
+        result, msg = meta.create_variable(project_id, site_id, instrument_id, chord_result['id'], body)
         logger.debug(result)
         return utils.ok(result=result, msg=msg)
 
@@ -246,7 +250,8 @@ class VariableResource(Resource):
     Work with Variables objects
     """
     def get(self, project_id, site_id, instrument_id, variable_id):
-        result,msg = chords.get_variable(variable_id)
+        chords_result,chords_msg = chords.get_variable(variable_id)
+        result, msg = meta.get_variable(project_id, site_id, instrument_id, variable_id)
         logger.debug(result)
         return utils.ok(result=result, msg=msg)
 
@@ -265,12 +270,14 @@ class VariableResource(Resource):
                                     body['shortname'],
                                     "")
         logger.debug(putInst)
-        result,msg = chords.update_variable(variable_id,putInst)
+        chord_result,chord_msg = chords.update_variable(variable_id,putInst)
+        result, msg = meta.update_variable(project_id, site_id, instrument_id, variable_id, body)
         logger.debug(result)
         return utils.ok(result=result, msg=msg)
 
     def delete(self, project_id, site_id, instrument_id, variable_id):
         result,msg = chords.delete_variable(variable_id)
+        result, msg = meta.update_variable(project_id, site_id, instrument_id, variable_id, {},True)
         logger.debug(result)
         return utils.ok(result=result, msg=msg)
 
