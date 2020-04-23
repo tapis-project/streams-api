@@ -164,7 +164,8 @@ class InstrumentsResource(Resource):
         logger.debug('after ChordsInstrument assignment')
         chord_result, chord_msg = chords.create_instrument(postInst)
         if chord_msg == "Instrument created":
-            body['instrument_id'] = chord_result['id']
+            body['chords_id'] = chord_result['id']
+            #body['instrument_id'] = instrument_id
             inst_result, inst_msg = meta.create_instrument(project_id, site_id, body)
             logger.debug(inst_msg)
             if len(inst_result) >0:

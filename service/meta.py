@@ -178,11 +178,13 @@ def create_instrument(project_id, site_id, post_body):
         site_result['instruments'].append(inst_body)
         logger.debug("ADD INSTRUMENT")
         logger.debug(site_result)
-        result, put_bug =t.meta.replaceDocument(db=conf.stream_db, collection=project_id, docId=site_result['_id']['$oid'], request_body=site_result, _tapis_debug=True)
-        logger.debug(put_bug.response.status_code)
-        if put_bug.response.status_code == 200:
+        result, post_bug =t.meta.replaceDocument(db=conf.stream_db, collection=project_id, docId=site_result['_id']['$oid'], request_body=site_result, _tapis_debug=True)
+        logger.debug(post_bug.response.status_code)
+        if post_bug.response.status_code == 200:
             result = inst_body
             message = "Instrument Created"
+            index_result = create_instrument_index(project_id, site_id, inst_body['instrument_id'])
+            logger.debug(index_result)
         else:
             message = "Instrument Failed to Create"
     else:
@@ -384,3 +386,12 @@ def update_variable(project_id, site_id, instrument_id, variable_id, put_body, r
         else:
             message = "Site Not Found - Cannote Delete Variable"
     return result, message
+
+def create_instrument_index(project_id, site_id, instrument_id):
+    req_body = {'project_id':project_id, 'site_id': site_id, 'instrument_id': instrument_id}
+    result, bug =t.meta.createDocument(db=conf.stream_db, collection='streams_instrument_index', request_body=req_body, _tapis_debug=True)
+    return result, str(bug.response.status_code)
+
+def fetch_instrument_index(instrument_id):
+    result= t.meta.listDocuments(db='StreamsTACCDB',collection='streams_instrument_index',filter='{"instrument_id":'+instrument_id+'}')
+    return result
