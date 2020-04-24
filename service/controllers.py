@@ -7,6 +7,7 @@ from openapi_core.wrappers.flask import FlaskOpenAPIRequest
 #import sqlalchemy
 import chords
 import influx
+import meta
 from models import ChordsSite, ChordsIntrument, ChordsVariable
 from common import utils, errors
 #from service.models import db, LDAPConnection, TenantOwner, Tenant
@@ -21,10 +22,19 @@ class ProjectsResource(Resource):
     Work with Project objects
     """
     def get(self):
-        return ""
+        logger.debug('In list projects')
+        result, msg = meta.list_projects()
+        logger.debug('After list projects')
+        return utils.ok(result=result,msg=msg)
 
     def post(self):
-        return ""
+        logger.debug(request.json)
+        body = request.json
+        result, msg = meta.create_project(body)
+        #resp['status'] = result['status']
+        #logger.debug(meta_resp['status'])
+        #logger.debug(resp)
+        return utils.ok(result, msg=msg)
 
 class ProjectResource(Resource):
     """
@@ -47,11 +57,12 @@ class SitesResource(Resource):
 
     #TODO metadata integration - need to use query, limit and offset
     def get(self, project_id):
-        result,msg = chords.list_sites()
+        result, msg = meta.list_sites(project_id)
         return utils.ok(result=result,msg=msg)
 
 
     def post(self, project_id):
+        #need to add check for project permission & project exists before chords insertion
         logger.debug('omg')
         logger.debug(request.json)
         body = request.json
@@ -60,8 +71,19 @@ class SitesResource(Resource):
                                 body['longitude'],
                                 body['elevation'],
                                 body['description'])
-        result, msg = chords.create_site(postSite)
-        return utils.ok(result=result, msg=msg)
+        resp, msg = chords.create_site(postSite)
+        if msg == "Site created":
+            meta_resp, message = meta.create_site(project_id, resp['id'],body)
+            #resp['results']=meta_resp['results']
+            logger.debug('success')
+            logger.debug(meta_resp)
+            meta_resp, getmsg = meta.get_site(project_id, resp['id'])
+        else:
+            logger.debug('failed')
+            message = msg
+            meta_resp=''
+        return utils.ok(result=meta_resp,msg=message)
+
 
 
 class SiteResource(Resource):
@@ -70,8 +92,8 @@ class SiteResource(Resource):
     """
 
     def get(self, project_id, site_id):
-        result,msg = chords.get_site(site_id)
-        #logger.debug(resp)
+        result, msg = meta.get_site(project_id,site_id)
+        logger.debug(result)
         return utils.ok(result=result, msg=msg)
 
     def put(self, project_id, site_id):
@@ -82,7 +104,8 @@ class SiteResource(Resource):
                               body['longitude'],
                               body['elevation'],
                               body['description'])
-        result, msg = chords.update_site(site_id, putSite)
+        result, msg = meta.update_site(project_id, site_id, body)
+        chord_result, chord_msg = chords.update_site(site_id, putSite)
         return utils.ok(result=result, msg=msg)
 
     def delete(self, project_id, site_id):
@@ -96,7 +119,9 @@ class InstrumentsResource(Resource):
     Work with Instruments objects
     """
     def get(self,project_id,site_id):
-        result,msg = chords.list_instruments()
+        #result,msg = chords.list_instruments()
+        result,msg = meta.get_instruments(project_id, site_id)
+        logger.debug(site_id)
         '''
         #logic to filter instruments based on site id
         filtered_res = []
@@ -118,6 +143,7 @@ class InstrumentsResource(Resource):
     def post(self, project_id, site_id):
         logger.debug(type(request.json))
         logger.debug(request.json)
+        result={}
         #TODO loop through list objects to support build operations
         if type(request.json) is dict:
             body = request.json
@@ -136,8 +162,18 @@ class InstrumentsResource(Resource):
                                     "weeks",
                                     "60")
         logger.debug('after ChordsInstrument assignment')
-        result, msg = chords.create_instrument(postInst)
-        return utils.ok(result=result, msg=f'Instrument created')
+        chord_result, chord_msg = chords.create_instrument(postInst)
+        if chord_msg == "Instrument created":
+            body['chords_id'] = chord_result['id']
+            #body['instrument_id'] = instrument_id
+            inst_result, inst_msg = meta.create_instrument(project_id, site_id, body)
+            logger.debug(inst_msg)
+            if len(inst_result) >0:
+                result = inst_result
+                message = inst_msg
+        else:
+            message = chord_msg
+        return utils.ok(result=result, msg=message)
 
 
 class InstrumentResource(Resource):
@@ -145,8 +181,8 @@ class InstrumentResource(Resource):
     Work with Instruments objects
     """
     def get(self, project_id, site_id, instrument_id):
-        result,msg = chords.get_instrument(instrument_id)
-        logger.debug(site_id)
+        #result,msg = chords.get_instrument(instrument_id)
+        result,msg = meta.get_instrument(project_id, site_id,instrument_id)
         return utils.ok(result=result, msg=msg)
 
 
@@ -158,7 +194,9 @@ class InstrumentResource(Resource):
             body = request.json
         else:
             body = request.json[0]
-        putInst = ChordsIntrument(instrument_id,site_id,
+
+        result, msg = meta.update_instrument(project_id, site_id, instrument_id, body)
+        putInst = ChordsIntrument(int(result['chords_id']),site_id,
                                     body['inst_name'],
                                     "",
                                     "",
@@ -167,12 +205,13 @@ class InstrumentResource(Resource):
                                     "",
                                     "",
                                     "")
-        result, msg = chords.update_instrument(instrument_id, putInst)
+        chord_result, chord_msg = chords.update_instrument(str(result['chords_id']), putInst)
         return utils.ok(result=result, msg=msg)
 
 
     def delete(self, project_id, site_id, instrument_id):
-        result,msg = chords.delete_instrument(instrument_id)
+        chord_result,chord_msg = chords.delete_instrument(instrument_id)
+        result, msg = meta.update_instrument(project_id, site_id, instrument_id, {},True)
         return utils.ok(result="null", msg=msg)
 
 
@@ -182,7 +221,8 @@ class VariablesResource(Resource):
     """
 
     def get(self, project_id, site_id, instrument_id):
-        result,msg = chords.list_variables()
+        #result,msg = chords.list_variables()
+        result, msg = meta.list_variables(project_id, site_id, instrument_id)
         logger.debug(instrument_id)
         return utils.ok(result=result, msg=msg)
 
@@ -201,7 +241,8 @@ class VariablesResource(Resource):
                                     body['shortname'],
                                     "")
         logger.debug(postInst)
-        result, msg = chords.create_variable(postInst)
+        chord_result, chord_msg = chords.create_variable(postInst)
+        result, msg = meta.create_variable(project_id, site_id, instrument_id, chord_result['id'], body)
         logger.debug(result)
         return utils.ok(result=result, msg=msg)
 
@@ -211,7 +252,8 @@ class VariableResource(Resource):
     Work with Variables objects
     """
     def get(self, project_id, site_id, instrument_id, variable_id):
-        result,msg = chords.get_variable(variable_id)
+        chords_result,chords_msg = chords.get_variable(variable_id)
+        result, msg = meta.get_variable(project_id, site_id, instrument_id, variable_id)
         logger.debug(result)
         return utils.ok(result=result, msg=msg)
 
@@ -230,12 +272,14 @@ class VariableResource(Resource):
                                     body['shortname'],
                                     "")
         logger.debug(putInst)
-        result,msg = chords.update_variable(variable_id,putInst)
+        chord_result,chord_msg = chords.update_variable(variable_id,putInst)
+        result, msg = meta.update_variable(project_id, site_id, instrument_id, variable_id, body)
         logger.debug(result)
         return utils.ok(result=result, msg=msg)
 
     def delete(self, project_id, site_id, instrument_id, variable_id):
         result,msg = chords.delete_variable(variable_id)
+        result, msg = meta.update_variable(project_id, site_id, instrument_id, variable_id, {},True)
         logger.debug(result)
         return utils.ok(result=result, msg=msg)
 
