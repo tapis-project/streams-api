@@ -364,3 +364,8 @@ class InfluxResource(Resource):
         resp = influx.create_measurement(request.args.get('site_id'), request.args.get('inst_id'), request.args.get('var_id'),  float(request.args.get('value')), request.args.get('timestamp'), )
         logger.debug(resp)
         return resp
+
+#class ChannelResource(Resource):
+
+
+#class ChannelsResource(Resource):
