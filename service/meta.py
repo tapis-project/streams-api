@@ -8,14 +8,15 @@ app = Flask(__name__)
 
 from common import utils, errors
 from tapy.dyna import DynaTapy
+import auth
 # get the logger instance -
 from common.logs import get_logger
 logger = get_logger(__name__)
 
 #pull out tenant from JWT
-t = DynaTapy(base_url=conf.tapis_base_url, username=conf.streams_user, account_type=conf.streams_account_type, tenant_id=conf.tapis_tenant)
-t.get_tokens()
-
+# t = DynaTapy(base_url=conf.tapis_base_url, username=conf.streams_user, service_password=conf.service_password, account_type=conf.streams_account_type, tenant_id='master')
+# t.get_tokens()
+t = auth.t
 # result=t.meta.createDocument(db='StreamsTACCDB', collection='Proj1', request_body={ "site_id" : 1234299, "lat" : 70.5, "lon" : 90, "instruments" : [ { "inst_id" : 2334, "inst_name" : "myinstrument", "variables" : [ { "var_id" : 34, "var_name" : "a", "abbrev" : "whatever", "unit" : "myunit" } ] }, { "inst_id" : 2435, "inst_name" : "myinstrument2","variables" : [ { "var_id" : 33, "var_name" : "a", "abbrev" : "whatever", "unit" : "myunit" }, { "var_id" : 32, "var_name" : "b", "abbrev" : "whatever2", "unit" : "myunit3" } ] } ] })
 # result=t.meta.listCollectionNames(db='StreamsTACCDB')
 # t.meta.listDocuments(db='StreamsTACCDB',collection='Proj1')
