@@ -3,6 +3,7 @@ import requests
 import json
 from flask import g, Flask
 from common.config import conf
+from common import auth
 import datetime
 app = Flask(__name__)
 
@@ -11,11 +12,12 @@ from tapy.dyna import DynaTapy
 # get the logger instance -
 from common.logs import get_logger
 logger = get_logger(__name__)
-
-#pull out tenant from JWT
-t = DynaTapy(base_url=conf.tapis_base_url, username=conf.streams_user, account_type=conf.streams_account_type, tenant_id=conf.tapis_tenant)
-t.get_tokens()
-
+import auth
+#TODO pull out tenant from JWT
+#t = DynaTapy(base_url=conf.tapis_base_url, username=conf.streams_user, account_type=conf.streams_account_type, tenant_id=conf.tapis_tenant)
+#t.get_tokens()
+#t = auth.get_service_tapy_client(jwt='')
+t = auth.t
 # result=t.meta.createDocument(db='StreamsTACCDB', collection='Proj1', request_body={ "site_id" : 1234299, "lat" : 70.5, "lon" : 90, "instruments" : [ { "inst_id" : 2334, "inst_name" : "myinstrument", "variables" : [ { "var_id" : 34, "var_name" : "a", "abbrev" : "whatever", "unit" : "myunit" } ] }, { "inst_id" : 2435, "inst_name" : "myinstrument2","variables" : [ { "var_id" : 33, "var_name" : "a", "abbrev" : "whatever", "unit" : "myunit" }, { "var_id" : 32, "var_name" : "b", "abbrev" : "whatever2", "unit" : "myunit3" } ] } ] })
 # result=t.meta.listCollectionNames(db='StreamsTACCDB')
 # t.meta.listDocuments(db='StreamsTACCDB',collection='Proj1')
@@ -24,7 +26,8 @@ t.get_tokens()
 #List projects a user has permission to read
 def list_projects():
     #get user role with permission ?
-    result= t.meta.listDocuments(db='StreamsTACCDB',collection='streams_project_metadata',filter='{"permissions.users":"'+g.username+'"}')
+    logger.debug('in META list project')
+    result= t.meta.listDocuments(db=conf.streamd_db,collection='streams_project_metadata',filter='{"permissions.users":"'+g.username+'"}')
     logger.debug(result)
     if len(result.decode('utf-8')) > 0:
         message = "Projects found"
@@ -394,5 +397,5 @@ def create_instrument_index(project_id, site_id, instrument_id):
     return result, str(bug.response.status_code)
 
 def fetch_instrument_index(instrument_id):
-    result= t.meta.listDocuments(db='StreamsTACCDB',collection='streams_instrument_index',filter='{"instrument_id":'+instrument_id+'}')
+    result= t.meta.listDocuments(db=conf.streamd_db,collection='streams_instrument_index',filter='{"instrument_id":'+instrument_id+'}')
     return result

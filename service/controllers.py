@@ -62,6 +62,14 @@ class SitesResource(Resource):
 
 
     def post(self, project_id):
+        # validator = RequestValidator(utils.spec)
+        # result = validator.validate(FlaskOpenAPIRequest(request))
+        # if result.errors:
+        #     raise errors.ResourceError(msg=f'Invalid POST data: {result.errors}.')
+        # validated_params = result.parameters
+        # validated_body = result.body
+        # logger.debug(f"validated_body: {dir(validated_body)}")
+
         #need to add check for project permission & project exists before chords insertion
         logger.debug('omg')
         logger.debug(request.json)
@@ -283,6 +291,20 @@ class VariableResource(Resource):
         logger.debug(result)
         return utils.ok(result=result, msg=msg)
 
+
+class MeasurementsWriteResource(Resource):
+    #at the moment expects some like
+    #http://localhost:5000/v3/streams/measurements?instrument_id=1&vars[]={"somename":1.0}&vars[]={"other":2.0}
+    #will need to adjust when openAPI def is final for measurement
+    def post(self, instrument_id):
+        body = request.json
+        logger.debug(body)
+        #expects instrument_id=1&vars[]={"somename":1.0}&vars[]={"other":2.0} in the request.args
+        resp = chords.create_measurement(body)
+        logger.debug(resp)
+        return resp
+
+
 class MeasurementsResource(Resource):
     """
     Work with Measurements objects
@@ -293,18 +315,6 @@ class MeasurementsResource(Resource):
         result,msg = chords.get_measurements(instrument_id)
         logger.debug(result)
         return utils.ok(result=result, msg=msg)
-
-    #at the moment expects some like
-    #http://localhost:5000/v3/streams/measurements?instrument_id=1&vars[]={"somename":1.0}&vars[]={"other":2.0}
-    #will need to adjust when openAPI def is final for measurement
-    def post(self, project_id, site_id, instrument_id):
-        body = request.json
-        logger.debug(body)
-        #expects instrument_id=1&vars[]={"somename":1.0}&vars[]={"other":2.0} in the request.args
-        resp = chords.create_measurement(body)
-        logger.debug(resp)
-        return resp
-
 
 class MeasurementResource(Resource):
     """
