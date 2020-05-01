@@ -2360,7 +2360,7 @@ components:
         var_id:
           type: string
           description: User provided, unique identifier within in the Instrument name space. will be used as the chords shortname
-        name:
+        var_name:
           type: string
           description: Variable name.
         unit_id:
@@ -2389,7 +2389,7 @@ components:
     Variable:
       type: object
       properties:
-        name:
+        var_name:
           type: string
           description: The name of variable.
         var_id:

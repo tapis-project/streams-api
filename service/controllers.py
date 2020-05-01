@@ -128,7 +128,7 @@ class InstrumentsResource(Resource):
     """
     def get(self,project_id,site_id):
         #result,msg = chords.list_instruments()
-        result,msg = meta.get_instruments(project_id, site_id)
+        result,msg = meta.list_instruments(project_id, site_id)
         logger.debug(site_id)
         '''
         #logic to filter instruments based on site id
@@ -243,14 +243,19 @@ class VariablesResource(Resource):
             body = request.json
         else:
             body = request.json[0]
+        inst_result, bug = meta.get_instrument(project_id, site_id, instrument_id)
         # id, name, instrument_id, shortname, commit
-        postInst = ChordsVariable("test",instrument_id,
+        postInst = ChordsVariable("test",inst_result['chords_id'],
                                     body['var_name'],
-                                    body['shortname'],
+                                    body['var_id'],
                                     "")
         logger.debug(postInst)
         chord_result, chord_msg = chords.create_variable(postInst)
-        result, msg = meta.create_variable(project_id, site_id, instrument_id, chord_result['id'], body)
+        if chord_msg == "Variable created":
+            body['chords_id'] = chord_result['id']
+            result, msg = meta.create_variable(project_id, site_id, instrument_id, body)
+        else:
+            message = chord_msg
         logger.debug(result)
         return utils.ok(result=result, msg=msg)
 
@@ -296,12 +301,18 @@ class MeasurementsWriteResource(Resource):
     #at the moment expects some like
     #http://localhost:5000/v3/streams/measurements?instrument_id=1&vars[]={"somename":1.0}&vars[]={"other":2.0}
     #will need to adjust when openAPI def is final for measurement
-    def post(self, instrument_id):
+    def post(self):
         body = request.json
         logger.debug(body)
-        #expects instrument_id=1&vars[]={"somename":1.0}&vars[]={"other":2.0} in the request.args
-        resp = chords.create_measurement(body)
-        logger.debug(resp)
+        if 'inst_id' in body:
+            result = meta.fetch_instrument_index(body['inst_id'])
+            logger.debug(result)
+            if len(result) > 0:
+                #check SK
+                logger.debug("YES")
+                logger.debug(result[0]['chords_inst_id'])
+                resp = chords.create_measurement(result[0]['chords_inst_id'], body)
+                logger.debug(resp)
         return resp
 
 

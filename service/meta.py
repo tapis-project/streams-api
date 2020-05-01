@@ -151,10 +151,13 @@ def get_instrument(project_id, site_id, instrument_id):
         logger.debug("Site  FOUND")
         for inst in site_result['instruments']:
             logger.debug(inst)
-            if str(inst['instrument_id']) == str(instrument_id):
-                logger.debug("INSTRUMENT FOUND")
-                result = inst
-                message = "Instrument Found"
+            #make sure this object has the inst_id key
+            if 'inst_id' in inst:
+                #check id for match
+                if str(inst['inst_id']) == str(instrument_id):
+                    logger.debug("INSTRUMENT FOUND")
+                    result = inst
+                    message = "Instrument Found"
         if len(result) == 0:
             message = "Instrument Not Found"
     else:
@@ -186,7 +189,7 @@ def create_instrument(project_id, site_id, post_body):
         if post_bug.response.status_code == 200:
             result = inst_body
             message = "Instrument Created"
-            index_result = create_instrument_index(project_id, site_id, inst_body['instrument_id'])
+            index_result = create_instrument_index(project_id, site_id, inst_body['inst_id'], inst_body['chords_id'])
             logger.debug(index_result)
         else:
             message = "Instrument Failed to Create"
@@ -281,7 +284,7 @@ def get_variable(project_id, site_id, instrument_id, variable_id):
                 inst_exists = True
                 if 'variables' in inst:
                     for variable in inst['variables']:
-                        if str(variable['variable_id']) == str(variable_id):
+                        if str(variable['var_id']) == str(var_id):
                             result = variable
                             message = "Variable Found"
         if inst_exists == False:
@@ -291,7 +294,7 @@ def get_variable(project_id, site_id, instrument_id, variable_id):
         message ="Site Not Found - Instrument Does Not Exist - No Variables Exist"
     return result, message
 
-def create_variable(project_id, site_id, instrument_id, variable_id, post_body):
+def create_variable(project_id, site_id, instrument_id, post_body):
     #fetch site document that should contain the instrument
     site_result, site_bug = get_site(project_id,site_id)
     #flag to track if the instrument exists in this site
@@ -299,21 +302,21 @@ def create_variable(project_id, site_id, instrument_id, variable_id, post_body):
     result={}
     if len(site_result) > 0:
         var_body = post_body
-        var_body['variable_id'] = variable_id
         var_body['updated_at'] = str(datetime.datetime.now())
         updated_instruments = []
         for inst in site_result['instruments']:
-            if inst['inst_id'] == instrument_id:
-                inst_exists=True;
-                inst_body = inst
-                #add variable to current instrument
-                if 'variables' in inst_body:
-                    inst_body['variables'].append(var_body)
+            if 'inst_id' in inst:
+                if inst['inst_id'] == instrument_id:
+                    inst_exists=True;
+                    inst_body = inst
+                    #add variable to current instrument
+                    if 'variables' in inst_body:
+                        inst_body['variables'].append(var_body)
+                    else:
+                        inst_body['variables'] = [var_body]
+                    updated_instruments.append(inst_body)
                 else:
-                    inst_body['variables'] = [var_body]
-                updated_instruments.append(inst_body)
-            else:
-                updated_instruments.append(inst)
+                    updated_instruments.append(inst)
         if inst_exists:
             site_result['instruments'] = updated_instruments
             logger.debug("ADD VARIABLE")
@@ -340,7 +343,7 @@ def update_variable(project_id, site_id, instrument_id, variable_id, put_body, r
     result={}
     if len(site_result) > 0:
         var_body = put_body
-        var_body['variable_id'] = variable_id
+        var_body['var_id'] = variable_id
         var_body['updated_at'] = str(datetime.datetime.now())
         updated_variables = []
         updated_instruments = []
@@ -351,7 +354,7 @@ def update_variable(project_id, site_id, instrument_id, variable_id, put_body, r
                 #add variable to current instrument
                 if 'variable' in inst_body:
                     for variable in inst['variables']:
-                        if variable['variable_id'] == variable_id:
+                        if variable['var_id'] == variable_id:
                             if remove_variable == False:
                                 #replace variable with new changes
                                 updated_variables.append(var_body)
@@ -391,11 +394,11 @@ def update_variable(project_id, site_id, instrument_id, variable_id, put_body, r
             message = "Site Not Found - Cannote Delete Variable"
     return result, message
 
-def create_instrument_index(project_id, site_id, instrument_id):
-    req_body = {'project_id':project_id, 'site_id': site_id, 'instrument_id': instrument_id}
+def create_instrument_index(project_id, site_id, instrument_id, chords_inst_id):
+    req_body = {'project_id':project_id, 'site_id': site_id, 'instrument_id': instrument_id, 'chords_inst_id':chords_inst_id}
     result, bug =t.meta.createDocument(db=conf.stream_db, collection='streams_instrument_index', request_body=req_body, _tapis_debug=True)
     return result, str(bug.response.status_code)
 
 def fetch_instrument_index(instrument_id):
-    result= t.meta.listDocuments(db=conf.streamd_db,collection='streams_instrument_index',filter='{"instrument_id":'+instrument_id+'}')
-    return result
+    result= t.meta.listDocuments(db=conf.stream_db,collection='streams_instrument_index',filter='{"instrument_id":"'+instrument_id+'"}')
+    return json.loads(result.decode('utf-8'))

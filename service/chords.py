@@ -284,7 +284,7 @@ def create_variable(variable:ChordsVariable):
     res = create_post_request("/vars.json", postData)
     logger.debug(res.content)
     if (res.status_code == 201):
-        message = "Instrument created"
+        message = "Variable created"
     else:
         raise errors.ResourceError(msg=f'Variable not created')
     logger.debug(message)
@@ -349,18 +349,19 @@ def get_measurements(instrument_id):
 
 #
 #create a new measurement in CHORDS
-def create_measurement(json_body):
+def create_measurement(inst_chords_id, json_body):
     #TODO validate the measurement has all properties requirement and fields are correct
     chords_uri = conf.chords_url+"/measurements/url_create.json?";
     getData = {'email':conf.chords_user_email,
                 'api_key': conf.chords_api_key,
-                'instrument_id' : json_body['instrument_id'],
+                'instrument_id' : inst_chords_id,
                 'at': json_body['datetime']
                 }
     for itm in json_body['vars']:
         vars = itm #json.loads(itm)
-        for k in vars:
-            getData[k]=vars[k]
+        getData[itm['var_id']]=itm['value']
+        # for k in vars:
+        #     getData[k]=vars[k]
     logger.debug(chords_uri)
     headers = {
         'Content-Type':'application/x-www-form-urlencoded'
