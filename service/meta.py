@@ -3,6 +3,7 @@ import requests
 import json
 from flask import g, Flask
 from common.config import conf
+from common import auth
 import datetime
 app = Flask(__name__)
 
@@ -25,7 +26,8 @@ t = auth.t
 #List projects a user has permission to read
 def list_projects():
     #get user role with permission ?
-    result= t.meta.listDocuments(db='StreamsTACCDB',collection='streams_project_metadata',filter='{"permissions.users":"'+g.username+'"}')
+    logger.debug('in META list project')
+    result= t.meta.listDocuments(db=conf.streamd_db,collection='streams_project_metadata',filter='{"permissions.users":"'+g.username+'"}')
     logger.debug(result)
     if len(result.decode('utf-8')) > 0:
         message = "Projects found"
@@ -395,5 +397,5 @@ def create_instrument_index(project_id, site_id, instrument_id):
     return result, str(bug.response.status_code)
 
 def fetch_instrument_index(instrument_id):
-    result= t.meta.listDocuments(db='StreamsTACCDB',collection='streams_instrument_index',filter='{"instrument_id":'+instrument_id+'}')
+    result= t.meta.listDocuments(db=conf.streamd_db,collection='streams_instrument_index',filter='{"instrument_id":'+instrument_id+'}')
     return result
