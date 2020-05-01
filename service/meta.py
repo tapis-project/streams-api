@@ -259,7 +259,7 @@ def list_variables(project_id, site_id, instrument_id):
     result =[]
     if len(site_result) > 0:
         for inst in site_result['instruments']:
-            if inst['instrument_id'] == instrument_id:
+            if inst['inst_id'] == instrument_id:
                 inst_exists = True
                 result = inst['variables']
                 message = "Variables Found"
@@ -277,7 +277,7 @@ def get_variable(project_id, site_id, instrument_id, variable_id):
     result = {}
     if len(site_result) > 0:
         for inst in site_result['instruments']:
-            if inst['instrument_id'] == instrument_id:
+            if inst['inst_id'] == instrument_id:
                 inst_exists = True
                 if 'variables' in inst:
                     for variable in inst['variables']:
@@ -303,7 +303,7 @@ def create_variable(project_id, site_id, instrument_id, variable_id, post_body):
         var_body['updated_at'] = str(datetime.datetime.now())
         updated_instruments = []
         for inst in site_result['instruments']:
-            if inst['instrument_id'] == instrument_id:
+            if inst['inst_id'] == instrument_id:
                 inst_exists=True;
                 inst_body = inst
                 #add variable to current instrument
@@ -345,7 +345,7 @@ def update_variable(project_id, site_id, instrument_id, variable_id, put_body, r
         updated_variables = []
         updated_instruments = []
         for inst in site_result['instruments']:
-            if inst['instrument_id'] == instrument_id:
+            if inst['inst_id'] == instrument_id:
                 inst_exists=True;
                 inst_body = inst
                 #add variable to current instrument
