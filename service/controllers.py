@@ -85,7 +85,7 @@ class SitesResource(Resource):
             #resp['results']=meta_resp['results']
             logger.debug('success')
             logger.debug(meta_resp)
-            meta_resp, getmsg = meta.get_site(project_id, resp['id'])
+            #meta_resp, getmsg = meta.get_site(project_id, resp['id'])
         else:
             logger.debug('failed')
             message = msg
@@ -159,28 +159,31 @@ class InstrumentsResource(Resource):
             body = request.json[0]
         logger.debug('before ChordsInstrument assignment')
         #id, site_id, name, sensor_id, topic_category_id, description, display_points, plot_offset_value, plot_offset_units, sample_rate_seconds):
-
-        postInst = ChordsIntrument("",site_id,
-                                    body['inst_name'],
-                                    "",
-                                    "",
-                                    body['inst_description'],
-                                    "120",
-                                    "1",
-                                    "weeks",
-                                    "60")
-        logger.debug('after ChordsInstrument assignment')
-        chord_result, chord_msg = chords.create_instrument(postInst)
-        if chord_msg == "Instrument created":
-            body['chords_id'] = chord_result['id']
-            #body['instrument_id'] = instrument_id
-            inst_result, inst_msg = meta.create_instrument(project_id, site_id, body)
-            logger.debug(inst_msg)
-            if len(inst_result) >0:
-                result = inst_result
-                message = inst_msg
+        site_result, site_bug = meta.get_site(project_id, site_id)
+        if site_bug == "Site found.":
+            postInst = ChordsIntrument("",site_result['chords_id'],
+                                        body['inst_name'],
+                                        "",
+                                        "",
+                                        body['inst_description'],
+                                        "120",
+                                        "1",
+                                        "weeks",
+                                        "60")
+            logger.debug('after ChordsInstrument assignment')
+            chord_result, chord_msg = chords.create_instrument(postInst)
+            if chord_msg == "Instrument created":
+                body['chords_id'] = chord_result['id']
+                #body['instrument_id'] = instrument_id
+                inst_result, inst_msg = meta.create_instrument(project_id, site_id, body)
+                logger.debug(inst_msg)
+                if len(inst_result) >0:
+                    result = inst_result
+                    message = inst_msg
+            else:
+                message = chord_msg
         else:
-            message = chord_msg
+            message = "Site Failed To Create"
         return utils.ok(result=result, msg=message)
 
 
@@ -311,6 +314,7 @@ class MeasurementsWriteResource(Resource):
                 #check SK
                 logger.debug("YES")
                 logger.debug(result[0]['chords_inst_id'])
+
                 resp = chords.create_measurement(result[0]['chords_inst_id'], body)
                 logger.debug(resp)
         return resp
@@ -323,8 +327,11 @@ class MeasurementsResource(Resource):
     #
     def get(self, project_id, site_id, instrument_id):
         logger.debug("top of GET /measurements")
-        result,msg = chords.get_measurements(instrument_id)
-        logger.debug(result)
+        inst_result = meta.get_instrument(project_id,site_id,instrument_id)
+        logger.debug(inst_result)
+        if len(inst_result) > 0:
+            result,msg = chords.get_measurements(str(inst_result[0]['chords_inst_id']))
+            logger.debug(result)
         return utils.ok(result=result, msg=msg)
 
 class MeasurementResource(Resource):

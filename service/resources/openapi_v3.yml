@@ -2451,7 +2451,7 @@ components:
           description: The Datatime of the measurement
         vars:
           type: array
-          description: Array of measuremnt objects. Example [{"var_id":"temp1", "value":"75.0"},{"var_id":"pc_hmd","value":"34"}]
+          description: Array of measurement objects. Example [{"var_id":"temp1", "value":"75.0"},{"var_id":"pc_hmd","value":"34"}]
           items:
             type: object
             properties:
@@ -2459,14 +2459,14 @@ components:
                 type: string
                 description: The variable id in the instrument
               value:
-                type: string
+                type: number
                 description: The value of the observed measuremnet.
 
     NewMeasurementVars:
       type: object
       properties:
         var_id:
-          type: integer
+          type: string
           description: Field Name needs to be the variable id and value is the observed measuremnet. Example {"temp1":75.0}
 
     NewOntology:

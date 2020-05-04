@@ -88,12 +88,15 @@ def list_sites(project_id):
 #strip out id and _etag fields
 def get_site(project_id, site_id):
     logger.debug('In GET Site')
-    result = t.meta.listDocuments(db=conf.stream_db,collection=project_id,filter='{"site_id":'+str(site_id)+'}')
+    result = t.meta.listDocuments(db=conf.stream_db,collection=project_id,filter='{"site_id":"'+site_id+'"}')
     if len(result.decode('utf-8')) > 0:
         message = "Site found."
         #result should be an object not an array
         #TODO strip out _id and _etag
-        result = json.loads(result.decode('utf-8'))[0]
+        site_result = json.loads(result.decode('utf-8'))[0]
+        site_result.pop('_id')
+        site_result.pop('_etag')
+        result = site_result
         logger.debug("SITE FOUND")
     else:
         logger.debug("NO SITE FOUND")
@@ -102,13 +105,15 @@ def get_site(project_id, site_id):
     return result, message
 
 #TODO need to validate required fields and GEOJSON field
-def create_site(project_id, site_id, body):
+def create_site(project_id, chords_site_id, body):
     logger.debug("IN CREATE SITE META")
     resp={}
     req_body = body
-    req_body['site_id'] = site_id
+    req_body['chords_id'] = chords_site_id
     req_body['created_at'] = str(datetime.datetime.now())
+    req_body['location'] = {"type":"Point", "coordinates":[float(req_body['longitude']),float(req_body['latitude'])]}
     #TODO validate fields
+    logger.debug(body)
     result, bug =t.meta.createDocument(db=conf.stream_db, collection=project_id, request_body=req_body, _tapis_debug=True)
     logger.debug(bug.response.status_code)
     logger.debug(result)
@@ -116,7 +121,7 @@ def create_site(project_id, site_id, body):
         message = "Site Created."
         #fetch site document to serve back
         #TODO strip out _id and _etag
-        result, site_bug = get_site(project_id, site_id)
+        result, site_bug = get_site(project_id, str(body['site_id']))
     else:
         #remove site from Chords
         message = "Site Failed to Create."
@@ -188,7 +193,10 @@ def create_instrument(project_id, site_id, post_body):
     if len(site_result) > 0:
         inst_body = post_body
         inst_body['created_at'] = str(datetime.datetime.now())
-        site_result['instruments'].append(inst_body)
+        if 'instruments' in site_result:
+            site_result['instruments'].append(inst_body)
+        else:
+            site_result['instruments'] = [inst_body]
         logger.debug("ADD INSTRUMENT")
         logger.debug(site_result)
         result, post_bug =t.meta.replaceDocument(db=conf.stream_db, collection=project_id, docId=site_result['_id']['$oid'], request_body=site_result, _tapis_debug=True)
