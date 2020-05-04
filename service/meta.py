@@ -24,6 +24,7 @@ t = auth.t
 # result, debug = t.meta.listCollectionNames(db='StreamsTACCDB', _tapis_debug=True)
 
 #List projects a user has permission to read
+#strip out id and _etag fields
 def list_projects():
     #get user role with permission ?
     logger.debug('in META list project')
@@ -35,6 +36,8 @@ def list_projects():
         raise errors.ResourceError(msg=f'No Projects found')
     logger.debug(result)
     return json.loads(result.decode('utf-8')), message
+
+#TODO add project get
 
 #TODO delete project metadata document if collection creation fails
 def create_project(body):
@@ -55,7 +58,9 @@ def create_project(body):
         logger.debug(col_result)
         if col_bug.response.status_code == 201:
             message = "Project Created"
+            index_result, index_bug = t.meta.createIndex(db=conf.stream_db, collection=body['project_id'],indexName=body['project_id']+"_loc_index", request_body={"keys":{"location": "2dsphere"}}, _tapis_debug=True)
             #create location index
+            logger.debug(index_result)
             #res = t.meta.createIndex(db=conf.stream_db,collection=body['project_id'], indexName='{"location" : "2dsphere"}')
             #logger.debug(res)
             results=''
@@ -68,6 +73,7 @@ def create_project(body):
         results =bug.response
     return results, message
 
+#strip out id and _etag fields
 def list_sites(project_id):
     logger.debug("Before")
     result = t.meta.listDocuments(db='StreamsTACCDB',collection=project_id)
@@ -79,6 +85,7 @@ def list_sites(project_id):
     logger.debug(result)
     return json.loads(result.decode('utf-8')), message
 
+#strip out id and _etag fields
 def get_site(project_id, site_id):
     logger.debug('In GET Site')
     result = t.meta.listDocuments(db=conf.stream_db,collection=project_id,filter='{"site_id":'+str(site_id)+'}')
