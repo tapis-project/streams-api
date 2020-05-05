@@ -23,12 +23,26 @@ t = auth.t
 # t.meta.listDocuments(db='StreamsTACCDB',collection='Proj1')
 # result, debug = t.meta.listCollectionNames(db='StreamsTACCDB', _tapis_debug=True)
 
+
+#strip off the _id and _etag from metadata objects
+def strip_meta(meta_object):
+    meta_object.pop('_id')
+    meta_object.pop('_etag')
+    return meta_object
+
+#strip off the _id and _etag for a list of metadata objects
+def strip_meta_list(meta_list):
+    new_list = []
+    for item in meta_list:
+        new_list.append(strip_meta(item))
+    return new_list
+
 #List projects a user has permission to read
 #strip out id and _etag fields
 def list_projects():
     #get user role with permission ?
     logger.debug('in META list project')
-    result= t.meta.listDocuments(db=conf.streamd_db,collection='streams_project_metadata',filter='{"permissions.users":"'+g.username+'"}')
+    result= t.meta.listDocuments(db=conf.stream_db,collection='streams_project_metadata',filter='{"permissions.users":"'+g.username+'"}')
     logger.debug(result)
     if len(result.decode('utf-8')) > 0:
         message = "Projects found"
@@ -38,6 +52,22 @@ def list_projects():
     return json.loads(result.decode('utf-8')), message
 
 #TODO add project get
+def get_project(project_id):
+    logger.debug('In GET Project')
+    result = t.meta.listDocuments(db=conf.stream_db,collection='streams_project_metadata',filter='{"project_id":"'+project_id+'"}')
+    logger.debug(result)
+    if len(result.decode('utf-8')) > 0:
+        logger.debug('PROJECT FOUND')
+        message = "Project found."
+        proj_result = json.loads(result.decode('utf-8'))[0]
+        #proj_result.pop('_id')
+        #proj_result.pop('_etag')
+        result = proj_result
+    else:
+        logger.debug("NO PROJECT FOUND")
+        raise errors.ResourceError(msg=f'No Project found')
+        result = ''
+    return result, message
 
 #TODO delete project metadata document if collection creation fails
 def create_project(body):
@@ -53,17 +83,16 @@ def create_project(body):
     if bug.response.status_code == 201:
         logger.debug('Created project metadata')
         #create project collection
-        col_result, col_bug =t.meta.createCollection(db=conf.stream_db,collection=body['project_id'], _tapis_debug=True)
+        col_result, col_bug =t.meta.createCollection(db=conf.stream_db,collection=req_body['project_id'], _tapis_debug=True)
         logger.debug("Status_Code: " + str(col_bug.response.status_code))
         logger.debug(col_result)
-        if col_bug.response.status_code == 201:
+        if str(col_bug.response.status_code) == '201':
             message = "Project Created"
-            index_result, index_bug = t.meta.createIndex(db=conf.stream_db, collection=body['project_id'],indexName=body['project_id']+"_loc_index", request_body={"keys":{"location": "2dsphere"}}, _tapis_debug=True)
+            index_result, index_bug = t.meta.createIndex(db=conf.stream_db, collection=req_body['project_id'],indexName=body['project_id']+"_loc_index", request_body={"keys":{"location": "2dsphere"}}, _tapis_debug=True)
             #create location index
             logger.debug(index_result)
-            #res = t.meta.createIndex(db=conf.stream_db,collection=body['project_id'], indexName='{"location" : "2dsphere"}')
-            #logger.debug(res)
-            results=''
+            results, bug= get_project(req_body['project_id'])
+
         else:
             #should remove project metadata record if this fails
             raise errors.ResourceError(msg=f'Project Creation Failed')
@@ -72,6 +101,26 @@ def create_project(body):
         raise errors.ResourceError(msg=f'Project Creation Failed')
         results =bug.response
     return results, message
+
+def update_project(project_id, put_body):
+    logger.debug("IN Update Project META")
+    proj_result, proj_bug = get_project(project_id)
+    if len(proj_result) > 0:
+        for field in put_body:
+            proj_result[field] = put_body[field]
+        proj_result['last_updated'] = str(datetime.datetime.now())
+        #validate fields
+        logger.debug(proj_result)
+        result={}
+        message=""
+        result, put_bug =t.meta.replaceDocument(db=conf.stream_db, collection='streams_project_metadata', docId=proj_result['_id']['$oid'], request_body=proj_result, _tapis_debug=True)
+        logger.debug(put_bug.response.status_code)
+        if put_bug.response.status_code == 200:
+            result = proj_result
+            message = 'Project Updated'
+    else:
+        raise errors.ResourceError(msg=f'Project Does Not Exist For Project ID:'+str(project_id))
+    return result, message
 
 #strip out id and _etag fields
 def list_sites(project_id):
@@ -94,8 +143,8 @@ def get_site(project_id, site_id):
         #result should be an object not an array
         #TODO strip out _id and _etag
         site_result = json.loads(result.decode('utf-8'))[0]
-        site_result.pop('_id')
-        site_result.pop('_etag')
+        #site_result.pop('_id')
+        #site_result.pop('_etag')
         result = site_result
         logger.debug("SITE FOUND")
     else:
@@ -121,7 +170,7 @@ def create_site(project_id, chords_site_id, body):
         message = "Site Created."
         #fetch site document to serve back
         #TODO strip out _id and _etag
-        result, site_bug = get_site(project_id, str(body['site_id']))
+        result, site_bug = get_site(project_id, str(req_body['site_id']))
     else:
         #remove site from Chords
         message = "Site Failed to Create."

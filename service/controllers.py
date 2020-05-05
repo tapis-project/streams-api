@@ -17,20 +17,25 @@ from common.logs import get_logger
 logger = get_logger(__name__)
 
 
+
+
 class ProjectsResource(Resource):
     """
     Work with Project objects
     """
     def get(self):
         logger.debug('In list projects')
-        result, msg = meta.list_projects()
+        proj_result, msg = meta.list_projects()
+        result = meta.strip_meta_list(proj_result)
         logger.debug('After list projects')
         return utils.ok(result=result,msg=msg)
 
     def post(self):
         logger.debug(request.json)
         body = request.json
-        result, msg = meta.create_project(body)
+        proj_result, msg = meta.create_project(body)
+        logger.debug(proj_result)
+        result = meta.strip_meta(proj_result)
         #resp['status'] = result['status']
         #logger.debug(meta_resp['status'])
         #logger.debug(resp)
@@ -42,10 +47,16 @@ class ProjectResource(Resource):
     """
 
     def get(self, project_id):
-        return ""
+        proj_result, msg = meta.get_project(project_id)
+        result = meta.strip_meta(proj_result)
+        logger.debug(result)
+        return utils.ok(result=result, msg=msg)
 
     def put(self, project_id):
-        return ""
+        body = request.json
+        proj_result, msg = meta.update_project(project_id, body)
+        result = meta.strip_meta(proj_result)
+        return utils.ok(result=result, msg=msg)
 
     def delete(self, project_id):
         return ""
@@ -57,7 +68,8 @@ class SitesResource(Resource):
 
     #TODO metadata integration - need to use query, limit and offset
     def get(self, project_id):
-        result, msg = meta.list_sites(project_id)
+        site_result, msg = meta.list_sites(project_id)
+        result = meta.strip_meta_list(site_result)
         return utils.ok(result=result,msg=msg)
 
 
@@ -81,16 +93,17 @@ class SitesResource(Resource):
                                 body['description'])
         resp, msg = chords.create_site(postSite)
         if msg == "Site created":
-            meta_resp, message = meta.create_site(project_id, resp['id'],body)
+            site_result, message = meta.create_site(project_id, resp['id'],body)
             #resp['results']=meta_resp['results']
             logger.debug('success')
-            logger.debug(meta_resp)
+            logger.debug(site_result)
+            result = meta.strip_meta(site_result)
             #meta_resp, getmsg = meta.get_site(project_id, resp['id'])
         else:
             logger.debug('failed')
             message = msg
-            meta_resp=''
-        return utils.ok(result=meta_resp,msg=message)
+            result=''
+        return utils.ok(result=result,msg=message)
 
 
 
@@ -100,7 +113,8 @@ class SiteResource(Resource):
     """
 
     def get(self, project_id, site_id):
-        result, msg = meta.get_site(project_id,site_id)
+        site_result, msg = meta.get_site(project_id,site_id)
+        result = meta.strip_meta(site_result)
         logger.debug(result)
         return utils.ok(result=result, msg=msg)
 
@@ -112,7 +126,8 @@ class SiteResource(Resource):
                               body['longitude'],
                               body['elevation'],
                               body['description'])
-        result, msg = meta.update_site(project_id, site_id, body)
+        site_result, msg = meta.update_site(project_id, site_id, body)
+        result = meta.strip_meta(site_result)
         chord_result, chord_msg = chords.update_site(site_id, putSite)
         return utils.ok(result=result, msg=msg)
 
