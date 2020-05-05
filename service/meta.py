@@ -3,28 +3,46 @@ import requests
 import json
 from flask import g, Flask
 from common.config import conf
+from common import auth
 import datetime
 app = Flask(__name__)
 
 from common import utils, errors
 from tapy.dyna import DynaTapy
+import auth
 # get the logger instance -
 from common.logs import get_logger
 logger = get_logger(__name__)
 
 #pull out tenant from JWT
-t = DynaTapy(base_url=conf.tapis_base_url, username=conf.streams_user, account_type=conf.streams_account_type, tenant_id=conf.tapis_tenant)
-t.get_tokens()
-
+# t = DynaTapy(base_url=conf.tapis_base_url, username=conf.streams_user, service_password=conf.service_password, account_type=conf.streams_account_type, tenant_id='master')
+# t.get_tokens()
+t = auth.t
 # result=t.meta.createDocument(db='StreamsTACCDB', collection='Proj1', request_body={ "site_id" : 1234299, "lat" : 70.5, "lon" : 90, "instruments" : [ { "inst_id" : 2334, "inst_name" : "myinstrument", "variables" : [ { "var_id" : 34, "var_name" : "a", "abbrev" : "whatever", "unit" : "myunit" } ] }, { "inst_id" : 2435, "inst_name" : "myinstrument2","variables" : [ { "var_id" : 33, "var_name" : "a", "abbrev" : "whatever", "unit" : "myunit" }, { "var_id" : 32, "var_name" : "b", "abbrev" : "whatever2", "unit" : "myunit3" } ] } ] })
 # result=t.meta.listCollectionNames(db='StreamsTACCDB')
 # t.meta.listDocuments(db='StreamsTACCDB',collection='Proj1')
 # result, debug = t.meta.listCollectionNames(db='StreamsTACCDB', _tapis_debug=True)
 
+
+#strip off the _id and _etag from metadata objects
+def strip_meta(meta_object):
+    meta_object.pop('_id')
+    meta_object.pop('_etag')
+    return meta_object
+
+#strip off the _id and _etag for a list of metadata objects
+def strip_meta_list(meta_list):
+    new_list = []
+    for item in meta_list:
+        new_list.append(strip_meta(item))
+    return new_list
+
 #List projects a user has permission to read
+#strip out id and _etag fields
 def list_projects():
     #get user role with permission ?
-    result= t.meta.listDocuments(db='StreamsTACCDB',collection='streams_project_metadata',filter='{"permissions.users":"'+g.username+'"}')
+    logger.debug('in META list project')
+    result= t.meta.listDocuments(db=conf.stream_db,collection='streams_project_metadata',filter='{"permissions.users":"'+g.username+'"}')
     logger.debug(result)
     if len(result.decode('utf-8')) > 0:
         message = "Projects found"
@@ -32,6 +50,24 @@ def list_projects():
         raise errors.ResourceError(msg=f'No Projects found')
     logger.debug(result)
     return json.loads(result.decode('utf-8')), message
+
+#TODO add project get
+def get_project(project_id):
+    logger.debug('In GET Project')
+    result = t.meta.listDocuments(db=conf.stream_db,collection='streams_project_metadata',filter='{"project_id":"'+project_id+'"}')
+    logger.debug(result)
+    if len(result.decode('utf-8')) > 0:
+        logger.debug('PROJECT FOUND')
+        message = "Project found."
+        proj_result = json.loads(result.decode('utf-8'))[0]
+        #proj_result.pop('_id')
+        #proj_result.pop('_etag')
+        result = proj_result
+    else:
+        logger.debug("NO PROJECT FOUND")
+        raise errors.ResourceError(msg=f'No Project found')
+        result = ''
+    return result, message
 
 #TODO delete project metadata document if collection creation fails
 def create_project(body):
@@ -47,15 +83,16 @@ def create_project(body):
     if bug.response.status_code == 201:
         logger.debug('Created project metadata')
         #create project collection
-        col_result, col_bug =t.meta.createCollection(db=conf.stream_db,collection=body['project_id'], _tapis_debug=True)
+        col_result, col_bug =t.meta.createCollection(db=conf.stream_db,collection=req_body['project_id'], _tapis_debug=True)
         logger.debug("Status_Code: " + str(col_bug.response.status_code))
         logger.debug(col_result)
-        if col_bug.response.status_code == 201:
+        if str(col_bug.response.status_code) == '201':
             message = "Project Created"
+            index_result, index_bug = t.meta.createIndex(db=conf.stream_db, collection=req_body['project_id'],indexName=body['project_id']+"_loc_index", request_body={"keys":{"location": "2dsphere"}}, _tapis_debug=True)
             #create location index
-            #res = t.meta.createIndex(db=conf.stream_db,collection=body['project_id'], indexName='{"location" : "2dsphere"}')
-            #logger.debug(res)
-            results=''
+            logger.debug(index_result)
+            results, bug= get_project(req_body['project_id'])
+
         else:
             #should remove project metadata record if this fails
             raise errors.ResourceError(msg=f'Project Creation Failed')
@@ -65,6 +102,27 @@ def create_project(body):
         results =bug.response
     return results, message
 
+def update_project(project_id, put_body):
+    logger.debug("IN Update Project META")
+    proj_result, proj_bug = get_project(project_id)
+    if len(proj_result) > 0:
+        for field in put_body:
+            proj_result[field] = put_body[field]
+        proj_result['last_updated'] = str(datetime.datetime.now())
+        #validate fields
+        logger.debug(proj_result)
+        result={}
+        message=""
+        result, put_bug =t.meta.replaceDocument(db=conf.stream_db, collection='streams_project_metadata', docId=proj_result['_id']['$oid'], request_body=proj_result, _tapis_debug=True)
+        logger.debug(put_bug.response.status_code)
+        if put_bug.response.status_code == 200:
+            result = proj_result
+            message = 'Project Updated'
+    else:
+        raise errors.ResourceError(msg=f'Project Does Not Exist For Project ID:'+str(project_id))
+    return result, message
+
+#strip out id and _etag fields
 def list_sites(project_id):
     logger.debug("Before")
     result = t.meta.listDocuments(db='StreamsTACCDB',collection=project_id)
@@ -76,14 +134,18 @@ def list_sites(project_id):
     logger.debug(result)
     return json.loads(result.decode('utf-8')), message
 
+#strip out id and _etag fields
 def get_site(project_id, site_id):
     logger.debug('In GET Site')
-    result = t.meta.listDocuments(db=conf.stream_db,collection=project_id,filter='{"site_id":'+str(site_id)+'}')
+    result = t.meta.listDocuments(db=conf.stream_db,collection=project_id,filter='{"site_id":"'+site_id+'"}')
     if len(result.decode('utf-8')) > 0:
         message = "Site found."
         #result should be an object not an array
         #TODO strip out _id and _etag
-        result = json.loads(result.decode('utf-8'))[0]
+        site_result = json.loads(result.decode('utf-8'))[0]
+        #site_result.pop('_id')
+        #site_result.pop('_etag')
+        result = site_result
         logger.debug("SITE FOUND")
     else:
         logger.debug("NO SITE FOUND")
@@ -92,13 +154,15 @@ def get_site(project_id, site_id):
     return result, message
 
 #TODO need to validate required fields and GEOJSON field
-def create_site(project_id, site_id, body):
+def create_site(project_id, chords_site_id, body):
     logger.debug("IN CREATE SITE META")
     resp={}
     req_body = body
-    req_body['site_id'] = site_id
+    req_body['chords_id'] = chords_site_id
     req_body['created_at'] = str(datetime.datetime.now())
+    req_body['location'] = {"type":"Point", "coordinates":[float(req_body['longitude']),float(req_body['latitude'])]}
     #TODO validate fields
+    logger.debug(body)
     result, bug =t.meta.createDocument(db=conf.stream_db, collection=project_id, request_body=req_body, _tapis_debug=True)
     logger.debug(bug.response.status_code)
     logger.debug(result)
@@ -106,7 +170,7 @@ def create_site(project_id, site_id, body):
         message = "Site Created."
         #fetch site document to serve back
         #TODO strip out _id and _etag
-        result, site_bug = get_site(project_id, site_id)
+        result, site_bug = get_site(project_id, str(req_body['site_id']))
     else:
         #remove site from Chords
         message = "Site Failed to Create."
@@ -148,10 +212,13 @@ def get_instrument(project_id, site_id, instrument_id):
         logger.debug("Site  FOUND")
         for inst in site_result['instruments']:
             logger.debug(inst)
-            if str(inst['instrument_id']) == str(instrument_id):
-                logger.debug("INSTRUMENT FOUND")
-                result = inst
-                message = "Instrument Found"
+            #make sure this object has the inst_id key
+            if 'inst_id' in inst:
+                #check id for match
+                if str(inst['inst_id']) == str(instrument_id):
+                    logger.debug("INSTRUMENT FOUND")
+                    result = inst
+                    message = "Instrument Found"
         if len(result) == 0:
             message = "Instrument Not Found"
     else:
@@ -175,7 +242,10 @@ def create_instrument(project_id, site_id, post_body):
     if len(site_result) > 0:
         inst_body = post_body
         inst_body['created_at'] = str(datetime.datetime.now())
-        site_result['instruments'].append(inst_body)
+        if 'instruments' in site_result:
+            site_result['instruments'].append(inst_body)
+        else:
+            site_result['instruments'] = [inst_body]
         logger.debug("ADD INSTRUMENT")
         logger.debug(site_result)
         result, post_bug =t.meta.replaceDocument(db=conf.stream_db, collection=project_id, docId=site_result['_id']['$oid'], request_body=site_result, _tapis_debug=True)
@@ -183,7 +253,7 @@ def create_instrument(project_id, site_id, post_body):
         if post_bug.response.status_code == 200:
             result = inst_body
             message = "Instrument Created"
-            index_result = create_instrument_index(project_id, site_id, inst_body['instrument_id'])
+            index_result = create_instrument_index(project_id, site_id, inst_body['inst_id'], inst_body['chords_id'])
             logger.debug(index_result)
         else:
             message = "Instrument Failed to Create"
@@ -256,7 +326,7 @@ def list_variables(project_id, site_id, instrument_id):
     result =[]
     if len(site_result) > 0:
         for inst in site_result['instruments']:
-            if inst['instrument_id'] == instrument_id:
+            if inst['inst_id'] == instrument_id:
                 inst_exists = True
                 result = inst['variables']
                 message = "Variables Found"
@@ -274,11 +344,11 @@ def get_variable(project_id, site_id, instrument_id, variable_id):
     result = {}
     if len(site_result) > 0:
         for inst in site_result['instruments']:
-            if inst['instrument_id'] == instrument_id:
+            if inst['inst_id'] == instrument_id:
                 inst_exists = True
                 if 'variables' in inst:
                     for variable in inst['variables']:
-                        if str(variable['variable_id']) == str(variable_id):
+                        if str(variable['var_id']) == str(var_id):
                             result = variable
                             message = "Variable Found"
         if inst_exists == False:
@@ -288,7 +358,7 @@ def get_variable(project_id, site_id, instrument_id, variable_id):
         message ="Site Not Found - Instrument Does Not Exist - No Variables Exist"
     return result, message
 
-def create_variable(project_id, site_id, instrument_id, variable_id, post_body):
+def create_variable(project_id, site_id, instrument_id, post_body):
     #fetch site document that should contain the instrument
     site_result, site_bug = get_site(project_id,site_id)
     #flag to track if the instrument exists in this site
@@ -296,21 +366,21 @@ def create_variable(project_id, site_id, instrument_id, variable_id, post_body):
     result={}
     if len(site_result) > 0:
         var_body = post_body
-        var_body['variable_id'] = variable_id
         var_body['updated_at'] = str(datetime.datetime.now())
         updated_instruments = []
         for inst in site_result['instruments']:
-            if inst['instrument_id'] == instrument_id:
-                inst_exists=True;
-                inst_body = inst
-                #add variable to current instrument
-                if 'variables' in inst_body:
-                    inst_body['variables'].append(var_body)
+            if 'inst_id' in inst:
+                if inst['inst_id'] == instrument_id:
+                    inst_exists=True;
+                    inst_body = inst
+                    #add variable to current instrument
+                    if 'variables' in inst_body:
+                        inst_body['variables'].append(var_body)
+                    else:
+                        inst_body['variables'] = [var_body]
+                    updated_instruments.append(inst_body)
                 else:
-                    inst_body['variables'] = [var_body]
-                updated_instruments.append(inst_body)
-            else:
-                updated_instruments.append(inst)
+                    updated_instruments.append(inst)
         if inst_exists:
             site_result['instruments'] = updated_instruments
             logger.debug("ADD VARIABLE")
@@ -337,18 +407,18 @@ def update_variable(project_id, site_id, instrument_id, variable_id, put_body, r
     result={}
     if len(site_result) > 0:
         var_body = put_body
-        var_body['variable_id'] = variable_id
+        var_body['var_id'] = variable_id
         var_body['updated_at'] = str(datetime.datetime.now())
         updated_variables = []
         updated_instruments = []
         for inst in site_result['instruments']:
-            if inst['instrument_id'] == instrument_id:
+            if inst['inst_id'] == instrument_id:
                 inst_exists=True;
                 inst_body = inst
                 #add variable to current instrument
                 if 'variable' in inst_body:
                     for variable in inst['variables']:
-                        if variable['variable_id'] == variable_id:
+                        if variable['var_id'] == variable_id:
                             if remove_variable == False:
                                 #replace variable with new changes
                                 updated_variables.append(var_body)
@@ -388,11 +458,11 @@ def update_variable(project_id, site_id, instrument_id, variable_id, put_body, r
             message = "Site Not Found - Cannote Delete Variable"
     return result, message
 
-def create_instrument_index(project_id, site_id, instrument_id):
-    req_body = {'project_id':project_id, 'site_id': site_id, 'instrument_id': instrument_id}
+def create_instrument_index(project_id, site_id, instrument_id, chords_inst_id):
+    req_body = {'project_id':project_id, 'site_id': site_id, 'instrument_id': instrument_id, 'chords_inst_id':chords_inst_id}
     result, bug =t.meta.createDocument(db=conf.stream_db, collection='streams_instrument_index', request_body=req_body, _tapis_debug=True)
     return result, str(bug.response.status_code)
 
 def fetch_instrument_index(instrument_id):
-    result= t.meta.listDocuments(db='StreamsTACCDB',collection='streams_instrument_index',filter='{"instrument_id":'+instrument_id+'}')
-    return result
+    result= t.meta.listDocuments(db=conf.stream_db,collection='streams_instrument_index',filter='{"instrument_id":"'+instrument_id+'"}')
+    return json.loads(result.decode('utf-8'))
