@@ -78,15 +78,15 @@ def create_project(body):
     req_body['project_id'] = body['project_name'].replace(" ", "")
     req_body['permissions']={'users':[g.username]}
     logger.debug(req_body)
-    #Check if project_id exists - if so add something to id to unique it.
-    result, bug =t.meta.createDocument(db=conf.stream_db, collection='streams_project_metadata', request_body=req_body, _tapis_debug=True)
-    if bug.response.status_code == 201:
+    #Check if project_id exists by creating collection - if so add something to id to unique it.
+    col_result, col_bug =t.meta.createCollection(db=conf.stream_db,collection=req_body['project_id'], _tapis_debug=True)
+    if col_bug.response.status_code == 201:
         logger.debug('Created project metadata')
         #create project collection
-        col_result, col_bug =t.meta.createCollection(db=conf.stream_db,collection=req_body['project_id'], _tapis_debug=True)
-        logger.debug("Status_Code: " + str(col_bug.response.status_code))
-        logger.debug(col_result)
-        if str(col_bug.response.status_code) == '201':
+        result, bug =t.meta.createDocument(db=conf.stream_db, collection='streams_project_metadata', request_body=req_body, _tapis_debug=True)
+        logger.debug("Status_Code: " + str(bug.response.status_code))
+        logger.debug(result)
+        if str(bug.response.status_code) == '201':
             message = "Project Created"
             index_result, index_bug = t.meta.createIndex(db=conf.stream_db, collection=req_body['project_id'],indexName=body['project_id']+"_loc_index", request_body={"keys":{"location": "2dsphere"}}, _tapis_debug=True)
             #create location index
