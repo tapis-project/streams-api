@@ -42,7 +42,6 @@ ROLE = 'streams_admin'
 
     # this is the Tapis client that tenants will use for interacting with other services, such as the security kernel.
 t = auth.get_service_tapy_client()
-t.x_tenant_id = conf.tenant_master
 t.x_username = conf.streams_user
 
 def authorization():
