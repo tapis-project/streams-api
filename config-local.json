@@ -24,4 +24,5 @@
   "kapacitor_username": "admin",
   "kapacitor_password": "admin kapacitor",
   "kapacitor_url":"http://localhost:9092"
+
 }

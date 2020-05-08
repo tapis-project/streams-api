@@ -10,6 +10,7 @@ app = Flask(__name__)
 from common import utils, errors
 from tapy.dyna import DynaTapy
 import auth
+import api
 # get the logger instance -
 from common.logs import get_logger
 logger = get_logger(__name__)
@@ -22,7 +23,6 @@ t = auth.t
 # result=t.meta.listCollectionNames(db='StreamsTACCDB')
 # t.meta.listDocuments(db='StreamsTACCDB',collection='Proj1')
 # result, debug = t.meta.listCollectionNames(db='StreamsTACCDB', _tapis_debug=True)
-
 
 #strip off the _id and _etag from metadata objects
 def strip_meta(meta_object):
