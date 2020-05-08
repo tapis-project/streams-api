@@ -375,9 +375,13 @@ class ChannelsResource(Resource):
     def post(self):
         logger.debug("top of POST /channels")
         body = request.json
-        result, msg = kapacitor.create_channel(body)
-        return utils.ok(result=result, msg=msg)
-        
+        #TODO need to check our instruments index for project_id and permissions
+        #for now just passing a project_id in the body for initial testing
+        project_id = body['project_id']
+        result, msg = kapacitor.create_channel(project_id, body)
+        logger.debug(result)
+        return utils.ok(result=meta.strip_meta(result), msg=msg)
+
 
 
 class ChannelResource(Resource):

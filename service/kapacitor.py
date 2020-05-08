@@ -26,10 +26,14 @@ t = auth.t
 #   "status": "enabled"
 #   }
 def create_task(body):
+    #TODO - need to confirm task_id is unqiue probably
+    logger.debug("IN CREATE TASK")
     headers = {
         'content-type': "application/json"
     }
-    res = requests.post(conf.kapacitor_url+'/kapacitor/v1/tasks', json=body, headers=headers,auth=HTTPBasicAuth(conf.Kapacitor, conf.kapacitor_password), verify=False)
+    res = requests.post(conf.kapacitor_url+'/kapacitor/v1/tasks', json=body, headers=headers,auth=HTTPBasicAuth(conf.kapacitor_username, conf.kapacitor_password), verify=False)
+    logger.debug(res.content)
+    logger.debug(res.status_code)
     return json.loads(res.content),res.status_code
 
 #list kapacitor tasks - probably will won't use much without adding query params
@@ -37,40 +41,43 @@ def list_tasks():
     headers = {
         'content-type': "application/json"
     }
-    res = requests.get(conf.kapacitor_url+'/kapacitor/v1/tasks',auth=HTTPBasicAuth(conf.Kapacitor, conf.kapacitor_password),  verify=False)
+    res = requests.get(conf.kapacitor_url+'/kapacitor/v1/tasks',auth=HTTPBasicAuth(conf.kapacitor_username, conf.kapacitor_password),  verify=False)
     return json.loads(res.content),res.status_code
 
 def get_task(task_id):
     headers = {
         'content-type': "application/json"
     }
-    res = requests.get(conf.kapacitor_url+'/kapacitor/v1/tasks'+task_id,auth=HTTPBasicAuth(conf.Kapacitor, conf.kapacitor_password), verify=False)
+    res = requests.get(conf.kapacitor_url+'/kapacitor/v1/tasks'+task_id,auth=HTTPBasicAuth(conf.kapacitor_username, conf.kapacitor_password), verify=False)
     return json.loads(res.content),res.status_code
 
 ####################### CHANNEL ########################################
+# script field in req_body is temporary until we have use a template
 #Expected values for req_body:
-#  channel_id, channel_name, triggers_with_actions, task_id, status,created,last_updated,template_id
+#  channel_id, channel_name, triggers_with_actions, task_id, status, created, last_updated, template_id
 def create_channel(project_id, req_body):
+    logger.debug("IN CREATE CHANNEL")
     #create a kapacitor task
-    task_body ={'id':task_id, 'type':'stream','dbrps': [{"db": "chords_ts_production", "rp" : "autogen"}],'status':'enabled'}
+    task_body ={'task_id':req_body['task_id'], 'type':'stream','dbrps': [{"db": "chords_ts_production", "rp" : "autogen"}],'status':'enabled'}
     #TODO figure out how to make this - for now pass in a script for testing
     task_body['script']=req_body['script']
     ktask_result, ktask_status = create_task(task_body)
+    logger.debug(ktask_status)
     req_body['project_id'] = project_id
-    if ktasK_status == 200:
-        #create a metadata record with kapacitor task id to central channel metadata collection
-        mchannel_result, mchannel_bug =t.meta.createDocument(db=conf.stream_db, collection='streams_channel_metadata', request_body=req_body, _tapis_debug=True)
+    if ktask_status == 200:
+        #create a metadata record with kapacitor task id to the project channel metadata collection
+        mchannel_result, mchannel_bug =t.meta.createDocument(db=conf.stream_db, collection=project_id, request_body=req_body, _tapis_debug=True)
         logger.debug("Status_Code: " + str(mchannel_bug.response.status_code))
         logger.debug(mchannel_result)
-        if str(bug.response.status_code) == '201':
+        if str(mchannel_bug.response.status_code) == '201':
             message = "Channel Created"
-            logger.debug(mchannel_result)
             #get the newly created channel object to return
-            result, bug= get_channel(req_body['channel_id'])
+            result, bug= get_channel(project_id, req_body['channel_id'])
+            logger.debug(result)
         else:
-            #should remove project metadata record if this fails
+            #TODO need to remove task from kapacitor if this failed
             raise errors.ResourceError(msg=f'Channel Creation Failed')
-            result=bug.response
+            result=mchannel_bug.response
             message = "Channel Creation Failed"
     else:
         raise errors.ResourceError(msg=f'Channel Creation Failed')
@@ -79,10 +86,29 @@ def create_channel(project_id, req_body):
     return result, message
 
 def list_channels(project_id):
-    return True
+    logger.debug('in Channel list ')
+    result= t.meta.listDocuments(db=conf.stream_db,collection='streams_project_metadata',filter='{"permissions.users":"'+g.username+'"}')
+    logger.debug(result)
+    if len(result.decode('utf-8')) > 0:
+        message = "Projects found"
+    else:
+        raise errors.ResourceError(msg=f'No Projects found')
+    logger.debug(result)
+    return json.loads(result.decode('utf-8')), message
 
-def get_channel(channel_id):
-    return true
+def get_channel(project_id, channel_id):
+    logger.debug('In GET Channel')
+    result = t.meta.listDocuments(db=conf.stream_db,collection=project_id,filter='{"channel_id":"'+channel_id+'"}')
+    if len(result.decode('utf-8')) > 0:
+        message = "Channel found."
+        channel_result = json.loads(result.decode('utf-8'))[0]
+        result = channel_result
+        logger.debug("CHANNEL FOUND")
+    else:
+        logger.debug("NO CHANNEL FOUND")
+        raise errors.ResourceError(msg=f'No Channel found')
+        result = ''
+    return result, message
 
 def update_channel():
     return True
