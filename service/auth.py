@@ -37,12 +37,12 @@ def authentication():
         return True
         #raise e
 
-# this role is stored in the security kernel
+    # this role is stored in the security kernel
 ROLE = 'streams_admin'
 
-# this is the Tapis client that tenants will use for interacting with other services, such as the security kernel.
-t = auth.get_service_tapy_client(jwt='')
-
+    # this is the Tapis client that tenants will use for interacting with other services, such as the security kernel.
+t = auth.get_service_tapy_client()
+t.x_username = conf.streams_user
 
 def authorization():
     """
@@ -70,3 +70,4 @@ def authorization():
     else:
         logger.info(f"user {g.username} has role {ROLE}")
         return True
+
