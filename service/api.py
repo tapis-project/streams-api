@@ -3,12 +3,13 @@ from flask_migrate import Migrate
 from common.utils import TapisApi, handle_error, flask_errors_dict
 
 from service.auth import authn_and_authz
-from service.controllers import ProjectsResource, ProjectResource, SitesResource, SiteResource, InstrumentsResource, InstrumentResource, VariablesResource, VariableResource, MeasurementsWriteResource, MeasurementsResource, MeasurementResource, StreamsResource, StreamResource, InfluxResource
+from service.controllers import ProjectsResource, ProjectResource, SitesResource, SiteResource, InstrumentsResource, InstrumentResource, VariablesResource, VariableResource, MeasurementsWriteResource, MeasurementsResource, MeasurementResource, ChannelsResource, ChannelResource, InfluxResource
 from service.models import app
 
 from common.logs import get_logger
 logger = get_logger(__name__)
-
+from flask_cors import CORS
+CORS(app)
 # authentication and authorization ---
 @app.before_request
 def authnz_for_authenticator():
@@ -44,6 +45,8 @@ api.add_resource(MeasurementsWriteResource, '/v3/streams/measurements')
 api.add_resource(MeasurementsResource, '/v3/streams/projects/<project_id>/sites/<site_id>/instruments/<instrument_id>/measurements')
 api.add_resource(MeasurementResource, '/v3/streams/projects/<project_id>/sites/<site_id>/instruments/<instrument_id>/measurements/<measurement_id>')
 
+api.add_resource(ChannelsResource, '/v3/streams/channels')
+api.add_resource(ChannelResource, '/v3/streams/channels/<channel_id>')
 #api.add_resource(StreamsResource, '/v3/streams/projects/<project_id>/channels')
 #api.add_resource(StreamResource, '/v3/streams/channels/<channels_id>')
 
