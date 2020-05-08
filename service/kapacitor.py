@@ -71,6 +71,7 @@ def create_channel(project_id, req_body):
         logger.debug(mchannel_result)
         if str(mchannel_bug.response.status_code) == '201':
             message = "Channel Created"
+            index_result = create_channel_index(project_id, req_body['channel_id'])
             #get the newly created channel object to return
             result, bug= get_channel(project_id, req_body['channel_id'])
             logger.debug(result)
@@ -148,3 +149,13 @@ def update_template():
 
 def remove_template():
     return True
+
+############################ CHANNEL INDEX #############################
+def create_channel_index(project_id, channel_id):
+    req_body = {'project_id':project_id, 'channel_id': channel_id}
+    result, bug =t.meta.createDocument(db=conf.stream_db, collection='streams_channel_index', request_body=req_body, _tapis_debug=True)
+    return result, str(bug.response.status_code)
+
+def fetch_channel_index(channel_id):
+    result= t.meta.listDocuments(db=conf.stream_db,collection='streams_channel_index',filter='{"channel_id":"'+channel_id+'"}')
+    return json.loads(result.decode('utf-8'))

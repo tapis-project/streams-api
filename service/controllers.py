@@ -391,6 +391,14 @@ class ChannelResource(Resource):
 
     def get(self, channel_id):
         logger.debug("top of GET /channels/{channel_id}")
+        #fetch index to get project_id
+        channel_index = kapacitor.fetch_channel_index(channel_id)
+        logger.debug(channel_index)
+        channel_result, msg = kapacitor.get_channel(channel_index[0]['project_id'],channel_id)
+        logger.debug(channel_result)
+        result = meta.strip_meta(channel_result)
+        logger.debug(result)
+        return utils.ok(result=result, msg=msg)
 
     def put(self, channel_id):
         logger.debug("top of PUT /channels/{channel_id}")
