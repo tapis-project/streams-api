@@ -8,6 +8,7 @@ from openapi_core.wrappers.flask import FlaskOpenAPIRequest
 import chords
 import influx
 import meta
+import kapacitor
 from models import ChordsSite, ChordsIntrument, ChordsVariable
 from common import utils, errors
 #from service.models import db, LDAPConnection, TenantOwner, Tenant
@@ -363,31 +364,35 @@ class MeasurementResource(Resource):
     def delete(self, measurement_id):
         logger.debug("top of DELETE /measurements/{measurement_id}")
 
-class StreamsResource(Resource):
+class ChannelsResource(Resource):
     """
     Work with Streams objects
     """
 
     def get(self):
-        logger.debug("top of GET /streams")
+        logger.debug("top of GET /channels")
 
     def post(self):
-        logger.debug("top of POST /streams")
+        logger.debug("top of POST /channels")
+        body = request.json
+        result, msg = kapacitor.create_channel(body)
+        return utils.ok(result=result, msg=msg)
+        
 
 
-class StreamResource(Resource):
+class ChannelResource(Resource):
     """
     Work with Streams objects
     """
 
-    def get(self, stream_id):
-        logger.debug("top of GET /streams/{stream_id}")
+    def get(self, channel_id):
+        logger.debug("top of GET /channels/{channel_id}")
 
-    def put(self, stream_id):
-        logger.debug("top of PUT /streams/{stream_id}")
+    def put(self, channel_id):
+        logger.debug("top of PUT /channels/{channel_id}")
 
-    def delete(self, stream_id):
-        logger.debug("top of DELETE /streams/{stream_id}")
+    def delete(self, channel_id):
+        logger.debug("top of DELETE /channels/{channel_id}")
 
 class InfluxResource(Resource):
 
