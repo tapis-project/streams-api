@@ -13,8 +13,7 @@ COPY configschema.json /home/tapis/configschema.json
 COPY config-local.json /home/tapis/config.json
 COPY service /home/tapis/service
 
-COPY tapy/tapy /home/tapis/tapy
-
+#COPY tapy/tapy /home/tapis/tapy
 
 # run service as non-root tapis user
 RUN chown -R tapis:tapis /home/tapis
