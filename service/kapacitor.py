@@ -1,5 +1,3 @@
-import datetime
-import enum
 import requests
 import json
 from flask import g, Flask
@@ -12,9 +10,11 @@ from common.logs import get_logger
 logger = get_logger(__name__)
 import auth
 from requests.auth import HTTPBasicAuth
+import subprocess
 
 #access the dynatpy instance
 t = auth.t
+
 
 #create a Kapacitor task and return the result content and status code
 #Example body
@@ -49,6 +49,49 @@ def get_task(task_id):
         'content-type': "application/json"
     }
     res = requests.get(conf.kapacitor_url+'/kapacitor/v1/tasks'+task_id,auth=HTTPBasicAuth(conf.kapacitor_username, conf.kapacitor_password), verify=False)
+    return json.loads(res.content),res.status_code
+
+# enable/disable a task
+def change_task_status(task_id,body):
+    logger.debug("CHANGING TASK STATUS")
+    headers = {
+        'content-type': 'application/json'
+    }
+    res = requests.patch(conf.kapacitor_url + '/kapacitor/v1/tasks' + task_id,json=body,
+                       auth=HTTPBasicAuth(conf.kapacitor_username, conf.kapacitor_password), verify=False)
+    return json.loads(res.content), res.status_code
+
+#create templates
+def create_template(body):
+    logger.debug("IN CREATE TEMPLATE")
+    res = requests.post(conf.kapacitor_url + '/kapacitor/v1/templates', json=body, headers=headers, auth=HTTPBasicAuth(conf.kapacitor_username, conf.kapacitor_password), verify=False)
+    logger.debug(res.content)
+    logger.debug(res.status_code)
+    return json.loads(res.content), res.status_code
+
+#create templates
+#TODO
+def create_template_cli(template_id,path_template_file):
+    logger.debug("IN CREATE TEMPLATE CLI")
+    #kapacitor define-template <TEMPLATE_ID> -tick <PATH_TO_TICKSCRIPT> -type <stream|batch>
+    output=subprocess.check_output(["kapacitor","define-template",template_id,"-tick",path_template_file,"-type","stream"],universal_newlines=True, check=True,stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    if output.returncode == 0 :
+        return "template created"
+    else:
+        return "template not created"
+
+#list templates
+def list_templates():
+    logger.debug("IN LIST TEMPLATES")
+    headers={'content_type': 'application/json'}
+    res = requests.get(conf.kapacitor_url + '/kapacitor/v1/templates', auth=HTTPBasicAuth(conf.kapacitor_username, conf.kapacitor_password), verify=False )
+    return json.loads(res.content),res.status_code
+
+#get a template
+def get_template(template_id):
+    logger.debug("IN GET TEMPLATE")
+    headers={'content_type': 'application/json'}
+    res = requests.get(conf.kapacitor_url + '/kapacitor/v1/templates' + template_id, auth=HTTPBasicAuth(conf.kapacitor_username, conf.kapacitor_password), verify=False)
     return json.loads(res.content),res.status_code
 
 ####################### CHANNEL ########################################
@@ -127,11 +170,12 @@ def get_alert():
 def list_alerts():
     return True
 
-def update_alert():
-    return True
+# We are not going to allow update alert and remove_alert
+#def update_alert():
+#    return True
 
-def remove_alert():
-    return True
+#def remove_alert():
+ #   return True
 
 ################### TEMPLATE ##########################################
 
