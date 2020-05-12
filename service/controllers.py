@@ -9,10 +9,13 @@ import chords
 import influx
 import meta
 import kapacitor
+import abaco
 from models import ChordsSite, ChordsIntrument, ChordsVariable
 from common import utils, errors
 #from service.models import db, LDAPConnection, TenantOwner, Tenant
 
+import requests
+import json
 # get the logger instance -
 from common.logs import get_logger
 logger = get_logger(__name__)
@@ -432,11 +435,10 @@ class AlertsResource(Resource):
         logger.debug(req_data)
 
         # prepare request for Abaco
-        channel_result, msg = kapacitor.get_channel(channel_id)
-        logger.debug(channel_result)
-        result=''
+        channel, msg = kapacitor.get_channel(channel_id)
+        logger.debug(channel)
+        result, message = abaco.create_alert(channel,req_data)
         return utils.ok(result=result, msg=msg)
-
 
 
 

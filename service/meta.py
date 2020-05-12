@@ -466,3 +466,15 @@ def create_instrument_index(project_id, site_id, instrument_id, chords_inst_id):
 def fetch_instrument_index(instrument_id):
     result= t.meta.listDocuments(db=conf.stream_db,collection='streams_instrument_index',filter='{"instrument_id":"'+instrument_id+'"}')
     return json.loads(result.decode('utf-8'))
+
+# create alert metadata
+def create_alert(alert):
+    result = {}
+    alert_result,alert_bug = t.meta.createDocument(db=conf.stream_db, collection='streams_alert_metadata', request_body=alert, _tapis_debug=True)
+    if str(alert_bug.response.status_code) == '201':
+        result = alert_result
+        message = "Alert Added"
+    else:
+        message = "Alert Failed to Create"
+        result = ''
+    return result, message
