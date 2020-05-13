@@ -2385,7 +2385,7 @@ components:
           type: string
           description: User entered metadata for the variable
         shortname:
-          type:string
+          type: string
           description: User entered short name
       required: [var_name, shortname, var_id]
 
