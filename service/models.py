@@ -39,3 +39,14 @@ class ChordsVariable:
 
 # class ChordsMeasurement():
 #     def __init__(self):
+class ChannelAlert:
+    def __init__(self,id, message, condition,channel_id,action_taken, actor_id, execution_id):
+        self.id = id
+        self.message = message
+        self.condition = condition
+        self.channel_id = channel_id
+        self.action_taken = action_taken
+        self.actor_id = actor_id
+        self.execution_id = execution_id
+
+

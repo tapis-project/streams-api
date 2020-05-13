@@ -346,7 +346,7 @@ class MeasurementsResource(Resource):
         inst_result = meta.get_instrument(project_id,site_id,instrument_id)
         logger.debug(inst_result)
         if len(inst_result) > 0:
-            result,msg = chords.get_measurements(str(inst_result[0]['chords_inst_id']))
+            result,msg = chords.get_measurements(str(inst_result[0]['chords_id']))
             logger.debug(result)
         return utils.ok(result=result, msg=msg)
 
@@ -371,14 +371,17 @@ class ChannelsResource(Resource):
 
     def get(self):
         logger.debug("top of GET /channels")
+        channel_result, msg = kapacitor.list_channels()
+        logger.debug(channel_result)
+        result = meta.strip_meta_list(channel_result)
+        logger.debug(result)
+        return utils.ok(result=result, msg=msg)
 
     def post(self):
         logger.debug("top of POST /channels")
         body = request.json
-        #TODO need to check our instruments index for project_id and permissions
-        #for now just passing a project_id in the body for initial testing
-        project_id = body['project_id']
-        result, msg = kapacitor.create_channel(project_id, body)
+        #TODO need to check our permissions
+        result, msg = kapacitor.create_channel(body)
         logger.debug(result)
         return utils.ok(result=meta.strip_meta(result), msg=msg)
 
@@ -391,10 +394,7 @@ class ChannelResource(Resource):
 
     def get(self, channel_id):
         logger.debug("top of GET /channels/{channel_id}")
-        #fetch index to get project_id
-        channel_index = kapacitor.fetch_channel_index(channel_id)
-        logger.debug(channel_index)
-        channel_result, msg = kapacitor.get_channel(channel_index[0]['project_id'],channel_id)
+        channel_result, msg = kapacitor.get_channel(channel_id)
         logger.debug(channel_result)
         result = meta.strip_meta(channel_result)
         logger.debug(result)
@@ -405,6 +405,40 @@ class ChannelResource(Resource):
 
     def delete(self, channel_id):
         logger.debug("top of DELETE /channels/{channel_id}")
+
+class AlertsResource(Resource):
+    """"
+    Alerts Resource
+    """
+    def get(self,channel_id):
+        logger.debug("top of GET /channels/{channel_id}/alerts")
+        logger.debug(channel_id)
+        result, msg = meta.list_alerts(channel_id)
+        logger.debug(result)
+        return utils.ok(result=result,msg=msg)
+
+    def post(self,channel_id):
+        logger.debug("top of POST /channels/{channel_id}/alerts")
+        logger.debug(channel_id)
+
+        # TODO convert request type from text/plain to json
+        # This will require implementing event post handler in kapacitor
+        # if type(request.json) is dict:
+        #    body = request.json
+        # else:
+        #    body = request.json[0]
+
+        req_data = request.get_data()
+        logger.debug(req_data)
+
+        # prepare request for Abaco
+        channel_result, msg = kapacitor.get_channel(channel_id)
+        logger.debug(channel_result)
+        result=''
+        return utils.ok(result=result, msg=msg)
+
+
+
 
 class InfluxResource(Resource):
 
