@@ -470,11 +470,49 @@ def fetch_instrument_index(instrument_id):
 # create alert metadata
 def create_alert(alert):
     result = {}
-    alert_result,alert_bug = t.meta.createDocument(db=conf.stream_db, collection='streams_alert_metadata', request_body=alert, _tapis_debug=True)
+    #col_result, col_bug = t.meta.createCollection(db=conf.stream_db, collection='streams_alerts_metadata',
+    #                                              _tapis_debug=True)
+    #if col_bug.response.status_code == 201:
+    #    logger.debug('Created streams_alerts_metadata')
+
+    alert_result,alert_bug = t.meta.createDocument(db=conf.stream_db, collection='streams_alerts_metadata', request_body=alert, _tapis_debug=True)
     if str(alert_bug.response.status_code) == '201':
-        result = alert_result
+        logger.debug(alert_bug.response)
+        logger.debug(alert_result)
+        # TODO strip out _id and _etag
+        result, alert_get_bug = get_alert(alert['channel_id'], alert['alert_id'])
+
         message = "Alert Added"
     else:
         message = "Alert Failed to Create"
         result = ''
     return result, message
+
+#strip out id and _etag fields
+def get_alert(channel_id,alert_id):
+    logger.debug('In GET alert')
+    result = t.meta.listDocuments(db=conf.stream_db,collection='streams_alerts_metadata',filter='{"alert_id":"'+alert_id+'"}')
+    if len(result.decode('utf-8')) > 0:
+        message = "Alert found."
+        #result should be an object not an array
+        #TODO strip out _id and _etag
+        alert_result = json.loads(result.decode('utf-8'))[0]
+        result = alert_result
+        logger.debug("ALERT FOUND")
+    else:
+        logger.debug("NO ALERT FOUND")
+        raise errors.ResourceError(msg=f'No Alert found')
+        result = ''
+    return result, message
+
+#strip out id and _etag fields
+def list_alerts(channel_id):
+    logger.debug("Before")
+    result = t.meta.listDocuments(db=conf.stream_db,collection='streams_alerts_metadata',filter='{"channel_id":"'+ channel_id+'"}')
+    logger.debug("After")
+    if len(result) > 0 :
+        message = "Alerts found"
+    else:
+        raise errors.ResourceError(msg=f'No Alert found')
+    logger.debug(result)
+    return json.loads(result.decode('utf-8')), message
