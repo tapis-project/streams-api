@@ -39,24 +39,27 @@ def create_measurement(site_id,inst_id,var_id,value, timestamp):
 
 def write_measurements(site_id, instrument, body):
     json_body=[]
-    vars = {}
-    for v in instrument['vars']:
-        vars[v['var_id']]= v['chords_id']
+    inst_vars = {}
+    logger.debug(instrument)
+    for v in instrument['variables']:
+        inst_vars[v['var_id']]= v['chords_id']
+    logger.debug(inst_vars)
     for itm in body['vars']:
         json_body.append(
             {
                 "measurement": "tsdata",
                 "tags": {
                     "site": site_id,
-                    "inst": instrument['inst_id'],
-                    "var": vars[itm['var_id']]
+                    "inst": instrument['chords_id'],
+                    "var": inst_vars[itm['var_id']]
                 },
                 "time": body['datetime'],
                 "fields": {
-                    "value": itm['value']
+                    "value": float(itm['value'])
                 }
             }
         )
+    logger.debug(json_body)
     result = influx_client.write_points(json_body)
     return result
 

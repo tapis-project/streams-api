@@ -335,12 +335,12 @@ class MeasurementsWriteResource(Resource):
                     for inst in site_result['instruments']:
                         if inst['inst_id'] == body['inst_id']:
                             instrument = inst
-                    logger.debug(inst_result)
+                    logger.debug(site_result)
                     #resp = chords.create_measurement(result[0]['chords_inst_id'], body)
                     resp = influx.write_measurements(site_result['chords_id'],instrument,body)
 
                 logger.debug(resp)
-        return utils.ok(result=resp, msg=msg)
+        return utils.ok(result=resp, msg="Measurements Saved")
 
 
 class MeasurementsResource(Resource):
