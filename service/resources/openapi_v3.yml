@@ -2242,6 +2242,9 @@ components:
     NewSite:
       type: object
       properties:
+        site_id:
+          type: string
+          description: User defined Identifer should be unique within a project.
         site_name:
           type: string
           description: Resource name.
@@ -2300,6 +2303,9 @@ components:
     NewInstrument:
       type: object
       properties:
+        inst_id:
+          type: string
+          description: Instrument Identifier should be unique in a project.
         inst_name:
           type: string
           description: Instrument name

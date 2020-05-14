@@ -142,6 +142,7 @@ def get_site(project_id, site_id):
         message = "Site found."
         #result should be an object not an array
         #TODO strip out _id and _etag
+        logger.debug(result)
         site_result = json.loads(result.decode('utf-8'))[0]
         #site_result.pop('_id')
         #site_result.pop('_etag')
@@ -224,6 +225,17 @@ def get_instrument(project_id, site_id, instrument_id):
     else:
         message ="Site Not Found - Instrument Does Not Exist"
     return result, message
+
+def get_instrument_by_id(inst_id):
+    #get index
+    result = fetch_instrument_index(inst_id)
+    logger.debug(result)
+    if len(result) > 0:
+        #get updated_instruments
+        inst_result, inst_msg = get_instrument(result['project_id'],result['site_id'],inst_id)
+        return inst_result, inst_msg
+    else:
+        return {},"Instrument ID not found"
 
 def list_instruments(project_id, site_id):
     site_result, site_bug = get_site(project_id,site_id)

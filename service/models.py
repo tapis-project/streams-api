@@ -5,7 +5,9 @@ from flask_migrate import Migrate
 #from flask_sqlalchemy import SQLAlchemy
 
 from common.config import conf
+from flask_cors import CORS
 app = Flask(__name__)
+CORS(app,resources={r"/v3/streams/*": {"origins": "*"}})
 
 class ChordsSite:
     def __init__(self,id, name, lat, long, elevation, description):
@@ -48,5 +50,3 @@ class ChannelAlert:
         self.action_taken = action_taken
         self.actor_id = actor_id
         self.execution_id = execution_id
-
-
