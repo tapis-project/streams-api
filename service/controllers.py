@@ -353,7 +353,7 @@ class MeasurementsResource(Resource):
         inst_result = meta.get_instrument(project_id,site_id,instrument_id)
         logger.debug(inst_result)
         if len(inst_result) > 0:
-            result,msg = chords.get_measurements(str(inst_result[0]['chords_inst_id']))
+            result,msg = chords.get_measurements(str(inst_result[0]['chords_id']))
             logger.debug(result)
         return utils.ok(result=result, msg=msg)
 

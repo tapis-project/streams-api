@@ -10,7 +10,6 @@ app = Flask(__name__)
 from common import utils, errors
 from tapy.dyna import DynaTapy
 import auth
-import api
 # get the logger instance -
 from common.logs import get_logger
 logger = get_logger(__name__)
@@ -353,6 +352,7 @@ def get_variable(project_id, site_id, instrument_id, variable_id):
     site_result, site_bug = get_site(project_id,site_id)
     inst_exists = False
     message = "No Variable with variable_id: "+str(variable_id)+" Found"
+    logger.debug(message)
     result = {}
     if len(site_result) > 0:
         for inst in site_result['instruments']:

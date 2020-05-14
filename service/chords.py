@@ -97,9 +97,9 @@ def create_site(site:ChordsSite):
     if (res.status_code == 201):
        message = "Site created"
     else:
+        logger.debug(res.status_code)
         raise errors.ResourceError(msg=f'Site not created')
     logger.debug(message)
-    logger.debug(res)
     return json.loads(res.content), message
 
 
@@ -336,6 +336,7 @@ def delete_variable(id):
 # or post the return
 def get_measurements(instrument_id):
     #GET get all variables from chords service
+    logger.debug("inside chords get measurement")
     path="/instruments/"+ instrument_id +".json"#"api/v1/data.json";
     #start, end, instruments
     res = create_get_request(path);
