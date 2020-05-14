@@ -420,39 +420,26 @@ class AlertsResource(Resource):
         logger.debug(result)
         return utils.ok(result=result,msg=msg)
 
-    def post(self,channel_id):
-        logger.debug("top of POST /channels/{channel_id}/alerts")
-        logger.debug(channel_id)
+    def post(self):
+        logger.debug("top of POST /alerts")
 
-        # TODO convert request type from text/plain to json
-        # This will require implementing event post handler in kapacitor
-        # if type(request.json) is dict:
-        #    body = request.json
-        # else:
-        #    body = request.json[0]
-
-
-
-        #req_data = request.get_data()
         try:
-            #req_data = request.json()
             req_data = json.loads(request.get_data())
             logger.debug(req_data)
-        except ValueError:
-            print('JSON conversion error')
         except:
-            print('Something is wrong')
-            raise
+            logger.debug('Invalid POST JSON data')
+            raise errors.ResourceError(msg=f'Invalid POST data: {req_data}.')
 
+        #parse 'id' field, first string is the channel_id
+        channel_id = req_data['id'].split(" ")[0]
 
         # prepare request for Abaco
         channel, msg = kapacitor.get_channel(channel_id)
         logger.debug(channel)
         result, message = abaco.create_alert(channel,req_data)
-        logger.debug("end of POST /channels/{channel_id}/alerts")
+        logger.debug("end of POST /alerts")
+
         return utils.ok(result=result, msg=message)
-
-
 
 class InfluxResource(Resource):
 

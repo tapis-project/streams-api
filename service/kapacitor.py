@@ -70,7 +70,7 @@ def change_task_status(task_id,body):
 def create_channel(req_body):
     logger.debug("IN CREATE CHANNEL")
     #create a kapacitor task
-    task_body ={'task_id':req_body['task_id'], 'type':'stream','dbrps': [{"db": "chords_ts_production", "rp" : "autogen"}],'status':'enabled'}
+    task_body ={'id':req_body['task_id'], 'type':'stream','dbrps': [{"db": "chords_ts_production", "rp" : "autogen"}],'status':'enabled'}
     #TODO figure out how to make this - for now pass in a script for testing
     task_body['script']=req_body['script']
     ktask_result, ktask_status = create_task(task_body)
