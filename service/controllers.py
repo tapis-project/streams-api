@@ -420,6 +420,12 @@ class AlertsResource(Resource):
         logger.debug(result)
         return utils.ok(result=result,msg=msg)
 
+class AlertsPostResource(Resource):
+    def get(self):
+        logger.debug("top of GET /channels/{channel_id}/alerts")
+        result = ''
+        msg = ''
+        return utils.ok(result=result,msg=msg)
     def post(self):
         logger.debug("top of POST /alerts")
 

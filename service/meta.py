@@ -485,36 +485,37 @@ def create_alert(alert):
 #strip out id and _etag fields
 def get_alert(channel_id,alert_id):
     logger.debug('In GET alert')
-    result, alert_bug = t.meta.listDocuments(db=conf.stream_db,collection='streams_alerts_metadata',filter='{"alert_id":"'+ alert_id +'"}')
-    if str(alert_bug.response.status_code) == '200':
+    result = t.meta.listDocuments(db=conf.stream_db,collection='streams_alerts_metadata',filter='{"alert_id":"'+ alert_id +'"}')
+    #logger.debug("meta_alert_bug" + str(alert_bug.response))
+    #if str(alert_bug.response.status_code) == '200':
 
-        if len(result.decode('utf-8')) > 0:
-            message = "Alert found."
-            #result should be an object not an array
-            #TODO strip out _id and _etag
-            alert_result = json.loads(result.decode('utf-8'))[0]
-            result = alert_result
-            logger.debug("ALERT FOUND")
-            return result, message
-        else:
-            logger.debug("NO ALERT FOUND")
-            raise errors.ResourceError(msg=f'No Alert found: {alert_id}')
+    if len(result.decode('utf-8')) > 0:
+        message = "Alert found."
+        #result should be an object not an array
+        #TODO strip out _id and _etag
+        alert_result = json.loads(result.decode('utf-8'))[0]
+        result = alert_result
+        logger.debug("ALERT FOUND")
+        return result, message
     else:
-        raise errors.ResourceError(msg=f'Unable to connect to Tapis Meta Server while requesting alert: {alert_id}')
+        logger.debug("NO ALERT FOUND")
+        raise errors.ResourceError(msg=f'No Alert found: {alert_id}')
+    #else:
+    #    raise errors.ResourceError(msg=f'Unable to connect to Tapis Meta Server while requesting alert: {alert_id}')
 
 
 #strip out id and _etag fields
 def list_alerts(channel_id):
     logger.debug("Before")
-    result, alerts_bug = t.meta.listDocuments(db=conf.stream_db,collection='streams_alerts_metadata',filter='{"channel_id":"'+ channel_id+'"}')
-    if str(alerts_bug.response.status_code) == '200':
-        logger.debug("After")
-        if len(result) > 0 :
-            message = "Alerts found"
-            logger.debug(result)
-            return json.loads(result.decode('utf-8')), message
-        else:
-            raise errors.ResourceError(msg=f'No Alert found')
+    result = t.meta.listDocuments(db=conf.stream_db,collection='streams_alerts_metadata',filter='{"channel_id":"'+ channel_id+'"}')
+    #if str(alerts_bug.response.status_code) == '200':
+    logger.debug("After")
+    if len(result) > 0 :
+        message = "Alerts found"
+        logger.debug(result)
+        return json.loads(result.decode('utf-8')), message
     else:
-        logger.debug("NO ALERTS FOUND for Channel: " + channel_id)
-        raise errors.ResourceError(msg=f'No Alerts found for Channel: {channel_id}')
+        raise errors.ResourceError(msg=f'No Alert found')
+    #else:
+    #    logger.debug("NO ALERTS FOUND for Channel: " + channel_id)
+    #    raise errors.ResourceError(msg=f'No Alerts found for Channel: {channel_id}')
