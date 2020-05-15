@@ -8,8 +8,7 @@ from service.models import app
 
 from common.logs import get_logger
 logger = get_logger(__name__)
-from flask_cors import CORS
-CORS(app)
+
 # authentication and authorization ---
 @app.before_request
 def authnz_for_authenticator():

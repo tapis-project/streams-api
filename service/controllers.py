@@ -326,17 +326,24 @@ class MeasurementsWriteResource(Resource):
     def post(self):
         body = request.json
         logger.debug(body)
+        instrument = {}
         if 'inst_id' in body:
             result = meta.fetch_instrument_index(body['inst_id'])
             logger.debug(result)
             if len(result) > 0:
-                #check SK
-                logger.debug("YES")
                 logger.debug(result[0]['chords_inst_id'])
+                #get isntrument
+                site_result, site_msg = meta.get_site(result[0]['project_id'],result[0]['site_id'])
+                if 'instruments' in site_result:
+                    for inst in site_result['instruments']:
+                        if inst['inst_id'] == body['inst_id']:
+                            instrument = inst
+                    logger.debug(site_result)
+                    #resp = chords.create_measurement(result[0]['chords_inst_id'], body)
+                    resp = influx.write_measurements(site_result['chords_id'],instrument,body)
 
-                resp = chords.create_measurement(result[0]['chords_inst_id'], body)
                 logger.debug(resp)
-        return resp
+        return utils.ok(result=resp, msg="Measurements Saved")
 
 
 class MeasurementsResource(Resource):
@@ -349,7 +356,7 @@ class MeasurementsResource(Resource):
         inst_result = meta.get_instrument(project_id,site_id,instrument_id)
         logger.debug(inst_result)
         if len(inst_result) > 0:
-            result,msg = chords.get_measurements(str(inst_result[0]['chords_inst_id']))
+            result,msg = chords.get_measurements(str(inst_result[0]['chords_id']))
             logger.debug(result)
         return utils.ok(result=result, msg=msg)
 

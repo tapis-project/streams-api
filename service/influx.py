@@ -37,6 +37,32 @@ def create_measurement(site_id,inst_id,var_id,value, timestamp):
     result = influx_client.write_points(json_body)
     return result
 
+def write_measurements(site_id, instrument, body):
+    json_body=[]
+    inst_vars = {}
+    logger.debug(instrument)
+    for v in instrument['variables']:
+        inst_vars[v['var_id']]= v['chords_id']
+    logger.debug(inst_vars)
+    for itm in body['vars']:
+        json_body.append(
+            {
+                "measurement": "tsdata",
+                "tags": {
+                    "site": site_id,
+                    "inst": instrument['chords_id'],
+                    "var": inst_vars[itm['var_id']]
+                },
+                "time": body['datetime'],
+                "fields": {
+                    "value": float(itm['value'])
+                }
+            }
+        )
+    logger.debug(json_body)
+    result = influx_client.write_points(json_body)
+    return result
+
 #expects a list of fields {key:value} to build and AND query to influxdb to fetch CHORDS measurments
 def query_measurments(query_field_list):
     #logger.debug(query.get('q'))
@@ -45,7 +71,13 @@ def query_measurments(query_field_list):
     for itm in query_field_list:
         fields = json.loads(itm)
         for k in fields:
+            # if k  "start_time":
+            #     query_list.append("\"time\">='"+str(fields[k])+"' "
+            # if k == "end_time":
+            #     query_list.append("\"time\"<='"+str(fields[k])+"' "
+            # else:
             query_list.append("\""+k+"\"='"+str(fields[k])+"' ")
+
     query_where = ' AND '.join(query_list)
     logger.debug(base_query+query_where)
     result = influx_client.query(base_query+query_where)
