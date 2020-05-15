@@ -343,7 +343,7 @@ class MeasurementsWriteResource(Resource):
                     resp = influx.write_measurements(site_result['chords_id'],instrument,body)
 
                 logger.debug(resp)
-        return utils.ok(result=resp, msg="Measurements Saved")
+        return utils.ok(result=[], msg="Measurements Saved")
 
 
 class MeasurementsResource(Resource):
