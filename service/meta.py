@@ -141,6 +141,7 @@ def get_site(project_id, site_id):
         message = "Site found."
         #result should be an object not an array
         #TODO strip out _id and _etag
+        logger.debug(result)
         site_result = json.loads(result.decode('utf-8'))[0]
         #site_result.pop('_id')
         #site_result.pop('_etag')
@@ -223,6 +224,17 @@ def get_instrument(project_id, site_id, instrument_id):
     else:
         message ="Site Not Found - Instrument Does Not Exist"
     return result, message
+
+def get_instrument_by_id(inst_id):
+    #get index
+    result = fetch_instrument_index(inst_id)
+    logger.debug(result)
+    if len(result) > 0:
+        #get updated_instruments
+        inst_result, inst_msg = get_instrument(result['project_id'],result['site_id'],inst_id)
+        return inst_result, inst_msg
+    else:
+        return {},"Instrument ID not found"
 
 def list_instruments(project_id, site_id):
     site_result, site_bug = get_site(project_id,site_id)
@@ -466,3 +478,56 @@ def create_instrument_index(project_id, site_id, instrument_id, chords_inst_id):
 def fetch_instrument_index(instrument_id):
     result= t.meta.listDocuments(db=conf.stream_db,collection='streams_instrument_index',filter='{"instrument_id":"'+instrument_id+'"}')
     return json.loads(result.decode('utf-8'))
+
+# create alert metadata
+def create_alert(alert):
+    alert_result,alert_bug = t.meta.createDocument(db=conf.stream_db, collection='streams_alerts_metadata', request_body=alert, _tapis_debug=True)
+    if str(alert_bug.response.status_code) == '201':
+        logger.debug(alert_bug.response)
+        logger.debug(alert_result)
+        # TODO strip out _id and _etag
+        result, alert_get_bug = get_alert(alert['channel_id'], alert['alert_id'])
+        message = "Alert Added"
+    else:
+        message = "Alert Failed to Create"
+        result = ''
+        logger.debug(message + " : Unable to connect to Tapis Meta Server: " + alert_bug)
+    return result, message
+
+#strip out id and _etag fields
+def get_alert(channel_id,alert_id):
+    logger.debug('In GET alert')
+    result = t.meta.listDocuments(db=conf.stream_db,collection='streams_alerts_metadata',filter='{"alert_id":"'+ alert_id +'"}')
+    #logger.debug("meta_alert_bug" + str(alert_bug.response))
+    #if str(alert_bug.response.status_code) == '200':
+
+    if len(result.decode('utf-8')) > 0:
+        message = "Alert found."
+        #result should be an object not an array
+        #TODO strip out _id and _etag
+        alert_result = json.loads(result.decode('utf-8'))[0]
+        result = alert_result
+        logger.debug("ALERT FOUND")
+        return result, message
+    else:
+        logger.debug("NO ALERT FOUND")
+        raise errors.ResourceError(msg=f'No Alert found: {alert_id}')
+    #else:
+    #    raise errors.ResourceError(msg=f'Unable to connect to Tapis Meta Server while requesting alert: {alert_id}')
+
+
+#strip out id and _etag fields
+def list_alerts(channel_id):
+    logger.debug("Before")
+    result = t.meta.listDocuments(db=conf.stream_db,collection='streams_alerts_metadata',filter='{"channel_id":"'+ channel_id+'"}')
+    #if str(alerts_bug.response.status_code) == '200':
+    logger.debug("After")
+    if len(result) > 0 :
+        message = "Alerts found"
+        logger.debug(result)
+        return json.loads(result.decode('utf-8')), message
+    else:
+        raise errors.ResourceError(msg=f'No Alert found')
+    #else:
+    #    logger.debug("NO ALERTS FOUND for Channel: " + channel_id)
+    #    raise errors.ResourceError(msg=f'No Alerts found for Channel: {channel_id}')

@@ -676,7 +676,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/NewInstRequest'
+              $ref: '#/components/schemas/NewInstrument'
       parameters:
         - name: project_uuid
           in: path
@@ -703,8 +703,6 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/Instrument'
-
-
         '400':
           description: Input error.
           content:
@@ -1016,7 +1014,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/NewVarRequest'
+              $ref: '#/components/schemas/NewVariable'
       parameters:
         - name: project_uuid
           in: path
@@ -2246,7 +2244,6 @@ components:
           description: User defined Id for site.
         description:
           type: string
-          description: Site description.
         latitude:
           type: number
           description: Latitude of site.
@@ -2259,7 +2256,7 @@ components:
         metadata:
           type: object
           description: User defined metadata for the site
-      required: [site_name, latitude, longitude, elevation]
+      required: [site_name, latitude, longitude, elevation, description]
 
     Instrument:
       type: object
@@ -2311,9 +2308,9 @@ components:
         inst_description:
           type: string
           description: Instrument description
-        #site_id:
-        #  type: string
-        #  description: The CHORDS site id to which instrument attached to
+        topic_category_id:
+          type: string
+          description: Instrument category
         tags:
           type: array
           description: tags array

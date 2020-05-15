@@ -9,10 +9,13 @@ import chords
 import influx
 import meta
 import kapacitor
+import abaco
 from models import ChordsSite, ChordsIntrument, ChordsVariable
 from common import utils, errors
 #from service.models import db, LDAPConnection, TenantOwner, Tenant
 
+import requests
+import json
 # get the logger instance -
 from common.logs import get_logger
 logger = get_logger(__name__)
@@ -323,17 +326,24 @@ class MeasurementsWriteResource(Resource):
     def post(self):
         body = request.json
         logger.debug(body)
+        instrument = {}
         if 'inst_id' in body:
             result = meta.fetch_instrument_index(body['inst_id'])
             logger.debug(result)
             if len(result) > 0:
-                #check SK
-                logger.debug("YES")
                 logger.debug(result[0]['chords_inst_id'])
+                #get isntrument
+                site_result, site_msg = meta.get_site(result[0]['project_id'],result[0]['site_id'])
+                if 'instruments' in site_result:
+                    for inst in site_result['instruments']:
+                        if inst['inst_id'] == body['inst_id']:
+                            instrument = inst
+                    logger.debug(site_result)
+                    #resp = chords.create_measurement(result[0]['chords_inst_id'], body)
+                    resp = influx.write_measurements(site_result['chords_id'],instrument,body)
 
-                resp = chords.create_measurement(result[0]['chords_inst_id'], body)
                 logger.debug(resp)
-        return resp
+        return utils.ok(result=resp, msg="Measurements Saved")
 
 
 class MeasurementsResource(Resource):
@@ -417,28 +427,32 @@ class AlertsResource(Resource):
         logger.debug(result)
         return utils.ok(result=result,msg=msg)
 
-    def post(self,channel_id):
-        logger.debug("top of POST /channels/{channel_id}/alerts")
-        logger.debug(channel_id)
+class AlertsPostResource(Resource):
+    def get(self):
+        logger.debug("top of GET /channels/{channel_id}/alerts")
+        result = ''
+        msg = ''
+        return utils.ok(result=result,msg=msg)
+    def post(self):
+        logger.debug("top of POST /alerts")
 
-        # TODO convert request type from text/plain to json
-        # This will require implementing event post handler in kapacitor
-        # if type(request.json) is dict:
-        #    body = request.json
-        # else:
-        #    body = request.json[0]
+        try:
+            req_data = json.loads(request.get_data())
+            logger.debug(req_data)
+        except:
+            logger.debug('Invalid POST JSON data')
+            raise errors.ResourceError(msg=f'Invalid POST data: {req_data}.')
 
-        req_data = request.get_data()
-        logger.debug(req_data)
+        #parse 'id' field, first string is the channel_id
+        channel_id = req_data['id'].split(" ")[0]
 
         # prepare request for Abaco
-        channel_result, msg = kapacitor.get_channel(channel_id)
-        logger.debug(channel_result)
-        result=''
-        return utils.ok(result=result, msg=msg)
+        channel, msg = kapacitor.get_channel(channel_id)
+        logger.debug(channel)
+        result, message = abaco.create_alert(channel,req_data)
+        logger.debug("end of POST /alerts")
 
-
-
+        return utils.ok(result=result, msg=message)
 
 class InfluxResource(Resource):
 
