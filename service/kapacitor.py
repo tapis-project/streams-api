@@ -32,8 +32,8 @@ def create_task(body):
         'content-type': "application/json"
     }
     res = requests.post(conf.kapacitor_url+'/kapacitor/v1/tasks', json=body, headers=headers,auth=HTTPBasicAuth(conf.kapacitor_username, conf.kapacitor_password), verify=False)
-    logger.debug(res.content)
-    logger.debug(res.status_code)
+    logger.debug('Kapacitor Response' + str(res.content))
+    logger.debug('status_code'+ str(res.status_code))
     return json.loads(res.content),res.status_code
 
 #list kapacitor tasks - probably will won't use much without adding query params
@@ -70,7 +70,7 @@ def change_task_status(task_id,body):
 def create_channel(req_body):
     logger.debug("IN CREATE CHANNEL")
     #create a kapacitor task
-    task_body ={'task_id':req_body['task_id'], 'type':'stream','dbrps': [{"db": "chords_ts_production", "rp" : "autogen"}],'status':'enabled'}
+    task_body ={'id':req_body['task_id'], 'type':'stream','dbrps': [{"db": "chords_ts_production", "rp" : "autogen"}],'status':'enabled'}
     #TODO figure out how to make this - for now pass in a script for testing
     task_body['script']=req_body['script']
     ktask_result, ktask_status = create_task(task_body)

@@ -9,10 +9,13 @@ import chords
 import influx
 import meta
 import kapacitor
+import abaco
 from models import ChordsSite, ChordsIntrument, ChordsVariable
 from common import utils, errors
 #from service.models import db, LDAPConnection, TenantOwner, Tenant
 
+import requests
+import json
 # get the logger instance -
 from common.logs import get_logger
 logger = get_logger(__name__)
@@ -424,28 +427,32 @@ class AlertsResource(Resource):
         logger.debug(result)
         return utils.ok(result=result,msg=msg)
 
-    def post(self,channel_id):
-        logger.debug("top of POST /channels/{channel_id}/alerts")
-        logger.debug(channel_id)
+class AlertsPostResource(Resource):
+    def get(self):
+        logger.debug("top of GET /channels/{channel_id}/alerts")
+        result = ''
+        msg = ''
+        return utils.ok(result=result,msg=msg)
+    def post(self):
+        logger.debug("top of POST /alerts")
 
-        # TODO convert request type from text/plain to json
-        # This will require implementing event post handler in kapacitor
-        # if type(request.json) is dict:
-        #    body = request.json
-        # else:
-        #    body = request.json[0]
+        try:
+            req_data = json.loads(request.get_data())
+            logger.debug(req_data)
+        except:
+            logger.debug('Invalid POST JSON data')
+            raise errors.ResourceError(msg=f'Invalid POST data: {req_data}.')
 
-        req_data = request.get_data()
-        logger.debug(req_data)
+        #parse 'id' field, first string is the channel_id
+        channel_id = req_data['id'].split(" ")[0]
 
         # prepare request for Abaco
-        channel_result, msg = kapacitor.get_channel(channel_id)
-        logger.debug(channel_result)
-        result=''
-        return utils.ok(result=result, msg=msg)
+        channel, msg = kapacitor.get_channel(channel_id)
+        logger.debug(channel)
+        result, message = abaco.create_alert(channel,req_data)
+        logger.debug("end of POST /alerts")
 
-
-
+        return utils.ok(result=result, msg=message)
 
 class InfluxResource(Resource):
 

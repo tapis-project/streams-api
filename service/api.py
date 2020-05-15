@@ -3,7 +3,7 @@ from flask_migrate import Migrate
 from common.utils import TapisApi, handle_error, flask_errors_dict
 
 from service.auth import authn_and_authz
-from service.controllers import ProjectsResource, ProjectResource, SitesResource, SiteResource, InstrumentsResource, InstrumentResource, VariablesResource, VariableResource, MeasurementsWriteResource, MeasurementsResource, MeasurementResource, ChannelsResource, ChannelResource, InfluxResource
+from service.controllers import ProjectsResource, ProjectResource, SitesResource, SiteResource, InstrumentsResource, InstrumentResource, VariablesResource, VariableResource, MeasurementsWriteResource, MeasurementsResource, MeasurementResource, ChannelsResource, ChannelResource, AlertsResource, AlertsPostResource, InfluxResource
 from service.models import app
 
 from common.logs import get_logger
@@ -46,6 +46,10 @@ api.add_resource(MeasurementResource, '/v3/streams/projects/<project_id>/sites/<
 
 api.add_resource(ChannelsResource, '/v3/streams/channels')
 api.add_resource(ChannelResource, '/v3/streams/channels/<channel_id>')
+api.add_resource(AlertsResource, '/v3/streams/channels/<channel_id>/alerts')
+
+api.add_resource(AlertsPostResource, '/v3/streams/alerts')
+
 #api.add_resource(StreamsResource, '/v3/streams/projects/<project_id>/channels')
 #api.add_resource(StreamResource, '/v3/streams/channels/<channels_id>')
 
