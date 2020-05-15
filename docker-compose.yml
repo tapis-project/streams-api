@@ -129,10 +129,11 @@ services:
   # InfluxData kapacitor time series monitoring
   kapacitor:
     container_name: chords_kapacitor
-    image: ncareol/kapacitor
+    image: kapacitor
     volumes:
       - kapacitor-data:/var/lib/kapacitor
       - kapacitor-log:/var/log/kapacitor
+      - $PWD/kapacitor.conf:/etc/kapacitor/kapacitor.conf:ro  
     environment:
       # Custom environment variable, used by ncareol/kapacitor
       - KAPACITOR_ENABLED=${KAPACITOR_ENABLED}
@@ -153,6 +154,8 @@ services:
       - KAPACITOR_SMTP_PORT=${CHORDS_EMAIL_PORT}
       - KAPACITOR_SMTP_USERNAME=${CHORDS_EMAIL_ADDRESS}
       - KAPACITOR_SMTP_PASSWORD=${CHORDS_EMAIL_PASSWORD}
+      #
+        
     logging:
       driver: "json-file"
       options:
