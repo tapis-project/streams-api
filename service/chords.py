@@ -341,10 +341,12 @@ def get_measurements(instrument_id, start="", end=""):
     #start, end, instruments
     logger.debug(start)
     logger.debug(end)
-    if start != "":
-        path = path + "&start="+start
-    if end !="":
-        path = path + "&end="+end
+    if start is not None:
+        if len(start) > 0:
+            path = path + "&start="+start
+    if end is not None:
+        if len(end) >0:
+            path = path + "&end="+end
     res = create_get_request(path);
     if (res.status_code == 200):
        message = "Measurement found"
