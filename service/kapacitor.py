@@ -11,7 +11,7 @@ logger = get_logger(__name__)
 import auth
 from requests.auth import HTTPBasicAuth
 import subprocess
-
+import meta
 #access the dynatpy instance
 t = auth.t
 
@@ -54,11 +54,20 @@ def get_task(task_id):
 # enable/disable a task
 def change_task_status(task_id,body):
     logger.debug("CHANGING TASK STATUS")
+    logger.debug(conf.kapacitor_url + '/kapacitor/v1/tasks/' + task_id)
+    logger.debug(body)
     headers = {
-        'content-type': 'application/json'
+        'content-type': "application/json"
     }
-    res = requests.patch(conf.kapacitor_url + '/kapacitor/v1/tasks' + task_id,json=body,
+    logger.debug(headers)
+    try:
+        res = requests.patch(conf.kapacitor_url + '/kapacitor/v1/tasks/' + task_id, headers=headers, json=body,
                        auth=HTTPBasicAuth(conf.kapacitor_username, conf.kapacitor_password), verify=False)
+    except Exception as e:
+        msg = f" Kapacitor bad request ; exception: {e}"
+        raise errors.ResourceError(msg=msg)
+    logger.debug('Kapacitor Response' + str(res.content))
+    logger.debug('status_code' + str(res.status_code))
     return json.loads(res.content), res.status_code
 
 
@@ -119,11 +128,42 @@ def get_channel(channel_id):
     else:
         logger.debug("NO CHANNEL FOUND")
         raise errors.ResourceError(msg=f'No Channel found')
-        result = ''
     return result, message
 
 def update_channel():
     return True
+
+def update_channel_status(channel_id, body):
+    logger.debug('In update_channel_status')
+    try:
+        channel_result, msg = get_channel(channel_id)
+    except Exception as e:
+        msg = f" Channel {channel_id} NOT Found; exception: {e}"
+        raise errors.ResourceError(msg=msg)
+
+    logger.debug('UPDATING ... Kapacitor task')
+
+    try:
+        result,status_code = change_task_status(channel_result['task_id'],body)
+    except Exception as e:
+        msg = f" Not able to connect to Kapacitor for the task {channel_result['task_id']} status update; exception: {e}"
+        raise errors.ResourceError(msg=msg)
+
+    if status_code == 200:
+        logger.debug("UPDATED ... Kapacitor task status ")
+        logger.debug("UPDATING ... channel object in meta")
+        logger.debug('status: ' + body['status'])
+        if result['status']=='enabled':
+            channel_result['status'] = 'ACTIVE'
+        elif result['status']=='disabled':
+            channel_result['status'] = 'INACTIVE'
+        else:
+            channel_result['status'] = 'ERROR'
+        result, message = meta.update_channel(channel_result)
+    else:
+        msg = f" Could Not Find Channel {channel_id} with Task {channel_result['task_id']} "
+        raise errors.ResourceError(msg=msg)
+    return result,message
 
 def remove_channel():
     return True

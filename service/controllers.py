@@ -413,6 +413,26 @@ class ChannelResource(Resource):
     def put(self, channel_id):
         logger.debug("top of PUT /channels/{channel_id}")
 
+    def post(self,channel_id):
+        logger.debug("top of POST /channels/{channel_id}")
+        body = request.json
+        # TODO need to check the user permission to update channel status
+        if body['status']== 'ACTIVE':
+            body['status']='enabled'
+        elif body['status']== 'INACTIVE':
+            body['status'] = 'disabled'
+            logger.debug(body)
+        else:
+            raise errors.ResourceError(msg=f'Invalid POST data: {body}.')
+
+        try:
+            result, msg = kapacitor.update_channel_status(channel_id,body)
+        except Exception as e:
+            msg = f"Could not update the channel status: {channel_id}; exception: {e}"
+
+        logger.debug(result)
+        return utils.ok(result=meta.strip_meta(result), msg=msg)
+
     def delete(self, channel_id):
         logger.debug("top of DELETE /channels/{channel_id}")
 
