@@ -360,7 +360,7 @@ class MeasurementsResource(Resource):
             result,msg = chords.get_measurements(str(inst_result[0]['chords_id']),request.args.get('start_date'),request.args.get('end_date'))
             logger.debug(result)
         #return utils.ok(result=list(map(lambda t: list(map(lambda r: {'units':r.units,'value':r.value,'variable_name':r.variable_name,'varable_id':r.shortname}, t['vars'])),result['features'][0 ]['properties']['data'])), msg=msg)
-        return utils.ok(result=result['features'][0 ]['properties']['data'], msg=msg)
+        return utils.ok(result={"data":result['features'][0 ]['properties']['data'],"measurements_in_file": result['features'][0 ]['properties']['measurements_in_file']}, msg=msg)
 
 class MeasurementResource(Resource):
     """
