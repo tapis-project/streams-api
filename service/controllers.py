@@ -350,15 +350,17 @@ class MeasurementsResource(Resource):
     """
     Work with Measurements objects
     """
-    #
+
+
     def get(self, project_id, site_id, instrument_id):
         logger.debug("top of GET /measurements")
         inst_result = meta.get_instrument(project_id,site_id,instrument_id)
         logger.debug(inst_result)
         if len(inst_result) > 0:
-            result,msg = chords.get_measurements(str(inst_result[0]['chords_id']))
+            result,msg = chords.get_measurements(str(inst_result[0]['chords_id']),request.args.get('start_date'),request.args.get('end_date'))
             logger.debug(result)
-        return utils.ok(result=result, msg=msg)
+        #return utils.ok(result=list(map(lambda t: list(map(lambda r: {'units':r.units,'value':r.value,'variable_name':r.variable_name,'varable_id':r.shortname}, t['vars'])),result['features'][0 ]['properties']['data'])), msg=msg)
+        return utils.ok(result={"data":result['features'][0 ]['properties']['data'],"measurements_in_file": result['features'][0 ]['properties']['measurements_in_file']}, msg=msg)
 
 class MeasurementResource(Resource):
     """

@@ -334,11 +334,19 @@ def delete_variable(id):
 #Can fetch all the measurments in JSON from CHORDS
 #TODO - will need to filter the output based on the user permission either in here
 # or post the return
-def get_measurements(instrument_id):
+def get_measurements(instrument_id, start="", end=""):
     #GET get all variables from chords service
     logger.debug("inside chords get measurement")
-    path="/instruments/"+ instrument_id +".json"#"api/v1/data.json";
+    path="/instruments/"+ instrument_id +".json?"#"api/v1/data.json";
     #start, end, instruments
+    logger.debug(start)
+    logger.debug(end)
+    if start is not None:
+        if len(start) > 0:
+            path = path + "&start="+start
+    if end is not None:
+        if len(end) >0:
+            path = path + "&end="+end
     res = create_get_request(path);
     if (res.status_code == 200):
        message = "Measurement found"
