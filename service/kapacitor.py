@@ -88,6 +88,7 @@ def create_channel(req_body):
     #task_body['triggers_with_actions'] = req_body['triggers_with_actions']
     task_body['template-id'] = req_body['template_id']
     task_body['vars'] = req_body['vars']
+    task_body['vars']["channel_id"] = {"type": "string", "value": req_body['channel_id']}
     ktask_result, ktask_status = create_task(task_body)
     logger.debug(ktask_status)
     req_body['permissions']={'users':[g.username]}

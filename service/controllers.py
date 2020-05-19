@@ -445,6 +445,7 @@ class AlertsResource(Resource):
         logger.debug(channel_id)
         result, msg = meta.list_alerts(channel_id)
         logger.debug(result)
+        result = meta.strip_meta_list(result)
         return utils.ok(result=result,msg=msg)
 
 class AlertsPostResource(Resource):
