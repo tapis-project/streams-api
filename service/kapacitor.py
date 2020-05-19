@@ -1,5 +1,6 @@
 import requests
 import json
+import datetime
 from flask import g, Flask
 from common.config import conf
 app = Flask(__name__)
@@ -79,14 +80,20 @@ def change_task_status(task_id,body):
 def create_channel(req_body):
     logger.debug("IN CREATE CHANNEL")
     #create a kapacitor task
-    task_body ={'id':req_body['task_id'], 'type':'stream','dbrps': [{"db": "chords_ts_production", "rp" : "autogen"}],'status':'enabled'}
+    #task_body ={'id':req_body['task_id'], 'type':'stream','dbrps': [{"db": "chords_ts_production", "rp" : "autogen"}],'status':'enabled'}
+    task_body = {'id': req_body['task_id'],
+                 'dbrps': [{"db": "chords_ts_production", "rp": "autogen"}], 'status': 'enabled'}
     #TODO figure out how to make this - for now pass in a script for testing
-    task_body['script']=req_body['script']
+    #task_body['script']=req_body['script']
+    #task_body['triggers_with_actions'] = req_body['triggers_with_actions']
+    task_body['template-id'] = req_body['template_id']
+    task_body['vars'] = req_body['vars']
     ktask_result, ktask_status = create_task(task_body)
     logger.debug(ktask_status)
     req_body['permissions']={'users':[g.username]}
     if ktask_status == 200:
-        #create a metadata record with kapacitor task id to the project channel metadata collection
+        req_body['create_time'] = str(datetime.datetime.utcnow())
+        #create a metadata record with kapacitor task id to the channel metadata collection
         mchannel_result, mchannel_bug =t.meta.createDocument(db=conf.stream_db, collection='streams_channel_metadata', request_body=req_body, _tapis_debug=True)
         logger.debug("Status_Code: " + str(mchannel_bug.response.status_code))
         logger.debug(mchannel_result)
@@ -159,6 +166,7 @@ def update_channel_status(channel_id, body):
             channel_result['status'] = 'INACTIVE'
         else:
             channel_result['status'] = 'ERROR'
+        result = {}
         result, message = meta.update_channel(channel_result)
     else:
         msg = f" Could Not Find Channel {channel_id} with Task {channel_result['task_id']} "
@@ -190,10 +198,61 @@ def list_alerts():
 #create templates
 def create_template(body):
     logger.debug("IN CREATE TEMPLATE")
-    res = requests.post(conf.kapacitor_url + '/kapacitor/v1/templates', json=body, headers=headers, auth=HTTPBasicAuth(conf.kapacitor_username, conf.kapacitor_password), verify=False)
+    headers = {
+        'content-type': "application/json"
+    }
+    json_req = {}
+    json_req['id'] = body['template_id']
+    json_req['type'] = 'stream'
+    json_req['script'] = body['script']
+
+    res = requests.post(conf.kapacitor_url + '/kapacitor/v1/templates', json=json_req, headers=headers, auth=HTTPBasicAuth(conf.kapacitor_username, conf.kapacitor_password), verify=False)
     logger.debug(res.content)
     logger.debug(res.status_code)
-    return json.loads(res.content), res.status_code
+    #json.loads(res.content), res.status_code
+    if res.status_code == 200:
+        body['create_time'] = str(datetime.datetime.utcnow())
+        #create a metadata record with kapacitor template id in the templates metadata collection
+        #col_result, col_bug = t.meta.createCollection(db=conf.stream_db, collection='streams_templates_metadata',
+        #                                             _tapis_debug=True)
+        #if col_bug.response.status_code == 201:
+         #  logger.debug('Created streams_templates_metadata')
+
+        mtemplate_result, mtemplate_bug =t.meta.createDocument(db=conf.stream_db, collection='streams_templates_metadata', request_body=body, _tapis_debug=True)
+        logger.debug("Status_Code: " + str(mtemplate_bug.response.status_code))
+        logger.debug(mtemplate_result)
+        if str(mtemplate_bug.response.status_code) == '201':
+            message = "Template Created"
+            #get the newly created channel object to return
+            result, bug = get_template(body['template_id'])
+            logger.debug(result)
+        else:
+            message = f'Template Creation in Meta Failed'
+            #TODO Rollback- delete template in Kapacitor
+            raise errors.ResourceError(msg=message)
+    else:
+        message = f'Kapacitor Template Creation Failed'
+        raise errors.ResourceError(msg=message)
+
+    return result, message
+
+# get template
+def get_template(template_id):
+    logger.debug('In get_template ')
+    result = t.meta.listDocuments(db=conf.stream_db, collection='streams_templates_metadata',
+                                  filter='{"template_id":"' + template_id + '"}')
+    if len(result.decode('utf-8')) > 0:
+        message = "Template found."
+        channel_result = json.loads(result.decode('utf-8'))[0]
+        result = channel_result
+        logger.debug("TEMPLATE FOUND")
+    else:
+        logger.debug("NO TEMPLATE FOUND")
+        raise errors.ResourceError(msg=f'No TEMPLATE found')
+    return result, message
+
+
+
 
 #create templates
 #TODO
@@ -214,7 +273,7 @@ def list_templates():
     return json.loads(res.content),res.status_code
 
 #get a template
-def get_template(template_id):
+def get_template_kapacitor(template_id):
     logger.debug("IN GET TEMPLATE")
     headers={'content_type': 'application/json'}
     res = requests.get(conf.kapacitor_url + '/kapacitor/v1/templates' + template_id, auth=HTTPBasicAuth(conf.kapacitor_username, conf.kapacitor_password), verify=False)

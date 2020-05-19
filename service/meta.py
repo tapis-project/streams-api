@@ -531,3 +531,20 @@ def list_alerts(channel_id):
     #else:
     #    logger.debug("NO ALERTS FOUND for Channel: " + channel_id)
     #    raise errors.ResourceError(msg=f'No Alerts found for Channel: {channel_id}')
+
+#update channel
+def update_channel(channel):
+    logger.debug('In META update_channel')
+    logger.debug('Channel: ' + channel['channel_id'] + ': ' + str(channel['_id']['$oid']))
+    result = {}
+    result, put_bug = t.meta.replaceDocument(db=conf.stream_db, collection='streams_channel_metadata', docId=channel['_id']['$oid'],
+                                             request_body=channel, _tapis_debug=True)
+    logger.debug(put_bug.response)
+    if put_bug.response.status_code == 200:
+        result = channel
+        message = 'Channel Status Updated'
+    else:
+        result = {}
+        message = 'Could not update Channel Status in meta'
+        #TODO rollback the status change in the kapacitor task
+    return result, message

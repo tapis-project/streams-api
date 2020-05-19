@@ -474,6 +474,66 @@ class AlertsPostResource(Resource):
 
         return utils.ok(result=result, msg=message)
 
+class TemplatesResource(Resource):
+    """
+    Work with Streams-Channels-Templates objects
+    """
+
+    def get(self):
+        logger.debug("top of GET /templates")
+        channel_result, msg = kapacitor.list_channels()
+        logger.debug(channel_result)
+        result = meta.strip_meta_list(channel_result)
+        logger.debug(result)
+        return utils.ok(result=result, msg=msg)
+
+    def post(self):
+        logger.debug("top of POST /tempates")
+        body = request.json
+        #TODO need to check our permissions
+        result, msg = kapacitor.create_template(body)
+        logger.debug(result)
+        return utils.ok(result=meta.strip_meta(result), msg=msg)
+
+class TemplateResource(Resource):
+    """
+    Work with Streams objects
+    """
+
+    def get(self, channel_id):
+        logger.debug("top of GET /templates/{template_id}")
+        channel_result, msg = kapacitor.get_channel(channel_id)
+        logger.debug(channel_result)
+        result = meta.strip_meta(channel_result)
+        logger.debug(result)
+        return utils.ok(result=result, msg=msg)
+
+    def put(self, channel_id):
+        logger.debug("top of PUT /templates/{template_id}")
+
+    def post(self,channel_id):
+        logger.debug("top of POST /templates/{template_id}")
+        body = request.json
+        # TODO need to check the user permission to update channel status
+        if body['status']== 'ACTIVE':
+            body['status']='enabled'
+        elif body['status']== 'INACTIVE':
+            body['status'] = 'disabled'
+            logger.debug(body)
+        else:
+            raise errors.ResourceError(msg=f'Invalid POST data: {body}.')
+
+        try:
+            result, msg = kapacitor.update_channel_status(channel_id,body)
+        except Exception as e:
+            msg = f"Could not update the channel status: {channel_id}; exception: {e}"
+
+        logger.debug(result)
+        return utils.ok(result=meta.strip_meta(result), msg=msg)
+
+    def delete(self, channel_id):
+        logger.debug("top of DELETE /channels/{channel_id}")
+
 class InfluxResource(Resource):
 
     #Expect fields[] parameters
