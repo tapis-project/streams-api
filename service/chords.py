@@ -334,10 +334,12 @@ def delete_variable(id):
 #Can fetch all the measurments in JSON from CHORDS
 #TODO - will need to filter the output based on the user permission either in here
 # or post the return
-def get_measurements(instrument_id, start="", end=""):
+def get_measurements(instrument_id, start="", end="", format="json"):
     #GET get all variables from chords service
     logger.debug("inside chords get measurement")
-    path="/instruments/"+ instrument_id +".json?"#"api/v1/data.json";
+    if format is None:
+        format = "json"
+    path="/instruments/"+ instrument_id +"."+format+"?"#"api/v1/data.json";
     #start, end, instruments
     logger.debug(start)
     logger.debug(end)
@@ -353,9 +355,11 @@ def get_measurements(instrument_id, start="", end=""):
     else:
         raise errors.ResourceError(msg=f'Measurements not found')
     logger.debug(message)
-    logger.debug(res)
-    return json.loads(res.content.decode('utf-8')), message
-
+    logger.debug(res.content)
+    if format == "json":
+        return json.loads(res.content.decode('utf-8')), message
+    else:
+        return res.content, message
 #
 #create a new measurement in CHORDS
 def create_measurement(inst_chords_id, json_body):
