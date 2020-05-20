@@ -1,5 +1,5 @@
 import datetime
-from flask import request
+from flask import request, make_response
 from flask_restful import Resource
 from openapi_core.shortcuts import RequestValidator
 from openapi_core.wrappers.flask import FlaskOpenAPIRequest
@@ -350,15 +350,30 @@ class MeasurementsResource(Resource):
     """
     Work with Measurements objects
     """
-    #
+
+
     def get(self, project_id, site_id, instrument_id):
         logger.debug("top of GET /measurements")
-        inst_result = meta.get_instrument(project_id,site_id,instrument_id)
-        logger.debug(inst_result)
-        if len(inst_result) > 0:
-            result,msg = chords.get_measurements(str(inst_result[0]['chords_id']))
+        #inst_result = meta.get_instrument(project_id,site_id,instrument_id)
+        inst_index = meta.fetch_instrument_index(instrument_id)
+        logger.debug(inst_index)
+        if len(inst_index) > 0:
+            result,msg = chords.get_measurements(str(inst_index[0]['chords_inst_id']),request.args.get('start_date'),request.args.get('end_date'),request.args.get('format'))
             logger.debug(result)
-        return utils.ok(result=result, msg=msg)
+        #return utils.ok(result=list(map(lambda t: list(map(lambda r: {'units':r.units,'value':r.value,'variable_name':r.variable_name,'varable_id':r.shortname}, t['vars'])),result['features'][0 ]['properties']['data'])), msg=msg)
+        if request.args.get('format') == "csv":
+            logger.debug("CSV")
+            # csv_response = Response(result, mimetype="text/csv")
+            # si = StringIO.StringIO()
+            #cw = csv.write(si)
+            # cw.writerows(csvList)
+            output = make_response(result)
+            output.headers["Content-Disposition"] = "attachment; filename=export.csv"
+            output.headers["Content-type"] = "text/csv"
+            return output
+        else:
+            logger.debug("JSON")
+            return utils.ok(result={"data":result['features'][0 ]['properties']['data'],"measurements_in_file": result['features'][0 ]['properties']['measurements_in_file']}, msg=msg)
 
 class MeasurementResource(Resource):
     """
