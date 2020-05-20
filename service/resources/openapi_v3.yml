@@ -1393,6 +1393,11 @@ paths:
           description: geojson polygon to spatiall search
           schema:
             type: object
+        - name: format
+          in: query
+          description: json or csv download format
+          schema:
+            type: string
       responses:
         '200':
           description: OK
