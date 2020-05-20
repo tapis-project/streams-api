@@ -554,7 +554,4 @@ class InfluxResource(Resource):
         logger.debug(resp)
         return resp
 
-#class ChannelResource(Resource):
 
-
-#class ChannelsResource(Resource):

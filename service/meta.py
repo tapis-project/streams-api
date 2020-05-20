@@ -360,7 +360,7 @@ def get_variable(project_id, site_id, instrument_id, variable_id):
                 inst_exists = True
                 if 'variables' in inst:
                     for variable in inst['variables']:
-                        if str(variable['var_id']) == str(var_id):
+                        if str(variable['var_id']) == str(variable_id):
                             result = variable
                             message = "Variable Found"
         if inst_exists == False:

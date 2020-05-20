@@ -80,15 +80,15 @@ def change_task_status(task_id,body):
 def create_channel(req_body):
     logger.debug("IN CREATE CHANNEL")
     #create a kapacitor task
-    #task_body ={'id':req_body['task_id'], 'type':'stream','dbrps': [{"db": "chords_ts_production", "rp" : "autogen"}],'status':'enabled'}
+    
     task_body = {'id': req_body['task_id'],
                  'dbrps': [{"db": "chords_ts_production", "rp": "autogen"}], 'status': 'enabled'}
-    #TODO figure out how to make this - for now pass in a script for testing
-    #task_body['script']=req_body['script']
-    #task_body['triggers_with_actions'] = req_body['triggers_with_actions']
+
     task_body['template-id'] = req_body['template_id']
-    task_body['vars'] = req_body['vars']
-    task_body['vars']["channel_id"] = {"type": "string", "value": req_body['channel_id']}
+    vars = {}
+    vars = convert_conditions_to_vars(req_body)
+    task_body['vars'] = vars
+    logger.debug(str(task_body))
     ktask_result, ktask_status = create_task(task_body)
     logger.debug(ktask_status)
     req_body['permissions']={'users':[g.username]}
@@ -113,6 +113,43 @@ def create_channel(req_body):
         result=ktask_result
         message = "Channel Creation Failed"
     return result, message
+
+# Converts a condition provided by the user to vars for Kapacitor tasks creation API request
+# TODO multiple conditions
+def convert_conditions_to_vars(req_body):
+    logger.debug("CONVERTING condition to vars ...")
+    triggers_with_actions = {}
+    triggers_with_actions = req_body['triggers_with_actions'][0]
+
+    inst_chords_id ={}
+    inst_var_chords_ids = {}
+
+    # inst_id.var_id
+    cond_key = []
+    cond_key = triggers_with_actions['condition']['key'].split(".")
+    # fetch chords id for the instrument
+    result = meta.fetch_instrument_index(cond_key[0])
+    logger.debug(result)
+    if len(result) > 0:
+        logger.debug(" chords instrument_ id: " + str(result[0]['chords_inst_id']))
+        inst_chords_id[cond_key[0]] = result[0]['chords_inst_id']
+
+        # fetch chords id for the variable
+        result_var, message = meta.get_variable(result[0]['project_id'], result[0]['site_id'], result[0]['instrument_id'], cond_key[1])
+        logger.debug("variable chords id : " + str(result_var['chords_id']))
+        inst_var_chords_ids[triggers_with_actions['condition']['key']] = result_var['chords_id']
+    # create vars dictionary
+    vars = {}
+    vars['crit'] = {}
+    vars['crit']['type'] = "lambda"
+    #  value is of the form : "value":"(\"var\" == '1') AND (\"value\" > 91.0)"
+    vars['crit']['value'] = "(\"var\" == '" + str(
+        inst_var_chords_ids[triggers_with_actions['condition']['key']]) + "') AND (\"value\"" + \
+                            triggers_with_actions['condition']['operator'] + str(
+        triggers_with_actions['condition']['val']) + ")"
+    # channel id information is added for later processing of the alerts
+    vars["channel_id"] = {"type": "string", "value": req_body['channel_id']}
+    return vars
 
 def list_channels():
     logger.debug('in Channel list ')
