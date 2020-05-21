@@ -54,7 +54,7 @@ api.add_resource(AlertsResource, '/v3/streams/channels/<channel_id>/alerts')
 
 api.add_resource(AlertsPostResource, '/v3/streams/alerts')
 api.add_resource(TemplatesResource, '/v3/streams/templates')
-api.add_resource(TemplateResource, '/v3/streams/templates')
+api.add_resource(TemplateResource, '/v3/streams/templates/<template_id>')
 
 #api.add_resource(StreamsResource, '/v3/streams/projects/<project_id>/channels')
 #api.add_resource(StreamResource, '/v3/streams/channels/<channels_id>')

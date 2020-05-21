@@ -598,9 +598,9 @@ class TemplatesResource(Resource):
 
     def get(self):
         logger.debug("top of GET /templates")
-        channel_result, msg = kapacitor.list_channels()
-        logger.debug(channel_result)
-        result = meta.strip_meta_list(channel_result)
+        template_result, msg = meta.list_templates()
+        logger.debug(template_result)
+        result = meta.strip_meta_list(template_result)
         logger.debug(result)
         return utils.ok(result=result, msg=msg)
 
@@ -617,38 +617,31 @@ class TemplateResource(Resource):
     Work with Streams objects
     """
 
-    def get(self, channel_id):
+    def get(self, template_id):
         logger.debug("top of GET /templates/{template_id}")
-        channel_result, msg = kapacitor.get_channel(channel_id)
-        logger.debug(channel_result)
-        result = meta.strip_meta(channel_result)
+        template_result, msg = kapacitor.get_template(template_id)
+        logger.debug(str(template_result))
+        result = meta.strip_meta(template_result)
         logger.debug(result)
         return utils.ok(result=result, msg=msg)
 
-    def put(self, channel_id):
-        logger.debug("top of PUT /templates/{template_id}")
-
-    def post(self,channel_id):
+    def post(self, template_id):
         logger.debug("top of POST /templates/{template_id}")
+
+    def put(self,template_id):
+        logger.debug("top of PUT /templates/{template_id}")
         body = request.json
-        # TODO need to check the user permission to update channel status
-        if body['status']== 'ACTIVE':
-            body['status']='enabled'
-        elif body['status']== 'INACTIVE':
-            body['status'] = 'disabled'
-            logger.debug(body)
-        else:
-            raise errors.ResourceError(msg=f'Invalid POST data: {body}.')
-
+        # TODO need to check the user permission to update template
+        result = {}
         try:
-            result, msg = kapacitor.update_channel_status(channel_id,body)
+            result, msg = kapacitor.update_template(template_id,body)
         except Exception as e:
-            msg = f"Could not update the channel status: {channel_id}; exception: {e}"
+            msg = f"Could not update the channel status: {template_id}; exception: {e}"
 
-        logger.debug(result)
+        logger.debug(str(result))
         return utils.ok(result=meta.strip_meta(result), msg=msg)
 
-    def delete(self, channel_id):
+    def delete(self, template_id):
         logger.debug("top of DELETE /channels/{channel_id}")
 
 class InfluxResource(Resource):
