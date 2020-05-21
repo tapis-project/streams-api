@@ -1,5 +1,6 @@
 import requests
 import json
+import datetime
 from flask import g, Flask
 from common.config import conf
 app = Flask(__name__)
@@ -11,7 +12,7 @@ logger = get_logger(__name__)
 import auth
 from requests.auth import HTTPBasicAuth
 import subprocess
-
+import meta
 #access the dynatpy instance
 t = auth.t
 
@@ -54,11 +55,20 @@ def get_task(task_id):
 # enable/disable a task
 def change_task_status(task_id,body):
     logger.debug("CHANGING TASK STATUS")
+    logger.debug(conf.kapacitor_url + '/kapacitor/v1/tasks/' + task_id)
+    logger.debug(body)
     headers = {
-        'content-type': 'application/json'
+        'content-type': "application/json"
     }
-    res = requests.patch(conf.kapacitor_url + '/kapacitor/v1/tasks' + task_id,json=body,
+    logger.debug(headers)
+    try:
+        res = requests.patch(conf.kapacitor_url + '/kapacitor/v1/tasks/' + task_id, headers=headers, json=body,
                        auth=HTTPBasicAuth(conf.kapacitor_username, conf.kapacitor_password), verify=False)
+    except Exception as e:
+        msg = f" Kapacitor bad request ; exception: {e}"
+        raise errors.ResourceError(msg=msg)
+    logger.debug('Kapacitor Response' + str(res.content))
+    logger.debug('status_code' + str(res.status_code))
     return json.loads(res.content), res.status_code
 
 
@@ -70,14 +80,22 @@ def change_task_status(task_id,body):
 def create_channel(req_body):
     logger.debug("IN CREATE CHANNEL")
     #create a kapacitor task
-    task_body ={'id':req_body['task_id'], 'type':'stream','dbrps': [{"db": "chords_ts_production", "rp" : "autogen"}],'status':'enabled'}
-    #TODO figure out how to make this - for now pass in a script for testing
-    task_body['script']=req_body['script']
+    
+    task_body = {'id': req_body['task_id'],
+                 'dbrps': [{"db": "chords_ts_production", "rp": "autogen"}], 'status': 'enabled'}
+
+    task_body['template-id'] = req_body['template_id']
+    vars = {}
+    vars = convert_conditions_to_vars(req_body)
+    task_body['vars'] = vars
+    logger.debug(str(task_body))
     ktask_result, ktask_status = create_task(task_body)
     logger.debug(ktask_status)
     req_body['permissions']={'users':[g.username]}
+    req_body['status'] = 'ACTIVE'
     if ktask_status == 200:
-        #create a metadata record with kapacitor task id to the project channel metadata collection
+        req_body['create_time'] = str(datetime.datetime.utcnow())
+        #create a metadata record with kapacitor task id to the channel metadata collection
         mchannel_result, mchannel_bug =t.meta.createDocument(db=conf.stream_db, collection='streams_channel_metadata', request_body=req_body, _tapis_debug=True)
         logger.debug("Status_Code: " + str(mchannel_bug.response.status_code))
         logger.debug(mchannel_result)
@@ -96,6 +114,43 @@ def create_channel(req_body):
         result=ktask_result
         message = "Channel Creation Failed"
     return result, message
+
+# Converts a condition provided by the user to vars for Kapacitor tasks creation API request
+# TODO multiple conditions
+def convert_conditions_to_vars(req_body):
+    logger.debug("CONVERTING condition to vars ...")
+    triggers_with_actions = {}
+    triggers_with_actions = req_body['triggers_with_actions'][0]
+
+    inst_chords_id ={}
+    inst_var_chords_ids = {}
+
+    # inst_id.var_id
+    cond_key = []
+    cond_key = triggers_with_actions['condition']['key'].split(".")
+    # fetch chords id for the instrument
+    result = meta.fetch_instrument_index(cond_key[0])
+    logger.debug(result)
+    if len(result) > 0:
+        logger.debug(" chords instrument_ id: " + str(result[0]['chords_inst_id']))
+        inst_chords_id[cond_key[0]] = result[0]['chords_inst_id']
+
+        # fetch chords id for the variable
+        result_var, message = meta.get_variable(result[0]['project_id'], result[0]['site_id'], result[0]['instrument_id'], cond_key[1])
+        logger.debug("variable chords id : " + str(result_var['chords_id']))
+        inst_var_chords_ids[triggers_with_actions['condition']['key']] = result_var['chords_id']
+    # create vars dictionary
+    vars = {}
+    vars['crit'] = {}
+    vars['crit']['type'] = "lambda"
+    #  value is of the form : "value":"(\"var\" == '1') AND (\"value\" > 91.0)"
+    vars['crit']['value'] = "(\"var\" == '" + str(
+        inst_var_chords_ids[triggers_with_actions['condition']['key']]) + "') AND (\"value\"" + \
+                            triggers_with_actions['condition']['operator'] + str(
+        triggers_with_actions['condition']['val']) + ")"
+    # channel id information is added for later processing of the alerts
+    vars["channel_id"] = {"type": "string", "value": req_body['channel_id']}
+    return vars
 
 def list_channels():
     logger.debug('in Channel list ')
@@ -119,11 +174,43 @@ def get_channel(channel_id):
     else:
         logger.debug("NO CHANNEL FOUND")
         raise errors.ResourceError(msg=f'No Channel found')
-        result = ''
     return result, message
 
 def update_channel():
     return True
+
+def update_channel_status(channel_id, body):
+    logger.debug('In update_channel_status')
+    try:
+        channel_result, msg = get_channel(channel_id)
+    except Exception as e:
+        msg = f" Channel {channel_id} NOT Found; exception: {e}"
+        raise errors.ResourceError(msg=msg)
+
+    logger.debug('UPDATING ... Kapacitor task')
+
+    try:
+        result,status_code = change_task_status(channel_result['task_id'],body)
+    except Exception as e:
+        msg = f" Not able to connect to Kapacitor for the task {channel_result['task_id']} status update; exception: {e}"
+        raise errors.ResourceError(msg=msg)
+
+    if status_code == 200:
+        logger.debug("UPDATED ... Kapacitor task status ")
+        logger.debug("UPDATING ... channel object in meta")
+        logger.debug('status: ' + body['status'])
+        if result['status']=='enabled':
+            channel_result['status'] = 'ACTIVE'
+        elif result['status']=='disabled':
+            channel_result['status'] = 'INACTIVE'
+        else:
+            channel_result['status'] = 'ERROR'
+        result = {}
+        result, message = meta.update_channel(channel_result)
+    else:
+        msg = f" Could Not Find Channel {channel_id} with Task {channel_result['task_id']} "
+        raise errors.ResourceError(msg=msg)
+    return result,message
 
 def remove_channel():
     return True
@@ -150,10 +237,85 @@ def list_alerts():
 #create templates
 def create_template(body):
     logger.debug("IN CREATE TEMPLATE")
-    res = requests.post(conf.kapacitor_url + '/kapacitor/v1/templates', json=body, headers=headers, auth=HTTPBasicAuth(conf.kapacitor_username, conf.kapacitor_password), verify=False)
+    headers = {
+        'content-type': "application/json"
+    }
+    json_req = {}
+    json_req['id'] = body['template_id']
+    json_req['type'] = 'stream'
+    json_req['script'] = body['script']
+
+    res = requests.post(conf.kapacitor_url + '/kapacitor/v1/templates', json=json_req, headers=headers, auth=HTTPBasicAuth(conf.kapacitor_username, conf.kapacitor_password), verify=False)
     logger.debug(res.content)
     logger.debug(res.status_code)
-    return json.loads(res.content), res.status_code
+    #json.loads(res.content), res.status_code
+    if res.status_code == 200:
+        body['create_time'] = str(datetime.datetime.utcnow())
+        #create a metadata record with kapacitor template id in the templates metadata collection
+        #col_result, col_bug = t.meta.createCollection(db=conf.stream_db, collection='streams_templates_metadata',
+        #                                             _tapis_debug=True)
+        #if col_bug.response.status_code == 201:
+         #  logger.debug('Created streams_templates_metadata')
+        body['permissions'] = {'users': [g.username]}
+        mtemplate_result, mtemplate_bug =t.meta.createDocument(db=conf.stream_db, collection='streams_templates_metadata', request_body=body, _tapis_debug=True)
+        logger.debug("Status_Code: " + str(mtemplate_bug.response.status_code))
+        logger.debug(mtemplate_result)
+        if str(mtemplate_bug.response.status_code) == '201':
+            message = "Template Created"
+            #get the newly created channel object to return
+            result, bug = get_template(body['template_id'])
+            logger.debug(result)
+        else:
+            message = f'Template Creation in Meta Failed'
+            #TODO Rollback- delete template in Kapacitor
+            raise errors.ResourceError(msg=message)
+    else:
+        message = f'Kapacitor Template Creation Failed'
+        raise errors.ResourceError(msg=message)
+
+    return result, message
+
+# get template
+def get_template(template_id):
+    logger.debug('In get_template')
+    result = {}
+    result = t.meta.listDocuments(db=conf.stream_db, collection='streams_templates_metadata',filter='{"template_id":"' + template_id + '"}')
+    if len(result.decode('utf-8')) > 0:
+        message = "Template found."
+        template_result = json.loads(result.decode('utf-8'))[0]
+        result = template_result
+        logger.debug("TEMPLATE FOUND")
+    else:
+        logger.debug("NO TEMPLATE FOUND")
+        raise errors.ResourceError(msg=f'No TEMPLATE found')
+    return result, message
+
+def update_template(template_id, body):
+    logger.debug('In update_template')
+    try:
+        template_result, msg = get_template(template_id)
+    except Exception as e:
+        msg = f" Template {template_id} NOT Found; exception: {e}"
+        raise errors.ResourceError(msg=msg)
+
+    logger.debug('UPDATING ... Kapacitor Template')
+
+    try:
+        result,status_code = update_kapacitor_template(template_result['template_id'],body)
+    except Exception as e:
+        msg = f" Not able to connect to Kapacitor for the task {template_result['template_id']} status update; exception: {e}"
+        raise errors.ResourceError(msg=msg)
+
+    if status_code == 200:
+        logger.debug("UPDATED ... Kapacitor template ")
+        logger.debug("UPDATING ... template object in meta")
+        result = {}
+        result, message = meta.update_template(template_result)
+    else:
+        msg = f" Could Not Find Channel {template_id} with Template {template_result['template_id']} "
+        raise errors.ResourceError(msg=msg)
+    return result,message
+
 
 #create templates
 #TODO
@@ -174,14 +336,29 @@ def list_templates():
     return json.loads(res.content),res.status_code
 
 #get a template
-def get_template(template_id):
+def get_template_kapacitor(template_id):
     logger.debug("IN GET TEMPLATE")
     headers={'content_type': 'application/json'}
-    res = requests.get(conf.kapacitor_url + '/kapacitor/v1/templates' + template_id, auth=HTTPBasicAuth(conf.kapacitor_username, conf.kapacitor_password), verify=False)
+    res = requests.get(conf.kapacitor_url + '/kapacitor/v1/templates/' + template_id, auth=HTTPBasicAuth(conf.kapacitor_username, conf.kapacitor_password), verify=False)
     return json.loads(res.content),res.status_code
 
-def update_template():
-    return True
+def update_kapacitor_template(template_id,body):
+    logger.debug("UPDATING Template")
+    logger.debug(conf.kapacitor_url + '/kapacitor/v1/templates/' + template_id)
+    logger.debug(body)
+    headers = {
+        'content-type': "application/json"
+    }
+    logger.debug(headers)
+    try:
+        res = requests.patch(conf.kapacitor_url + '/kapacitor/v1/templates/' + template_id, headers=headers, json=body,
+                       auth=HTTPBasicAuth(conf.kapacitor_username, conf.kapacitor_password), verify=False)
+    except Exception as e:
+        msg = f" Kapacitor bad request ; exception: {e}"
+        raise errors.ResourceError(msg=msg)
+    logger.debug('Kapacitor Response' + str(res.content))
+    logger.debug('status_code' + str(res.status_code))
+    return json.loads(res.content), res.status_code
 
 def remove_template():
     return True
