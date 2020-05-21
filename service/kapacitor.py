@@ -92,6 +92,7 @@ def create_channel(req_body):
     ktask_result, ktask_status = create_task(task_body)
     logger.debug(ktask_status)
     req_body['permissions']={'users':[g.username]}
+    req_body['status'] = 'ACTIVE'
     if ktask_status == 200:
         req_body['create_time'] = str(datetime.datetime.utcnow())
         #create a metadata record with kapacitor task id to the channel metadata collection
@@ -255,7 +256,7 @@ def create_template(body):
         #                                             _tapis_debug=True)
         #if col_bug.response.status_code == 201:
          #  logger.debug('Created streams_templates_metadata')
-
+        body['permissions'] = {'users': [g.username]}
         mtemplate_result, mtemplate_bug =t.meta.createDocument(db=conf.stream_db, collection='streams_templates_metadata', request_body=body, _tapis_debug=True)
         logger.debug("Status_Code: " + str(mtemplate_bug.response.status_code))
         logger.debug(mtemplate_result)
@@ -276,20 +277,44 @@ def create_template(body):
 
 # get template
 def get_template(template_id):
-    logger.debug('In get_template ')
-    result = t.meta.listDocuments(db=conf.stream_db, collection='streams_templates_metadata',
-                                  filter='{"template_id":"' + template_id + '"}')
+    logger.debug('In get_template')
+    result = {}
+    result = t.meta.listDocuments(db=conf.stream_db, collection='streams_templates_metadata',filter='{"template_id":"' + template_id + '"}')
     if len(result.decode('utf-8')) > 0:
         message = "Template found."
-        channel_result = json.loads(result.decode('utf-8'))[0]
-        result = channel_result
+        template_result = json.loads(result.decode('utf-8'))[0]
+        result = template_result
         logger.debug("TEMPLATE FOUND")
     else:
         logger.debug("NO TEMPLATE FOUND")
         raise errors.ResourceError(msg=f'No TEMPLATE found')
     return result, message
 
+def update_template(template_id, body):
+    logger.debug('In update_template')
+    try:
+        template_result, msg = get_template(template_id)
+    except Exception as e:
+        msg = f" Template {template_id} NOT Found; exception: {e}"
+        raise errors.ResourceError(msg=msg)
 
+    logger.debug('UPDATING ... Kapacitor Template')
+
+    try:
+        result,status_code = update_kapacitor_template(template_result['template_id'],body)
+    except Exception as e:
+        msg = f" Not able to connect to Kapacitor for the task {template_result['template_id']} status update; exception: {e}"
+        raise errors.ResourceError(msg=msg)
+
+    if status_code == 200:
+        logger.debug("UPDATED ... Kapacitor template ")
+        logger.debug("UPDATING ... template object in meta")
+        result = {}
+        result, message = meta.update_template(template_result)
+    else:
+        msg = f" Could Not Find Channel {template_id} with Template {template_result['template_id']} "
+        raise errors.ResourceError(msg=msg)
+    return result,message
 
 
 #create templates
@@ -314,11 +339,26 @@ def list_templates():
 def get_template_kapacitor(template_id):
     logger.debug("IN GET TEMPLATE")
     headers={'content_type': 'application/json'}
-    res = requests.get(conf.kapacitor_url + '/kapacitor/v1/templates' + template_id, auth=HTTPBasicAuth(conf.kapacitor_username, conf.kapacitor_password), verify=False)
+    res = requests.get(conf.kapacitor_url + '/kapacitor/v1/templates/' + template_id, auth=HTTPBasicAuth(conf.kapacitor_username, conf.kapacitor_password), verify=False)
     return json.loads(res.content),res.status_code
 
-def update_template():
-    return True
+def update_kapacitor_template(template_id,body):
+    logger.debug("UPDATING Template")
+    logger.debug(conf.kapacitor_url + '/kapacitor/v1/templates/' + template_id)
+    logger.debug(body)
+    headers = {
+        'content-type': "application/json"
+    }
+    logger.debug(headers)
+    try:
+        res = requests.patch(conf.kapacitor_url + '/kapacitor/v1/templates/' + template_id, headers=headers, json=body,
+                       auth=HTTPBasicAuth(conf.kapacitor_username, conf.kapacitor_password), verify=False)
+    except Exception as e:
+        msg = f" Kapacitor bad request ; exception: {e}"
+        raise errors.ResourceError(msg=msg)
+    logger.debug('Kapacitor Response' + str(res.content))
+    logger.debug('status_code' + str(res.status_code))
+    return json.loads(res.content), res.status_code
 
 def remove_template():
     return True
