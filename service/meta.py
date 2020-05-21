@@ -532,6 +532,35 @@ def list_alerts(channel_id):
     #    logger.debug("NO ALERTS FOUND for Channel: " + channel_id)
     #    raise errors.ResourceError(msg=f'No Alerts found for Channel: {channel_id}')
 
+def list_templates():
+    logger.debug("Before")
+    result = t.meta.listDocuments(db=conf.stream_db,collection='streams_templates_metadata',filter='{"permissions.users":"'+ g.username+'"}')
+    #if str(alerts_bug.response.status_code) == '200':
+    logger.debug("After")
+    if len(result) > 0 :
+        message = "Templates found"
+        logger.debug(result)
+        return json.loads(result.decode('utf-8')), message
+    else:
+        raise errors.ResourceError(msg=f'No Template found')
+
+#update template
+def update_template(template):
+    logger.debug('In META update_template')
+    logger.debug('Channel: ' + template['template_id'] + ': ' + str(template['_id']['$oid']))
+    result = {}
+    result, put_bug = t.meta.replaceDocument(db=conf.stream_db, collection='streams_templates_metadata', docId=template['_id']['$oid'],
+                                             request_body=template, _tapis_debug=True)
+    logger.debug(put_bug.response)
+    if put_bug.response.status_code == 200:
+        result = template
+        message = 'Template Updated'
+    else:
+        result = {}
+        message = 'Could not update Template in meta'
+        #TODO rollback the template change in the kapacitor template
+    return result, message
+
 #update channel
 def update_channel(channel):
     logger.debug('In META update_channel')
