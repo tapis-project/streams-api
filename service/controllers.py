@@ -16,6 +16,7 @@ from common import utils, errors
 
 import requests
 import json
+import pandas as pd
 # get the logger instance -
 from common.logs import get_logger
 logger = get_logger(__name__)
@@ -353,34 +354,134 @@ class MeasurementsResource(Resource):
 
 
     def get(self, project_id, site_id, instrument_id):
+        result =[]
+        msg=""
+        logger.debug("top of GET /measurements")
+        #inst_result = meta.get_instrument(project_id,site_id,instrument_id)
+        site,msg = meta.get_site(project_id,site_id)
+        logger.debug(site)
+        replace_cols = {}
+        for inst in site['instruments']:
+            logger.debug(inst)
+            if inst['inst_id'] == instrument_id:
+                instrument = inst
+                logger.debug(inst)
+                for v in inst['variables']:
+                    logger.debug(v)
+                    replace_cols[str(v['chords_id'])]=v['var_id']
+        js= influx.query_measurments([{"inst":str(instrument['chords_id'])},{"start_date": request.args.get('start_date')},{"end_date": request.args.get('end_date')}])
+        logger.debug(js)
+        if len(js) > 1 and len(js['series']) > 0:
+            df = pd.DataFrame(js['series'][0]['values'],columns=js['series'][0]['columns'])
+            pv = df.pivot(index='time', columns='var', values=['value'])
+            df1 = pv
+            df1.columns = df1.columns.droplevel(0)
+            df1 = df1.reset_index().rename_axis(None, axis=1)
+            df1.rename(columns=replace_cols,inplace=True)
+            df1.set_index('time',inplace=True)
+            if request.args.get('format') == "csv":
+                logger.debug("CSV")
+                # csv_response = Response(result, mimetype="text/csv")
+                # si = StringIO.StringIO()
+                #cw = csv.write(si)
+                # cw.writerows(csvList)
+                output = make_response(df1.to_csv())
+                output.headers["Content-Disposition"] = "attachment; filename=export.csv"
+                output.headers["Content-type"] = "text/csv"
+                return output
+            else:
+                result = json.loads(df1.to_json())
+                result['measurements_in_file'] = len(df1.index)
+                result['instrument'] = instrument
+                site.pop('instruments',None)
+                result['site'] = meta.strip_meta(site)
+                return utils.ok(result=result, msg="Measurements Found")
+        else:
+            return utils.ok(result=[], msg="No Measurements Founds")
+        # logger.debug("top of GET /measurements")
+        # #inst_result = meta.get_instrument(project_id,site_id,instrument_id)
+        # inst_index = meta.fetch_instrument_index(instrument_id)
+        # logger.debug(inst_index)
+        # if len(inst_index) > 0:
+        #     result,msg = chords.get_measurements(str(inst_index[0]['chords_inst_id']),request.args.get('start_date'),request.args.get('end_date'),request.args.get('format'))
+        #     logger.debug(result)
+        # #return utils.ok(result=list(map(lambda t: list(map(lambda r: {'units':r.units,'value':r.value,'variable_name':r.variable_name,'varable_id':r.shortname}, t['vars'])),result['features'][0 ]['properties']['data'])), msg=msg)
+        # if request.args.get('format') == "csv":
+        #     logger.debug("CSV")
+        #     # csv_response = Response(result, mimetype="text/csv")
+        #     # si = StringIO.StringIO()
+        #     #cw = csv.write(si)
+        #     # cw.writerows(csvList)
+        #     output = make_response(result)
+        #     output.headers["Content-Disposition"] = "attachment; filename=export.csv"
+        #     output.headers["Content-type"] = "text/csv"
+        #     return output
+        # else:
+        #     logger.debug("JSON")
+        #     return utils.ok(result={"data":result['features'][0 ]['properties']['data'],"measurements_in_file": result['features'][0 ]['properties']['measurements_in_file']}, msg=msg)
+
+
+class MeasurementsReadResource(Resource):
+    """
+    Work with Measurements objects
+    """
+    def get(self, instrument_id):
+        result =[]
+        msg=""
         logger.debug("top of GET /measurements")
         #inst_result = meta.get_instrument(project_id,site_id,instrument_id)
         inst_index = meta.fetch_instrument_index(instrument_id)
         logger.debug(inst_index)
-        if len(inst_index) > 0:
-            result,msg = chords.get_measurements(str(inst_index[0]['chords_inst_id']),request.args.get('start_date'),request.args.get('end_date'),request.args.get('format'))
-            logger.debug(result)
-        #return utils.ok(result=list(map(lambda t: list(map(lambda r: {'units':r.units,'value':r.value,'variable_name':r.variable_name,'varable_id':r.shortname}, t['vars'])),result['features'][0 ]['properties']['data'])), msg=msg)
-        if request.args.get('format') == "csv":
-            logger.debug("CSV")
-            # csv_response = Response(result, mimetype="text/csv")
-            # si = StringIO.StringIO()
-            #cw = csv.write(si)
-            # cw.writerows(csvList)
-            output = make_response(result)
-            output.headers["Content-Disposition"] = "attachment; filename=export.csv"
-            output.headers["Content-type"] = "text/csv"
-            return output
-        else:
-            logger.debug("JSON")
-            return utils.ok(result={"data":result['features'][0 ]['properties']['data'],"measurements_in_file": result['features'][0 ]['properties']['measurements_in_file']}, msg=msg)
+        if len(inst_index[0]) > 0:
+            site,msg = meta.get_site(inst_index[0]['project_id'],inst_index[0]['site_id'])
+            logger.debug("in IF")
+            js= influx.query_measurments([{"inst":str(inst_index[0]['chords_inst_id'])},{"start_date": request.args.get('start_date')},{"end_date": request.args.get('end_date')}])
+            logger.debug(js)
+            if len(js) > 1 and len(js['series']) > 0:
+                df = pd.DataFrame(js['series'][0]['values'],columns=js['series'][0]['columns'])
+                pv = df.pivot(index='time', columns='var', values=['value'])
+                df1 = pv
+                df1.columns = df1.columns.droplevel(0)
+                df1 = df1.reset_index().rename_axis(None, axis=1)
+                replace_cols = {}
+                logger.debug(site)
+                for inst in site['instruments']:
+                    logger.debug(inst)
+                    if inst['inst_id'] == instrument_id:
+                        instrument = inst
+                        logger.debug(inst)
+                        for v in inst['variables']:
+                            logger.debug(v)
+                            replace_cols[str(v['chords_id'])]=v['var_id']
+                logger.debug(replace_cols)
+                df1.rename(columns=replace_cols,inplace=True)
+                df1.set_index('time',inplace=True)
+                if request.args.get('format') == "csv":
+                    logger.debug("CSV")
+                    # csv_response = Response(result, mimetype="text/csv")
+                    # si = StringIO.StringIO()
+                    #cw = csv.write(si)
+                    # cw.writerows(csvList)
+                    output = make_response(df1.to_csv())
+                    output.headers["Content-Disposition"] = "attachment; filename=export.csv"
+                    output.headers["Content-type"] = "text/csv"
+                    return output
+                else:
+                    result = json.loads(df1.to_json())
+                    result['measurements_in_file'] = len(df1.index)
+                    result['instrument'] = instrument
+                    site.pop('instruments',None)
+                    result['site'] = meta.strip_meta(site)
+                    return utils.ok(result=result, msg="Measurements Found")
+            else:
+                return utils.ok(result=[], msg="No Measurements Founds")
 
 class MeasurementResource(Resource):
     """
     Work with Measurements objects
     """
 
-    def get(self, measurement_id):
+    def get(self, instrument_id):
         logger.debug("top of GET /measurements/{measurement_id}")
 
     def put(self, measurement_id):
@@ -428,6 +529,26 @@ class ChannelResource(Resource):
     def put(self, channel_id):
         logger.debug("top of PUT /channels/{channel_id}")
 
+    def post(self,channel_id):
+        logger.debug("top of POST /channels/{channel_id}")
+        body = request.json
+        # TODO need to check the user permission to update channel status
+        if body['status']== 'ACTIVE':
+            body['status']='enabled'
+        elif body['status']== 'INACTIVE':
+            body['status'] = 'disabled'
+            logger.debug(body)
+        else:
+            raise errors.ResourceError(msg=f'Invalid POST data: {body}.')
+
+        try:
+            result, msg = kapacitor.update_channel_status(channel_id,body)
+        except Exception as e:
+            msg = f"Could not update the channel status: {channel_id}; exception: {e}"
+
+        logger.debug(result)
+        return utils.ok(result=meta.strip_meta(result), msg=msg)
+
     def delete(self, channel_id):
         logger.debug("top of DELETE /channels/{channel_id}")
 
@@ -440,6 +561,7 @@ class AlertsResource(Resource):
         logger.debug(channel_id)
         result, msg = meta.list_alerts(channel_id)
         logger.debug(result)
+        result = meta.strip_meta_list(result)
         return utils.ok(result=result,msg=msg)
 
 class AlertsPostResource(Resource):
@@ -469,6 +591,66 @@ class AlertsPostResource(Resource):
 
         return utils.ok(result=result, msg=message)
 
+class TemplatesResource(Resource):
+    """
+    Work with Streams-Channels-Templates objects
+    """
+
+    def get(self):
+        logger.debug("top of GET /templates")
+        channel_result, msg = kapacitor.list_channels()
+        logger.debug(channel_result)
+        result = meta.strip_meta_list(channel_result)
+        logger.debug(result)
+        return utils.ok(result=result, msg=msg)
+
+    def post(self):
+        logger.debug("top of POST /tempates")
+        body = request.json
+        #TODO need to check our permissions
+        result, msg = kapacitor.create_template(body)
+        logger.debug(result)
+        return utils.ok(result=meta.strip_meta(result), msg=msg)
+
+class TemplateResource(Resource):
+    """
+    Work with Streams objects
+    """
+
+    def get(self, channel_id):
+        logger.debug("top of GET /templates/{template_id}")
+        channel_result, msg = kapacitor.get_channel(channel_id)
+        logger.debug(channel_result)
+        result = meta.strip_meta(channel_result)
+        logger.debug(result)
+        return utils.ok(result=result, msg=msg)
+
+    def put(self, channel_id):
+        logger.debug("top of PUT /templates/{template_id}")
+
+    def post(self,channel_id):
+        logger.debug("top of POST /templates/{template_id}")
+        body = request.json
+        # TODO need to check the user permission to update channel status
+        if body['status']== 'ACTIVE':
+            body['status']='enabled'
+        elif body['status']== 'INACTIVE':
+            body['status'] = 'disabled'
+            logger.debug(body)
+        else:
+            raise errors.ResourceError(msg=f'Invalid POST data: {body}.')
+
+        try:
+            result, msg = kapacitor.update_channel_status(channel_id,body)
+        except Exception as e:
+            msg = f"Could not update the channel status: {channel_id}; exception: {e}"
+
+        logger.debug(result)
+        return utils.ok(result=meta.strip_meta(result), msg=msg)
+
+    def delete(self, channel_id):
+        logger.debug("top of DELETE /channels/{channel_id}")
+
 class InfluxResource(Resource):
 
     #Expect fields[] parameters
@@ -488,7 +670,4 @@ class InfluxResource(Resource):
         logger.debug(resp)
         return resp
 
-#class ChannelResource(Resource):
 
-
-#class ChannelsResource(Resource):

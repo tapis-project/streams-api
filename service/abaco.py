@@ -1,5 +1,8 @@
 import datetime
 import requests
+import json
+import auth
+import meta
 from flask import g, Flask
 app = Flask(__name__)
 
@@ -8,13 +11,10 @@ from common import utils, errors
 from common.logs import get_logger
 logger = get_logger(__name__)
 
-import auth
-import meta
-import json
+
 #access the dynatpy instance
 t = auth.t
-# {"message":""}
-# https: // host / actors / v2 /$ACTOR_ID / messages?x - nonce = TACC - PROD_XV4XQDyp6jRLj
+
 def create_alert(channel,req_data):
     actor_id = channel['triggers_with_actions'][0]['action']['actor_id']
     logger.debug(actor_id)

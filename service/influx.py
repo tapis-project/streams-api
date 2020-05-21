@@ -65,23 +65,38 @@ def write_measurements(site_id, instrument, body):
 
 #expects a list of fields {key:value} to build and AND query to influxdb to fetch CHORDS measurments
 def query_measurments(query_field_list):
-    #logger.debug(query.get('q'))
+    logger.debug("IN INFLUX QUERY")
     base_query = "SELECT * FROM \"tsdata\" WHERE "
     query_list=[];
-    for itm in query_field_list:
-        fields = json.loads(itm)
+    for fields in query_field_list:
+        #fields = json.loads(itm)
+        print(fields)
         for k in fields:
-            # if k  "start_time":
-            #     query_list.append("\"time\">='"+str(fields[k])+"' "
-            # if k == "end_time":
-            #     query_list.append("\"time\"<='"+str(fields[k])+"' "
-            # else:
-            query_list.append("\""+k+"\"='"+str(fields[k])+"' ")
+            if k ==  "start_date":
+                if str(fields[k]) != 'None':
+                    query_list.append("\"time\">='"+str(fields[k])+"' ")
+            elif k == "end_date":
+                if str(fields[k]) != 'None':
+                    query_list.append("\"time\"<='"+str(fields[k])+"' ")
+            else:
+                query_list.append("\""+k+"\"='"+str(fields[k])+"' ")
 
     query_where = ' AND '.join(query_list)
     logger.debug(base_query+query_where)
     result = influx_client.query(base_query+query_where)
+    logger.debug(result)
     return result.raw
 
 def list_measurements(instrument_id):
+    #curl -G 'http://localhost:8086/query?pretty=true' --data-urlencode "db=mydb" --data-urlencode "q=SELECT \"value\" FROM \"cpu_load_short\" WHERE \"region\"='us-west'"
     print(something)
+    logger.debug("IN List Measurements")
+    headers = {
+        'content-type': "application/json"
+    }
+    query = "q=SELECT * FROM \"tsdata\" WHERE "
+    url = urllib.parse.quote(conf.influxdb_host+":"+conf.influxdb_port+'query?', safe='')
+    res = requests.post(conf.influxdb_host+":"+conf.influxdb_port+'query?', json=body, headers=headers,auth=HTTPBasicAuth(conf.kapacitor_username, conf.kapacitor_password), verify=False)
+    logger.debug('Kapacitor Response' + str(res.content))
+    logger.debug('status_code'+ str(res.status_code))
+    return json.loads(res.content),res.status_code
