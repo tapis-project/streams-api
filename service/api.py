@@ -3,7 +3,7 @@ from flask_migrate import Migrate
 from common.utils import TapisApi, handle_error, flask_errors_dict
 
 from service.auth import authn_and_authz
-from service.controllers import ProjectsResource, ProjectResource, SitesResource, SiteResource, InstrumentsResource, InstrumentResource, VariablesResource, VariableResource, MeasurementsWriteResource, MeasurementsResource, MeasurementResource, ChannelsResource, ChannelResource, AlertsResource, AlertsPostResource, InfluxResource
+from service.controllers import ProjectsResource, ProjectResource, SitesResource, SiteResource, InstrumentsResource, InstrumentResource, VariablesResource, VariableResource, MeasurementsWriteResource,MeasurementsReadResource, MeasurementsResource, MeasurementResource, ChannelsResource, ChannelResource, AlertsResource, AlertsPostResource, InfluxResource
 from service.models import app
 
 from common.logs import get_logger
@@ -41,6 +41,7 @@ api.add_resource(VariablesResource, '/v3/streams/projects/<project_id>/sites/<si
 api.add_resource(VariableResource, '/v3/streams/projects/<project_id>/sites/<site_id>/instruments/<instrument_id>/variables/<variable_id>')
 
 api.add_resource(MeasurementsWriteResource, '/v3/streams/measurements')
+api.add_resource(MeasurementsReadResource, '/v3/streams/measurements/<instrument_id>')
 api.add_resource(MeasurementsResource, '/v3/streams/projects/<project_id>/sites/<site_id>/instruments/<instrument_id>/measurements')
 api.add_resource(MeasurementResource, '/v3/streams/projects/<project_id>/sites/<site_id>/instruments/<instrument_id>/measurements/<measurement_id>')
 
