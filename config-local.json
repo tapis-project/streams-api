@@ -6,10 +6,10 @@
   "show_traceback": false,
   "dev_token": "sometoken",
   "local_dev":true,
-  "chords_url":"http://192.168.86.219",
-  "chords_api_key":"XEiYfx6-LBgxSou38Tzn",
+  "chords_url":"http://192.168.56.1",
+  "chords_api_key":"",
   "chords_user_email":"admin@chordsrt.com",
-  "influxdb_host":"192.168.86.219",
+  "influxdb_host":"192.168.56.1",
   "influxdb_port":"8086",
   "influxdb_database":"chords_ts_production",
   "influxdb_username":"admin",
@@ -19,6 +19,9 @@
   "stream_db":"StreamsTACCDB",
   "tapis_base_url":"https://dev.develop.tapis.io",
   "tapis_tenant":"dev",
-  "service_password": "1S5r1p8Sf05bBlcsQ+XkvybYrop2y8s+IaEouR9Kcs4=",
-  "ignore_auth": true
+  "service_password": "",
+  "ignore_auth": true,
+  "kapacitor_username": "admin",
+  "kapacitor_password": "admin kapacitor",
+  "kapacitor_url":"http://localhost:9092"
 }
