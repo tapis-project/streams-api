@@ -408,7 +408,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-
   /v3/streams/projects/{project_uuid}/sites/{site_id}:
     get:
       tags:
@@ -723,7 +722,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-
   /v3/streams/projects/{project_uuid}/sites/{site_id}/instruments/{inst_id}:
     get:
       tags:
@@ -925,6 +923,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+
 
   /v3/streams/projects/{project_uuid}/sites/{site_id}/instruments/{inst_id}/variables:
     get:
@@ -1287,6 +1286,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
+
   /v3/streams/measurements:
     post:
       tags:
@@ -1311,6 +1311,80 @@ paths:
                   - $ref: '#/components/schemas/BasicResponse'
                 properties:
                  result:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Measurement'
+
+        '400':
+          description: Input error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+        '401':
+          description: Not authorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /v3/streams/measurements/{inst_id}:
+    get:
+      tags:
+      - Measurements
+      summary: List measurements when only inst_id is provided
+      description: Download measurements
+      operationId: download_measurements.
+      parameters:
+        - name: inst_id
+          in: path
+          description: Unique id of instruments
+          required: true
+          schema:
+            type: string
+        - name: query
+          in: query
+          description: a formated query string for measurements.
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: limit the number of records returned.
+          schema:
+            type: integer
+        - name: offset
+          in: query
+          description: index (offset) to start list.
+          schema:
+            type: integer
+        - name: start_date
+          in: query
+          description: start date of measurements
+          schema:
+            type: string
+        - name: end_date
+          in: query
+          description: end date of measurements
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BasicResponse'
+                properties:
+                  result:
                     type: array
                     items:
                       $ref: '#/components/schemas/Measurement'
@@ -1432,7 +1506,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-
 
 
 ### begin of Ontology
@@ -1710,18 +1783,20 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
 
 #### End of Ontology
-  /creeks:
+
+
+  /channels:
     get:
       tags:
-       - Creeks
-      summary: List creeks.
-      description: List creeks.
-      operationId: list_creeks
+       - channels
+      summary: List channels.
+      description: List channels.
+      operationId: list_channels
       x-swagger-router-controller: connexContr
       parameters:
       - name: query
         in: query
-        description: a formated query string for creeks.
+        description: a formated query string for channel.
         schema:
           type: string
       - name: limit
@@ -1746,7 +1821,7 @@ paths:
                    result:
                     type: array
                     items:
-                      $ref: '#/components/schemas/Creek'
+                      $ref: '#/components/schemas/Channel'
 
         '400':
           description: Input error.
@@ -1772,17 +1847,17 @@ paths:
 
     post:
       tags:
-      - Creeks
-      summary: Create creeks.
-      description: Create creeks.
-      operationId: create_creek
+      - Channels
+      summary: Create channels.
+      description: Create channels.
+      operationId: create_channels
       x-swagger-router-controller: connexContr
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/NewCreek'
+              $ref: '#/components/schemas/NewChannel'
       responses:
         '201':
           description: Created
@@ -1795,7 +1870,7 @@ paths:
                   result:
                     type: array
                     items:
-                      $ref: '#/components/schemas/Creek'
+                      $ref: '#/components/schemas/Channel'
         '400':
           description: Input error.
           content:
@@ -1817,18 +1892,17 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-
-  /creeks/{creek_uuid}:
+  /channels/{channel_id}:
     get:
       tags:
-      - Creeks
-      summary: Get creek details
-      description: Get details of a specific creek by its id
-      operationId: get_creek
+      - Channels
+      summary: Get channels details
+      description: Get details of a specific channel by its id
+      operationId: get_channel
       parameters:
-      - name: creek_uuid
+      - name: channel_id
         in: path
-        description: Unique ID of creek generated by Tapis
+        description: Unique channel id
         required: true
         schema:
           type: string
@@ -1842,8 +1916,7 @@ paths:
                   - $ref: '#/components/schemas/BasicResponse'
                 properties:
                   result:
-                    $ref: '#/components/schemas/Creek'
-
+                    $ref: '#/components/schemas/Channel'
 
         '400':
           description: Input error.
@@ -1859,7 +1932,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
         '404':
-          description: Creek not found.
+          description: Channel not found.
           content:
             application/json:
               schema:
@@ -1874,17 +1947,17 @@ paths:
 
 
 
-    put:
+    patch:
       tags:
-      - Creeks
-      summary: Update a creek
-      description: Update a creek
-      operationId: update_creek
+      - Channel
+      summary: Update a channel
+      description: Update a channel
+      operationId: update_channel
       x-swagger-router-controller: connexContr
       parameters:
-        - name: creek_uuid
+        - name: channel_id
           in: path
-          description: Unique ID of creek generated by Tapis
+          description: Unique channel id
           required: true
           schema:
             type: string
@@ -1893,7 +1966,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/NewCreek'
+              $ref: '#/components/schemas/NewChannel'
       responses:
         '201':
           description: Updated
@@ -1904,7 +1977,7 @@ paths:
                   - $ref: '#/components/schemas/BasicResponse'
                 properties:
                  result:
-                  $ref: '#/components/schemas/Creek'
+                  $ref: '#/components/schemas/Channel'
 
         '400':
           description: Input error.
@@ -1920,7 +1993,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
         '404':
-          description: Creek not found.
+          description: Channel not found.
           content:
             application/json:
               schema:
@@ -1936,15 +2009,15 @@ paths:
 
     delete:
       tags:
-      - Creeks
-      summary: Delete a creek
-      description: Delete a creek
-      operationId: delete_creek
+      - Channel
+      summary: Delete a channel
+      description: Delete a channel
+      operationId: delete_channel
       x-swagger-router-controller: connexContr
       parameters:
-        - name: creek_uuid
+        - name: channel_id
           in: path
-          description: Unique ID of creek generated by Tapis
+          description: Unique channel id
           required: true
           schema:
             type: string
@@ -1958,7 +2031,7 @@ paths:
                   - $ref: '#/components/schemas/BasicResponse'
                 properties:
                  result:
-                  $ref: '#/components/schemas/Creek'
+                  $ref: '#/components/schemas/Channel'
 
         '400':
           description: Input error.
@@ -1974,7 +2047,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
         '404':
-          description: Creek not found.
+          description: Channel not found.
           content:
             application/json:
               schema:
@@ -1986,6 +2059,216 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+
+  /channels/{channel_id}/alerts:
+    get:
+      tags:
+        - Channels
+      summary: List alerts for given channel id
+      description: Get details of a specific channel by its id
+      operationId: list_alerts
+      parameters:
+        - name: channel_id
+          in: path
+          description: Unique channel id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BasicResponse'
+                properties:
+                  result:
+                    $ref: '#/components/schemas/Alert'
+        '400':
+          description: Input error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+        '401':
+          description: Not authorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Alert not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /templates:
+    get:
+      tags:
+        - Templates
+      summary: List templates.
+      description: List templates.
+      operationId: list_templates
+      x-swagger-router-controller: connexContr
+      parameters:
+        - name: query
+          in: query
+          description: a formated query string for channel.
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: limit the number of records returned.
+          schema:
+            type: integer
+        - name: offset
+          in: query
+          description: index (offset) to start list.
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BasicResponse'
+                properties:
+                  result:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Template'
+
+        '400':
+          description: Input error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+        '401':
+          description: Not authorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+
+    post:
+      tags:
+        - Templates
+      summary: Create template.
+      description: Create template.
+      operationId: create_template
+      x-swagger-router-controller: connexContr
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewTemplate'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BasicResponse'
+                properties:
+                  result:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Template'
+        '400':
+          description: Input error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+        '401':
+          description: Not authorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /templates/{template_id}:
+    get:
+      tags:
+        - Templates
+      summary: Get templates.
+      description: Get template.
+      operationId: get_template
+      x-swagger-router-controller: connexContr
+      parameters:
+        - name: template_id
+          in: path
+          description: Unique template id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BasicResponse'
+                properties:
+                  result:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Template'
+
+        '400':
+          description: Input error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+        '401':
+          description: Not authorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
 
 
   /units:
@@ -2039,7 +2322,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
         '404':
-          description: Creek not found.
+          description: Unit not found.
           content:
             application/json:
               schema:
@@ -2103,7 +2386,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
         '404':
-          description: Creek not found.
+          description: measured properties not found.
           content:
             application/json:
               schema:
@@ -2391,8 +2674,6 @@ components:
           description: User entered short name
       required: [var_name, shortname, var_id]
 
-
-
     Variable:
       type: object
       properties:
@@ -2444,8 +2725,6 @@ components:
               var_id:
                 type: string
                 description: Field Name needs to be the variable id and value is the observed measuremnet. Example {"temp1":75.0}
-
-
 
     NewMeasurement:
       type: object
@@ -2513,44 +2792,117 @@ components:
           type: string
 
 
-    Creek:
+    Channel:
       type: object
       properties:
-        name:
+        channel_name:
           type: string
-          description: The name of creek.
-        creek_uuid:
+          description: The name of channel.
+        channel_id:
           type: string
-          description: The creek uuid generated by Tapis.
-        creek_id:
+          description: The id generated by Tapis.
+        create_time:
           type: string
-          description: The unique identifier for creek.
-        owner:
+          description: The time of channel creation
+        task_id:
           type: string
-          description: The owner for creek.
-        query:
-          type: object
-          description: For continous query it needs frequency, group by time.RESAMPLE EVERY <interval> FOR <interval>
-        triggers:
+          description: task id from Kapacitor
+        triggers_with_actions:
           type: array
           items:
             type: object
-          description: Each object in triggers array evaluates one variable using some mathematical function.
-        query_type:
+            properties:
+              action:
+                type: object
+                properties:
+                  actor_base_url:
+                    type: string
+                    description: base url for tenant
+                  actor_id:
+                    type: string
+                    description: actor id
+                  message:
+                    type: string
+                    description: message posted to the actor
+                  method:
+                    type: string
+                    description: ACTOR
+                  nonces:
+                    type: string
+                    description: Abaco nonces
+              condition:
+                type: object
+                properties:
+                  key:
+                    type: string
+                    description: variable id
+                  operator:
+                    type: string
+                    description: logical operator
+                  val:
+                    type: number
+                    description: Value of measurement
+              inst_ids:
+                type: array
+                items:
+                  type: string
+        template_id:
           type: string
-          description: Type of query
-          enum: [triggers, continous]
-        resource_type:
-          type: string
-          description: The type of resource.
-          enum: [creek]
-        action:
-          oneOf:
-            - $ref: "#/components/schemas/Actor"
-            - $ref: "#/components/schemas/Notification"
-            - $ref: "#/components/schemas/Application"
-            - $ref: "#/components/schemas/Callback"
+          description: Template id
+        permissions:
+          type: object
+          properties:
+            users:
+              type: array
+              items:
+                type: string
 
+    NewChannel:
+      type: object
+      properties:
+        channel_id:
+          type: string
+          description: User defined channel id.
+        channel_name:
+          type: string
+          description: User defined channel name.
+        task_id:
+          type: string
+          description: Task id generated by Kapacitor.
+        template_id:
+          type: string
+          description: Template id.
+        triggers_with_actions:
+          type: array
+          items:
+            type: object
+            properties:
+              inst_ids:
+                type: array
+                items:
+                  type: string
+              condition:
+                type: object
+                properties:
+                  key:
+                    type: string
+                  operator:
+                    type: string
+                  value:
+                    type: number
+              action:
+                type: object
+                properties:
+                  method:
+                    type: string
+                  actor_id:
+                    type: string
+                  message:
+                    type: string
+                  abaco_base_url:
+                    type: string
+                  nonces:
+                    type: string
 
     Unit:
       type: object
@@ -2582,41 +2934,59 @@ components:
           description: Name of the ontology this unit belongs too.
 
 
-
-
-    NewCreek:
-      type: object
-      properties:
-        variable_uuid:
-          type: string
-          description: Associate variable id.
-        query:
-          type: object
-          description: For continous query it needs frequency, group by time.RESAMPLE EVERY <interval> FOR <interval>
-        triggers:
-          type: array
-          items:
-            type: object
-          description: Each object in triggers array evaluates one variable using some mathematical function.
-        query_type:
-          type: string
-          description: Type of query
-          enum: [triggers, continous]
-        action:
-          type: string
-          description: Type of action
-          enum: [actor, callback, application, notifications]
-
-
-
-    Actor:
+    Alert:
      type: object
+     properties:
+       actor_id:
+         type: string
+         description: Abaco actor id
+       alert_id:
+         type: string
+         description: Alert id
+       channel_id:
+         type: string
+         description: Unique channel id
+       channel_name:
+          type: string
+          description: User defined channel name
+       create_time:
+          type: string
+          description: Time of alert creation
+       execution_id:
+          type: string
+          description: Abaco execution id
 
-    Notification:
-     type: object
 
-    Callback:
+    Template:
      type: object
+     properties:
+       create_time:
+         type: string
+         description: Time for template creation
+       permissions:
+         type: object
+         properties:
+           users:
+             type: array
+             items:
+               type: string
+       script:
+         type: string
+       template_id:
+         type: string
+       type:
+         type: string
+
+    NewTemplate:
+     type: object
+     properties:
+        template_id:
+          type: string
+          description: User defined template id
+        script:
+          type: string
+        type:
+          type: string
 
     Application:
      type: object
