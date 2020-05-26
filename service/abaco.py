@@ -5,7 +5,7 @@ import auth
 import meta
 from flask import g, Flask
 app = Flask(__name__)
-
+import pandas as pd
 from common import utils, errors
 # get the logger instance -
 from common.logs import get_logger
@@ -25,6 +25,15 @@ def create_alert(channel,req_data):
     headers = {'accept': 'application/json'}
     message_data = {}
     message_data['message'] = req_data
+    message_data['message']['channel_id'] = channel['channel_id']
+
+    result = meta.fetch_instrument_index(channel["triggers_with_actions"][0]['inst_ids'][0])
+    message_data['message']['project_id'] = result[0]['project_id']
+    message_data['message']['site_id'] = result[0]['site_id']
+    message_data['message']['inst_id'] = result[0]['instrument_id']
+    cond_key = channel['triggers_with_actions'][0]['condition']['key'].split(".")
+    message_data['message']['var_id'] = cond_key[1]
+    logger.debug('message_data: '+ str(message_data))
     try:
         res = requests.post(abaco_url, json=message_data, headers=headers, verify=False)
     except Exception as e:
@@ -53,3 +62,6 @@ def create_alert(channel,req_data):
     else:
         msg = f"Abaco Actor: {actor_id} unable to perform the execution on the message: {message_data}. Check the Actor Status and the message"
         raise errors.ResourceError(msg=msg)
+
+
+
