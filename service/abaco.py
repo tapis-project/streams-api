@@ -26,8 +26,8 @@ def create_alert(channel,req_data):
     message_data = {}
     message_data['message'] = req_data
     message_data['message']['channel_id'] = channel['channel_id']
+
     result = meta.fetch_instrument_index(channel["triggers_with_actions"][0]['inst_ids'][0])
-    #logger.debug(str(result))
     message_data['message']['project_id'] = result[0]['project_id']
     message_data['message']['site_id'] = result[0]['site_id']
     message_data['message']['inst_id'] = result[0]['instrument_id']
