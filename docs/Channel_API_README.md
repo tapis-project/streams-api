@@ -15,7 +15,7 @@ Header  Content-Type: application/json
 Header  X-Tapis-Token: $TOKEN
 JSON request body:
 {   
-  "template_id":"tapis_template",
+  "template_id":"tapis_template_demo_2",
   "type":"stream",
   "script":"var period=5s\n var every=0s\n var crit lambda \n var channel_id string\n stream\n    |from()\n        .measurement('tsdata')\n         .groupBy('var')\n     |window()\n        .period(period)\n         .every(every)\n         .align()\n     |alert()\n        .id(channel_id +  ' {{ .Name }}/{{ .Group }}/{{.TaskName}}/{{index .Tags \"var\" }}')\n         .crit(crit)\n         .message('{{.ID}} is {{ .Level}} at time: {{.Time}} as value: {{ index .Fields \"value\" }} exceeded the threshold')\n        .details('')\n         .post()\n         .endpoint('api-alert')\n     .captureResponse()\n    |httpOut('msg')"
 
@@ -29,14 +29,15 @@ Expected Response:
 {
     "message": "Template Created",
     "result": {
-        "create_time": "2020-05-21 00:52:33.120704",
+        "create_time": "2020-05-26 00:52:30.950782",
+        "last_updated": "2020-05-26 00:52:30.950802",
         "permissions": {
             "users": [
                 "streamsTACCAdmin"
             ]
         },
         "script": "var period=5s\n var every=0s\n var crit lambda \n var channel_id string\n stream\n    |from()\n        .measurement('tsdata')\n         .groupBy('var')\n     |window()\n        .period(period)\n         .every(every)\n         .align()\n     |alert()\n        .id(channel_id +  ' {{ .Name }}/{{ .Group }}/{{.TaskName}}/{{index .Tags \"var\" }}')\n         .crit(crit)\n         .message('{{.ID}} is {{ .Level}} at time: {{.Time}} as value: {{ index .Fields \"value\" }} exceeded the threshold')\n        .details('')\n         .post()\n         .endpoint('api-alert')\n     .captureResponse()\n    |httpOut('msg')",
-        "template_id": "tapis_template",
+        "template_id": "tapis_template_demo_2",
         "type": "stream"
     },
     "status": "success",
@@ -51,12 +52,12 @@ To obtain a template information, make a `GET` request to `/templates/<template_
 A template can be updated like so:
 
 ```
-POST http://localhost:5000/v3/streams/templates
+PUT http://localhost:5000/v3/streams/templates/tapis_template_demo_2
 Header  Content-Type: application/json
 Header  X-Tapis-Token: $TOKEN
 JSON request body:
 {   
-  "template_id":"tapis_template",
+  "template_id":"tapis_template_demo_2",
   "type":"stream",
   "script":"var period=5s\n var every=1s\n var crit lambda \n var channel_id string\n stream\n    |from()\n        .measurement('tsdata')\n         .groupBy('var')\n     |window()\n        .period(period)\n         .every(every)\n         .align()\n     |alert()\n        .id(channel_id +  ' {{ .Name }}/{{ .Group }}/{{.TaskName}}/{{index .Tags \"var\" }}')\n         .crit(crit)\n         .message('{{.ID}} is {{ .Level}} at time: {{.Time}} as value: {{ index .Fields \"value\" }} exceeded the threshold')\n        .details('')\n         .post()\n         .endpoint('api-alert')\n     .captureResponse()\n    |httpOut('msg')"
 
@@ -76,22 +77,20 @@ Header  Content-Type: application/json
 Header  X-Tapis-Token: $TOKEN
 JSON request body:
 {  
-  "channel_id": "abacoTest12",
+    "channel_id": "abacoTest15",
     "channel_name": "streams.abaco.test",
-  "task_id" : "abacoTest12",
-    "template_id":"tapis_template",
+    "template_id":"tapis_template_demo_2",
     "triggers_with_actions":[
       {
-      "inst_ids":["1ab"],
-      "condition": {"key":"1ab.temp", "operator":">", "val":91.0},
-      "action":{
-          "method": "ACTOR",
-          "actor_id":"4VQZ540z1P3Gm",
-          "message": "Instrument: 1ab temp exceeded threshold ",
-          "abaco_base_url":"https://api.tacc.utexas.edu",
-          "nonces":""
-        }
-    }]
+        "inst_ids":["1ab"],
+        "condition": {"key":"1ab.temp", "operator":">", "val":91.0},
+         "action":{
+            "method": "ACTOR",
+            "actor_id":"4VQZ540z1P3Gm",
+            "message": "Instrument: 1ab temp exceeded threshold ",
+            "abaco_base_url":"https://api.tacc.utexas.edu",
+            "nonces":"TACC-PROD_7KZppEa8Vrrm3"}
+        }]
 }
 
 ```
@@ -101,17 +100,17 @@ Expected Response:
 {
     "message": "Channel Created",
     "result": {
-        "channel_id": "abacoTest12",
+        "channel_id": "abacoTest15",
         "channel_name": "streams.abaco.test",
-        "create_time": "2020-05-21 00:56:45.925735",
+        "create_time": "2020-05-26 00:58:50.796785",
+        "last_updated": "2020-05-26 00:58:50.796802",
         "permissions": {
             "users": [
                 "streamsTACCAdmin"
             ]
         },
         "status": "ACTIVE",
-        "task_id": "abacoTest12",
-        "template_id": "tapis_template",
+        "template_id": "tapis_template_demo_2",
         "triggers_with_actions": [
             {
                 "action": {
@@ -119,7 +118,7 @@ Expected Response:
                     "actor_id": "4VQZ540z1P3Gm",
                     "message": "Instrument: 1ab temp exceeded threshold ",
                     "method": "ACTOR",
-                    "nonces": ""
+                    "nonces": "TACC-PROD_7KZppEa8Vrrm3"
                 },
                 "condition": {
                     "key": "1ab.temp",
@@ -145,7 +144,7 @@ To obtain a channel information, make a `GET` request to `/channels/<channel_id>
 To change channel status from `ACTIVE` to `INACTIVE`, make a `POST` request to `/channels/<channel_id>` like so :
 
 ```
-POST http://localhost:5000/v3/streams/channels/abacoTest12
+POST http://localhost:5000/v3/streams/channels/abacoTest15
 Header  Content-Type: application/json
 Header  X-Tapis-Token: $TOKEN
 JSON body:
@@ -156,3 +155,41 @@ JSON body:
 #### Alerts
 
 To get alerts list for a channel, make a `GET` request to `/channels/<channel_id>/alerts`.
+
+```
+GET http://localhost:5000/v3/streams/channels/abacoTest15/alerts
+
+Expected Response depending on the number of alerts triggered:
+{
+    "message": "Alerts found",
+    "result": [
+        {
+            "actor_id": "4VQZ540z1P3Gm",
+            "alert_id": "axMykJ0D8EoR",
+            "channel_id": "abacoTest15",
+            "channel_name": "streams.abaco.test",
+            "create_time": "2020-05-26 01:05:47.761673",
+            "execution_id": "axMykJ0D8EoR"
+        },
+        {
+            "actor_id": "4VQZ540z1P3Gm",
+            "alert_id": "jq5RJOVyM6BWg",
+            "channel_id": "abacoTest15",
+            "channel_name": "streams.abaco.test",
+            "create_time": "2020-05-26 01:04:47.711024",
+            "execution_id": "jq5RJOVyM6BWg"
+        },
+        {
+            "actor_id": "4VQZ540z1P3Gm",
+            "alert_id": "jJ6LkNPNMZ0kQ",
+            "channel_id": "abacoTest15",
+            "channel_name": "streams.abaco.test",
+            "create_time": "2020-05-26 01:03:47.835196",
+            "execution_id": "jJ6LkNPNMZ0kQ"
+        }
+    ],
+    "status": "success",
+    "version": "dev"
+}
+
+```

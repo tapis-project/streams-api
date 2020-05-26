@@ -98,7 +98,7 @@ def create_project(body):
             results=bug.response
     else:
         raise errors.ResourceError(msg=f'Project Creation Failed')
-        results =bug.response
+        results = bug.response
     return results, message
 
 def update_project(project_id, put_body):
