@@ -41,6 +41,19 @@ class ChordsVariable:
 
 # class ChordsMeasurement():
 #     def __init__(self):
+
+class KapacitorTemplate:
+    def __init__(self, id, type, script):
+        self.id = id
+        self.type = type
+        self.script = script
+
+class MetaTemplate:
+    def __init__(self, template_id, type, script):
+        self.template_id = template_id
+        self.type = type
+        self.script = script
+
 class ChannelAlert:
     def __init__(self,id, message, condition,channel_id,action_taken, actor_id, execution_id):
         self.id = id
