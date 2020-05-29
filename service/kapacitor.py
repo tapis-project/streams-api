@@ -71,7 +71,24 @@ def change_task_status(task_id,body):
     logger.debug('status_code' + str(res.status_code))
     return json.loads(res.content), res.status_code
 
-
+# update a task
+def update_kapacitor_task(task_id,body):
+    logger.debug("UPDATING TASK ")
+    logger.debug(conf.kapacitor_url + '/kapacitor/v1/tasks/' + task_id)
+    logger.debug(body)
+    headers = {
+        'content-type': "application/json"
+    }
+    logger.debug(headers)
+    try:
+        res = requests.patch(conf.kapacitor_url + '/kapacitor/v1/tasks/' + task_id, headers=headers, json=body,
+                       auth=HTTPBasicAuth(conf.kapacitor_username, conf.kapacitor_password), verify=False)
+    except Exception as e:
+        msg = f" Kapacitor bad request ; exception: {e}"
+        raise errors.ResourceError(msg=msg)
+    logger.debug('Kapacitor Response' + str(res.content))
+    logger.debug('status_code' + str(res.status_code))
+    return json.loads(res.content), res.status_code
 
 ####################### CHANNEL ########################################
 #Expected values for req_body:
@@ -117,15 +134,16 @@ def create_channel(req_body):
         if str(mchannel_bug.response.status_code) == '201':
             message = "Channel Created"
             #get the newly created channel object to return
-            result, bug= get_channel(req_body['channel_id'])
-            logger.debug(result)
+            result, bug = get_channel(req_body['channel_id'])
+            logger.debug('Channel Returned From Meta'+ str(result))
         else:
             #TODO need to remove task from kapacitor if this failed
-            raise errors.ResourceError(msg=f'Channel Creation Failed')
-            result=mchannel_bug.response
-            message = "Channel Creation Failed"
+            raise errors.ResourceError(msg=f'Meta Channel Creation Failed')
+            #result = mchannel_bug.response
+            #message = "Channel Creation Failed"
     else:
-        raise errors.ResourceError(msg=f'Channel Already Exists or Internel Server Error.  Channel Creation Failed')
+        msg = str(ktask_result) + 'Channel Creation Failed'
+        raise errors.ResourceError(msg=msg)
         #result=ktask_result
         #message = "Channel Creation Failed"
     return result, message
@@ -191,8 +209,54 @@ def get_channel(channel_id):
         raise errors.ResourceError(msg=f'No Channel found')
     return result, message
 
-def update_channel():
-    return True
+def update_channel(channel_id, req_body):
+    logger.debug('Top of update_channel')
+
+    # Get channel information from Meta
+    try:
+        channel_result, msg = get_channel(channel_id)
+    except Exception as e:
+        msg = f" Channel {channel_id} NOT Found; exception: {e}"
+        raise errors.ResourceError(msg=msg)
+
+    # TODO check if Kapacitor Task exist
+    logger.debug('UPDATING ... Kapacitor Task')
+    task_id = req_body['channel_id']
+    task_body = {'id': task_id,
+                 'dbrps': [{"db": "chords_ts_production", "rp": "autogen"}]}
+
+    task_body['template-id'] = req_body['template_id']
+    vars = {}
+    vars = convert_conditions_to_vars(req_body)
+    task_body['vars'] = vars
+    logger.debug('update_task request body: ' + str(task_body))
+
+    try:
+        kapacitor_result, kapacitor_status_code = update_kapacitor_task(channel_id, task_body)
+    except Exception as e:
+        msg = f" Not able to connect to Kapacitor for the task {channel_id} update; exception: {e}"
+        raise errors.ResourceError(msg=msg)
+
+    if kapacitor_status_code == 200:
+        logger.debug("UPDATED ... Kapacitor task  ")
+        logger.debug("UPDATING ... channel object in meta")
+
+        if kapacitor_result['status'] == 'enabled':
+            channel_result['status'] = 'ACTIVE'
+        elif kapacitor_result['status'] == 'disabled':
+            channel_result['status'] = 'INACTIVE'
+        else:
+            channel_result['status'] = 'ERROR'
+        channel_result['last_updated'] = str(datetime.datetime.utcnow())
+        channel_result['template_id'] = kapacitor_result['template-id']
+        channel_result['channel_name'] = req_body['channel_name']
+        channel_result['triggers_with_actions'] = req_body['triggers_with_actions']
+        meta_result = {}
+        meta_result, meta_message = meta.update_channel(channel_result)
+    else:
+        msg = f" Could Not Find Channel {channel_id} with Task ID {channel_result['channel_id']} "
+        raise errors.ResourceError(msg=msg)
+    return meta_result, meta_message
 
 def update_channel_status(channel_id, body):
     logger.debug('In update_channel_status')
@@ -266,8 +330,8 @@ def create_template(body):
         logger.debug("Status_Code: " + str(mtemplate_bug.response.status_code))
         logger.debug(mtemplate_result)
         if str(mtemplate_bug.response.status_code) == '201':
-            message = "Template Created"
-            #get the newly created channel object to return
+            message = "Template Created in Meta"
+            #get the newly created template object to return
             result, bug = get_template(body['template_id'])
             logger.debug(result)
         else:
@@ -275,7 +339,8 @@ def create_template(body):
             #TODO Rollback- delete template in Kapacitor
             raise errors.ResourceError(msg=message)
     else:
-        message = f'Template already exists. Kapacitor Template Creation Failed'
+        kapacitor_res_msg = res.content
+        message = kapacitor_res_msg + f'Kapacitor Template Creation Failed'
         raise errors.ResourceError(msg=message)
 
     return result, message
@@ -298,26 +363,34 @@ def get_template(template_id):
 def update_template(template_id, body):
     logger.debug('In update_template')
     try:
-        template_result, msg = get_template(template_id)
+        meta_template, msg = get_template(template_id)
     except Exception as e:
-        msg = f" Template {template_id} NOT Found; exception: {e}"
-        raise errors.ResourceError(msg=msg)
+       msg = f" Template {template_id} NOT Found; exception: {e}"
+       raise errors.ResourceError(msg=msg)
 
     logger.debug('UPDATING ... Kapacitor Template')
 
+    template_body = {}
+    template_body['id'] = body['template_id']
+    template_body['type'] = body['type']
+    template_body['script'] = body['script']
+
     try:
-        result,status_code = update_kapacitor_template(template_result['template_id'],body)
+        result,status_code = update_kapacitor_template(body['template_id'],template_body)
     except Exception as e:
-        msg = f" Not able to connect to Kapacitor for the template {template_result['template_id']} update; exception: {e}"
+        msg = f" Not able to connect to Kapacitor for the template {body['template_id']} update; exception: {e}"
         raise errors.ResourceError(msg=msg)
 
     if status_code == 200:
         logger.debug("UPDATED ... Kapacitor template ")
         logger.debug("UPDATING ... template object in meta")
+        meta_template['type'] = body['type']
+        meta_template['script'] = body['script']
+        meta_template['last_updated'] = str(datetime.datetime.utcnow())
         result = {}
-        result, message = meta.update_template(template_result)
+        result, message = meta.update_template(meta_template)
     else:
-        msg = f" Could Not Find Template {template_id} with Template {template_result['template_id']} "
+        msg = f" Could Not Find Template {template_id} with Template {body} "
         raise errors.ResourceError(msg=msg)
     return result,message
 
@@ -350,6 +423,8 @@ def get_template_kapacitor(template_id):
 def update_kapacitor_template(template_id,body):
     logger.debug("UPDATING Template")
     logger.debug(conf.kapacitor_url + '/kapacitor/v1/templates/' + template_id)
+
+
     logger.debug(body)
     headers = {
         'content-type': "application/json"
