@@ -59,8 +59,30 @@ JSON request body:
 {   
   "template_id":"tapis_template_demo_2",
   "type":"stream",
-  "script":"var period=5s\n var every=1s\n var crit lambda \n var channel_id string\n stream\n    |from()\n        .measurement('tsdata')\n         .groupBy('var')\n     |window()\n        .period(period)\n         .every(every)\n         .align()\n     |alert()\n        .id(channel_id +  ' {{ .Name }}/{{ .Group }}/{{.TaskName}}/{{index .Tags \"var\" }}')\n         .crit(crit)\n         .message('{{.ID}} is {{ .Level}} at time: {{.Time}} as value: {{ index .Fields \"value\" }} exceeded the threshold')\n        .details('')\n         .post()\n         .endpoint('api-alert')\n     .captureResponse()\n    |httpOut('msg')"
+  "script": "var crit lambda \n var channel_id string\n stream\n    |from()\n        .measurement('tsdata')\n         .groupBy('var')\n     |alert()\n        .id(channel_id +  ' {{ .Group }}/{{.TaskName}}/{{index .Tags \"var\" }}')\n         .crit(crit)\n         .noRecoveries()\n         .message('{{.ID}} was {{ .Level}} at time: {{.Time}} as value: {{ index .Fields \"value\" }} exceeded the threshold')\n        .details('')\n         .post()\n         .endpoint('api-alert')\n     .captureResponse()\n    |httpOut('msg')"
+}
 
+```
+
+Expected Response:
+
+```
+{
+    "message": "Template Updated",
+    "result": {
+        "create_time": "2020-05-26 00:52:30.950782",
+        "last_updated": "2020-05-29 18:29:37.279405",
+        "permissions": {
+            "users": [
+                "streamsTACCAdmin"
+            ]
+        },
+        "script": "var crit lambda \n var channel_id string\n stream\n    |from()\n        .measurement('tsdata')\n         .groupBy('var')\n     |alert()\n        .id(channel_id +  ' {{ .Group }}/{{.TaskName}}/{{index .Tags \"var\" }}')\n         .crit(crit)\n         .noRecoveries()\n         .message('{{.ID}} was {{ .Level}} at time: {{.Time}} as value: {{ index .Fields \"value\" }} exceeded the threshold')\n        .details('')\n         .post()\n         .endpoint('api-alert')\n     .captureResponse()\n    |httpOut('msg')",
+        "template_id": "tapis_template_demo_2",
+        "type": "stream"
+    },
+    "status": "success",
+    "version": "dev"
 }
 
 ```
@@ -152,44 +174,50 @@ JSON body:
 
 ```
 
+
 #### Alerts
 
 To get alerts list for a channel, make a `GET` request to `/channels/<channel_id>/alerts`.
 
 ```
 GET http://localhost:5000/v3/streams/channels/abacoTest15/alerts
+Header  X-Tapis-Token: $TOKEN
 
-Expected Response depending on the number of alerts triggered:
+```
+
+Expected Response if there is total of 15 alerts:
+
+```
+
 {
     "message": "Alerts found",
-    "result": [
-        {
-            "actor_id": "4VQZ540z1P3Gm",
-            "alert_id": "axMykJ0D8EoR",
-            "channel_id": "abacoTest15",
-            "channel_name": "streams.abaco.test",
-            "create_time": "2020-05-26 01:05:47.761673",
-            "execution_id": "axMykJ0D8EoR"
-        },
-        {
-            "actor_id": "4VQZ540z1P3Gm",
-            "alert_id": "jq5RJOVyM6BWg",
-            "channel_id": "abacoTest15",
-            "channel_name": "streams.abaco.test",
-            "create_time": "2020-05-26 01:04:47.711024",
-            "execution_id": "jq5RJOVyM6BWg"
-        },
-        {
-            "actor_id": "4VQZ540z1P3Gm",
-            "alert_id": "jJ6LkNPNMZ0kQ",
-            "channel_id": "abacoTest15",
-            "channel_name": "streams.abaco.test",
-            "create_time": "2020-05-26 01:03:47.835196",
-            "execution_id": "jJ6LkNPNMZ0kQ"
-        }
-    ],
-    "status": "success",
-    "version": "dev"
-}
+    "result": {
+        "alerts": [
+            {
+                "actor_id": "4VQZ540z1P3Gm",
+                "alert_id": "9203494f-91be-468e-bf52-777a3ab3bdd1",
+                "channel_id": "abacoTest15",
+                "channel_name": "streams.abaco.test",
+                "create_time": "2020-05-29 18:37:19.216410",
+                "execution_id": "KJjYZw3e5Qbqr",
+                "message": "abacoTest15 var=1/abacoTest15/1 was CRITICAL at time: 2020-05-29 18:37:15.779 +0000 UTC as value: 93 exceeded the threshold"
+            },
+            {
+                "actor_id": "4VQZ540z1P3Gm",
+                "alert_id": "60c217f1-f0af-45d2-a8e5-417ddc72b242",
+                "channel_id": "abacoTest15",
+                "channel_name": "streams.abaco.test",
+                "create_time": "2020-05-29 18:37:18.091686",
+                "execution_id": "jQA6qWL708D7K",
+                "message": "abacoTest15 var=1/abacoTest15/1 was CRITICAL at time: 2020-05-29 18:37:15.726 +0000 UTC as value: 100 exceeded the threshold"
+            },
+            ...
+          ],
+          "num_of_alerts": 15
+   },
+
+   "status": "success",
+   "version": "dev"
+}  
 
 ```

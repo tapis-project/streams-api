@@ -51,7 +51,7 @@ def create_alert(channel, req_data):
 
     if res.status_code == 200:
         abaco_res = json.loads(res.text)
-        #TODO create alert summary and alert object
+        #TODO create alert summary and alert object with all details
         execution_id = abaco_res['result']['executionId']
         alert = {}
         alert['alert_id'] = str(uuid.uuid4())

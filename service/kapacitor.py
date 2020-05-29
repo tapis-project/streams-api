@@ -278,6 +278,8 @@ def update_channel_status(channel_id, body):
         logger.debug("UPDATED ... Kapacitor task status ")
         logger.debug("UPDATING ... channel object in meta")
         logger.debug('status: ' + body['status'])
+
+        # TODO Convert to Status Enum
         if result['status']=='enabled':
             channel_result['status'] = 'ACTIVE'
         elif result['status']=='disabled':
