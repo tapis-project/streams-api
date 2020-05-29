@@ -8,7 +8,6 @@ import datetime
 app = Flask(__name__)
 
 from common import utils, errors
-from tapy.dyna import DynaTapy
 import auth
 # get the logger instance -
 from common.logs import get_logger
