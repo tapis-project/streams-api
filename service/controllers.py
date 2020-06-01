@@ -526,6 +526,19 @@ class ChannelResource(Resource):
     def put(self, channel_id):
         logger.debug("top of PUT /channels/{channel_id}")
 
+        body = request.json
+        # TODO need to check the user permission to update channel status
+        if body['channel_id'] != channel_id:
+            raise errors.ResourceError(msg=f'Invalid PUT data: {body}. You cannot change channel id')
+
+        try:
+            result, msg = kapacitor.update_channel(channel_id, body)
+        except Exception as e:
+            msg = f"Could not update the channel: {channel_id}; exception: {e}"
+
+        logger.debug(result)
+        return utils.ok(result=meta.strip_meta(result), msg=msg)
+
     def post(self,channel_id):
         logger.debug("top of POST /channels/{channel_id}")
         body = request.json
@@ -558,8 +571,12 @@ class AlertsResource(Resource):
         logger.debug(channel_id)
         result, msg = meta.list_alerts(channel_id)
         logger.debug(result)
-        result = meta.strip_meta_list(result)
-        return utils.ok(result=result,msg=msg)
+        result_meta = meta.strip_meta_list(result)
+        num_of_alerts = len(result_meta)
+        result_alerts = {}
+        result_alerts['num_of_alerts'] = num_of_alerts
+        result_alerts['alerts'] = result_meta
+        return utils.ok(result=result_alerts,msg=msg)
 
 class AlertsPostResource(Resource):
     def get(self):
@@ -629,6 +646,10 @@ class TemplateResource(Resource):
         logger.debug("top of PUT /templates/{template_id}")
         body = request.json
         # TODO need to check the user permission to update template
+
+        if body['template_id'] != template_id:
+            raise errors.ResourceError(msg=f'Invalid PUT data: {body}. You cannot change template_id')
+
         result = {}
         try:
             result, msg = kapacitor.update_template(template_id,body)
