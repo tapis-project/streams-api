@@ -21,9 +21,6 @@ import pandas as pd
 from common.logs import get_logger
 logger = get_logger(__name__)
 
-
-
-
 class ProjectsResource(Resource):
     """
     Work with Project objects
