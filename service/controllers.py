@@ -546,6 +546,7 @@ class ChannelResource(Resource):
         logger.debug("top of POST /channels/{channel_id}")
         body = request.json
         # TODO need to check the user permission to update channel status
+        # TODO Convert to Status Enum
         if body['status']== 'ACTIVE':
             body['status']='enabled'
         elif body['status']== 'INACTIVE':
