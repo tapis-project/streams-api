@@ -20,6 +20,7 @@ servers:
   description: Develop Instance
 
 paths:
+### Begin of Projects
   /v3/streams/projects:
     get:
       tags:
@@ -288,8 +289,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+### End of Projects
 
 
+### Begin of Sites
   /v3/streams/projects/{project_uuid}/sites:
     get:
       tags:
@@ -592,8 +595,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+### End of Sites
 
 
+### Begin of Instruments
   /v3/streams/projects/{project_uuid}/sites/{site_id}/instruments:
     get:
       tags:
@@ -923,8 +928,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+### End of Instruments
 
 
+### Begin of Variables
   /v3/streams/projects/{project_uuid}/sites/{site_id}/instruments/{inst_id}/variables:
     get:
       tags:
@@ -1285,8 +1292,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+### End of Variables
 
 
+### Begin of Measurements
   /v3/streams/measurements:
     post:
       tags:
@@ -1506,6 +1515,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+### End of Measurements
 
 
 ### begin of Ontology
@@ -1781,14 +1791,14 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-
 #### End of Ontology
 
 
+### Begin of Channels
   /v3/streams/channels:
     get:
       tags:
-       - channels
+       - Channels
       summary: List channels.
       description: List channels.
       operationId: list_channels
@@ -1843,7 +1853,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-
 
     post:
       tags:
@@ -1945,11 +1954,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-
-
-    patch:
+    put:
       tags:
-      - Channel
+      - Channels
       summary: Update a channel
       description: Update a channel
       operationId: update_channel
@@ -2006,10 +2013,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-
     delete:
       tags:
-      - Channel
+      - Channels
       summary: Delete a channel
       description: Delete a channel
       operationId: delete_channel
@@ -2060,6 +2066,68 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
+    post:
+      tags:
+        - Channels
+      summary: Update channel status
+      description: Update channel status
+      operationId: update_status
+      x-swagger-router-controller: connexContr
+      parameters:
+        - name: channel_id
+          in: path
+          description: Unique channel id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateChannelStatus'
+      responses:
+        '201':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BasicResponse'
+                properties:
+                  result:
+                    $ref: '#/components/schemas/Channel'
+
+        '400':
+          description: Input error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+        '401':
+          description: Not authorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Channel not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+#### End of Channels
+
+
+### Begin of alerts
   /v3/streams/channels/{channel_id}/alerts:
     get:
       tags:
@@ -2084,7 +2152,9 @@ paths:
                   - $ref: '#/components/schemas/BasicResponse'
                 properties:
                   result:
-                    $ref: '#/components/schemas/Alert'
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Alert'
         '400':
           description: Input error.
           content:
@@ -2111,7 +2181,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+#### End of alerts
 
+
+### Begin of templates
   /v3/streams/templates:
     get:
       tags:
@@ -2269,7 +2342,58 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
+    put:
+      tags:
+        - Templates
+      summary: Update template.
+      description: Update template.
+      operationId: update_template
+      x-swagger-router-controller: connexContr
+      parameters:
+            - name: template_id
+              in: path
+              description: Unique template id
+              required: true
+              schema:
+                type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewTemplate'
+      responses:
+        '201':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BasicResponse'
+                properties:
+                  result:
+                    $ref: '#/components/schemas/Template'
+        '400':
+          description: Input error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
+        '401':
+          description: Not authorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+#### End of templates
 
   /units:
     get:
@@ -2804,6 +2928,10 @@ components:
         create_time:
           type: string
           description: The time of channel creation
+        status:
+          type: string
+          description: The status of channel
+          enum: [INACTIVE, ACTIVE]
         last_updated:
           type: string
           description: The time of channel update
@@ -2920,6 +3048,22 @@ components:
           type: string
           description: category of unit.
 
+    UpdateChannelStatus:
+      type: object
+      properties:
+        status:
+          type: string
+          description: Whether the request was a success or failure.
+          enum: [INACTIVE, ACTIVE]
+
+    UpdateTemplate:
+      type: object
+      properties:
+        status:
+          type: string
+          description: Whether the request was a success or failure.
+          enum: [INACTIVE, ACTIVE]
+
     MeasuredProperty:
       type: object
       properties:
@@ -2955,7 +3099,9 @@ components:
        execution_id:
           type: string
           description: Abaco execution id
-
+       message:
+         type: string
+         description: alert message
 
     Template:
      type: object
