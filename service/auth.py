@@ -33,12 +33,19 @@ def authentication():
         g.username = None
         g.tenant_id = None
         # for retrieval and informational methods, allow the request (with possibly limited information)
-        #if request.method == 'GET' or request.method == 'OPTIONS' or request.method == 'HEAD':
+    if request.method == 'GET' and request.endpoint == 'helloresource':
+        logger.debug("Inside hello request")
+        logger.debug(request.endpoint)
+        conf.use_sk = False
+        return True
+    else:
+        logger.debug('when its normal request')
+        conf.use_sk = True
         return True
         #raise e
 
     # this role is stored in the security kernel
-ROLE = 'streams_admin'
+ROLE = 'streams_user'
 
     # this is the Tapis client that tenants will use for interacting with other services, such as the security kernel.
 t = auth.get_service_tapy_client()
@@ -52,9 +59,9 @@ def authorization():
     # todo - Call security kernel to check if user is authorized for the request.
     #
     logger.debug("top of authorization()")
-    #if not conf.use_sk:
-    #    logger.debug("not using SK; returning True")
-     #   return True
+    if not conf.use_sk:
+        logger.debug("not using SK; returning True")
+        return True
     logger.debug(f"calling SK to check users assigned to role: {ROLE}")
     try:
         users = t.sk.getUsersWithRole(roleName=ROLE, tenant=g.tenant_id)

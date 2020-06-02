@@ -31,7 +31,7 @@ api.handle_exception = handle_error
 api.handle_user_exception = handle_error
 
 # Add resources
-#api.add_resource(HelloResource, '/v3/streams/hello')
+api.add_resource(HelloResource, '/v3/streams/hello')
 
 api.add_resource(ProjectsResource, '/v3/streams/projects')
 api.add_resource(ProjectResource, '/v3/streams/projects/<project_id>')

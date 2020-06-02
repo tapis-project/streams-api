@@ -23,8 +23,8 @@ logger = get_logger(__name__)
 
 class HelloResource(Resource):
     def get(self):
-        logger.debug('In hello')
-        return utils.ok(result='',msg="Hello")
+        logger.debug('In hello resource')
+        return utils.ok(result='',msg="Hello from Streams")
 
 
 class ProjectsResource(Resource):
