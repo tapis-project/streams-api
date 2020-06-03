@@ -530,7 +530,7 @@ class ChannelResource(Resource):
         # TODO need to check the user permission to update channel status
         if body['channel_id'] != channel_id:
             raise errors.ResourceError(msg=f'Invalid PUT data: {body}. You cannot change channel id')
-
+        result = {}
         try:
             result, msg = kapacitor.update_channel(channel_id, body)
         except Exception as e:
@@ -551,14 +551,19 @@ class ChannelResource(Resource):
             logger.debug(body)
         else:
             raise errors.ResourceError(msg=f'Invalid POST data: {body}.')
-
+        result = {}
         try:
             result, msg = kapacitor.update_channel_status(channel_id,body)
         except Exception as e:
-            msg = f"Could not update the channel status: {channel_id}; exception: {e}"
-
+            logger.debug(type(e))
+            logger.debug(e.args)
+            msg = f"Could not update the channel status: {channel_id}; exception: {e} "
+            logger.debug(msg)
         logger.debug(result)
-        return utils.ok(result=meta.strip_meta(result), msg=msg)
+        if result:
+            return utils.ok(result=meta.strip_meta(result), msg=msg)
+        return utils.error(result=result, msg=msg)
+
 
     def delete(self, channel_id):
         logger.debug("top of DELETE /channels/{channel_id}")
