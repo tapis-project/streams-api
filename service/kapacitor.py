@@ -76,8 +76,8 @@ def change_task_status(task_id,body):
     except Exception as e:
         msg = f" Kapacitor bad request ; exception: {e}"
         raise errors.ResourceError(msg=msg)
-    logger.debug('Kapacitor Response' + str(res.content))
-    logger.debug('status_code' + str(res.status_code))
+    logger.debug('Kapacitor Response ' + str(res.content))
+    logger.debug('status_code ' + str(res.status_code))
     return json.loads(res.content), res.status_code
 
 # update a task
@@ -263,7 +263,9 @@ def update_channel(channel_id, req_body):
         meta_result = {}
         meta_result, meta_message = meta.update_channel(channel_result)
     else:
-        msg = f" Could Not Find Channel {channel_id} with Task ID {channel_result['channel_id']} "
+        str_response = kapacitor_result['error']
+        msg = f" Could Not Find Channel {channel_id} with Task ID {channel_result['channel_id']}: {str_response} "
+        logger.debug(msg)
         raise errors.ResourceError(msg=msg)
     return meta_result, meta_message
 
@@ -276,7 +278,8 @@ def update_channel_status(channel_id, body):
         raise errors.ResourceError(msg=msg)
 
     logger.debug('UPDATING ... Kapacitor task status')
-
+    result = {}
+    meta_result = {}
     try:
         result,status_code = change_task_status(channel_result['channel_id'],body)
     except Exception as e:
@@ -296,12 +299,13 @@ def update_channel_status(channel_id, body):
         else:
             channel_result['status'] = 'ERROR'
         channel_result['last_updated'] = str(datetime.datetime.utcnow())
-        result = {}
-        result, message = meta.update_channel(channel_result)
+        meta_result, message = meta.update_channel(channel_result)
     else:
-        msg = f" Could Not Find Channel {channel_id} with Task {channel_result['channel_id']} "
+        str_result = result['error']
+        msg = f" Could Not Find Channel {channel_id} with Task {channel_result['channel_id']} kapacitor's response:{str_result} "
+        logger.debug(msg)
         raise errors.ResourceError(msg=msg)
-    return result,message
+    return meta_result,message
 
 def remove_channel():
     return True
