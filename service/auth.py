@@ -36,18 +36,13 @@ def authentication():
         g.username = None
         g.tenant_id = None
         # for retrieval and informational methods, allow the request (with possibly limited information)
-    if request.method == 'GET' and request.endpoint == 'helloresource':
-        logger.debug("Inside hello request")
+    if request.method == 'GET' and (request.endpoint == 'helloresource' or request.endpoint == 'readyresource'):
         logger.debug('SK Flag value')
+        logger.debug(request.endpoint)
         set_sk = False
         logger.debug(set_sk)
         return True
-    '''else:
-        logger.debug('when its normal request')
-        conf.use_sk = True
-        return True
-        #raise e
-    '''
+
 
     # this role is stored in the security kernel
 ROLE = 'streams_user'

@@ -52,6 +52,15 @@ def get_task(task_id):
     res = requests.get(conf.kapacitor_url+'/kapacitor/v1/tasks'+task_id,auth=HTTPBasicAuth(conf.kapacitor_username, conf.kapacitor_password), verify=False)
     return json.loads(res.content),res.status_code
 
+def ping():
+    headers = {
+        'content-type': "application/json"
+    }
+    res = requests.get(conf.kapacitor_url+'/kapacitor/v1/ping',auth=HTTPBasicAuth(conf.kapacitor_username, conf.kapacitor_password),  verify=False)
+    return res.status_code
+
+
+
 # enable/disable a task
 def change_task_status(task_id,body):
     logger.debug("CHANGING TASK STATUS")
