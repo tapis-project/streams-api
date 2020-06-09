@@ -12,6 +12,9 @@ import kapacitor
 import abaco
 from models import ChordsSite, ChordsIntrument, ChordsVariable
 from common import utils, errors
+from common.config import conf
+from requests.auth import HTTPBasicAuth
+
 #from service.models import db, LDAPConnection, TenantOwner, Tenant
 
 import requests
@@ -26,6 +29,22 @@ class HelloResource(Resource):
         logger.debug('In hello resource')
         return utils.ok(result='',msg="Hello from Streams")
 
+class ReadyResource(Resource):
+    def get(self):
+        try:
+            status_kapacitor=kapacitor.ping()
+            logger.debug('Kapacitor status')
+            logger.debug(status_kapacitor)
+            status_chords=chords.ping()
+            logger.debug('Chords status')
+            logger.debug(status_chords)
+            status_influx = influx.ping()
+            logger.debug('Influx status')
+            logger.debug(status_influx)
+            if(status_kapacitor == 204 and status_chords == 200 and status_influx == 204):
+                return utils.ok(result='', msg=f'Service ready')
+        except:
+            raise errors.ResourceError(msg=f'Service not ready')
 
 class ProjectsResource(Resource):
     """

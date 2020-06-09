@@ -100,3 +100,10 @@ def list_measurements(instrument_id):
     logger.debug('Kapacitor Response' + str(res.content))
     logger.debug('status_code'+ str(res.status_code))
     return json.loads(res.content),res.status_code
+
+def ping():
+    headers = {
+        'content-type': "application/json"
+    }
+    res = requests.get('http://'+conf.influxdb_host + ':' + conf.influxdb_port +'/ping',  verify=False)
+    return res.status_code
