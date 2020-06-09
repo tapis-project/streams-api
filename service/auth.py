@@ -7,23 +7,22 @@ from common import errors as common_errors
 from common.logs import get_logger
 logger = get_logger(__name__)
 
-set_sk = True
-
 
 def authn_and_authz():
     """
     Entry point for checking authentication and authorization for all requests to the authenticator.
     :return:
     """
-    authentication()
-    authorization()
+    skip_sk = False
+    skip_sk = authentication()
+    authorization(skip_sk)
 
 def authentication():
     """
     Entry point for checking authentication for all requests to the authenticator.
     :return:
     """
-    global set_sk
+    #global set_sk
     # The tenants API has both public endpoints that do not require a token as well as endpoints that require
     # authorization.
     # we always try to call the primary tapis authentication function to add authentication information to the
@@ -36,18 +35,13 @@ def authentication():
         g.username = None
         g.tenant_id = None
         # for retrieval and informational methods, allow the request (with possibly limited information)
-    if request.method == 'GET' and request.endpoint == 'helloresource':
-        logger.debug("Inside hello request")
+    if request.method == 'GET' and (request.endpoint == 'helloresource' or request.endpoint == 'readyresource'):
         logger.debug('SK Flag value')
-        set_sk = False
-        logger.debug(set_sk)
-        return True
-    '''else:
-        logger.debug('when its normal request')
-        conf.use_sk = True
-        return True
-        #raise e
-    '''
+        logger.debug(request.endpoint)
+        skip_sk = True
+        logger.debug(skip_sk)
+        return skip_sk
+
 
     # this role is stored in the security kernel
 ROLE = 'streams_user'
@@ -55,16 +49,16 @@ ROLE = 'streams_user'
 t = auth.get_service_tapy_client()
 t.x_username = conf.streams_user
 
-def authorization():
+def authorization(skip_sk):
     """
     Entry point for checking authorization for all requests to the authenticator.
     :return:
     """
-    global set_sk
+    #global set_sk
     # todo - Call security kernel to check if user is authorized for the request.
     #
     logger.debug("top of authorization()")
-    if not set_sk:
+    if skip_sk:
         logger.debug("not using SK; returning True")
         return True
     logger.debug(f"calling SK to check users assigned to role: {ROLE}")

@@ -395,3 +395,10 @@ def create_measurement(inst_chords_id, json_body):
 #     res = requests.delete(chords_uri, headers=headers,verify=False)
 #     resp = json.loads(res.content)
 #     return resp
+
+def ping():
+    headers = {
+        'content-type': "application/json"
+    }
+    res = requests.get(conf.chords_url,  verify=False)
+    return res.status_code
