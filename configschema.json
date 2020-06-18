@@ -17,6 +17,6 @@
      "kapacitor_password": {
       "type": "string",
       "description": "kapacitor password"
-    },
+    }
   }
 }
