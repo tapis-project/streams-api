@@ -13,6 +13,10 @@
     "service_password": {
       "type": "string",
       "description": "streams password"
-    }
+    },
+     "kapacitor_password": {
+      "type": "string",
+      "description": "kapacitor password"
+    },
   }
 }
