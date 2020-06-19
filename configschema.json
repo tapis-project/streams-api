@@ -2,6 +2,21 @@
   "$id": "http://github.com/tapis-project/streams-api/configschema.json",
   "$schema": "http://json-schema.org/schema#",
   "properties": {
-    
+    "chords_api_key": {
+      "type": "string",
+      "description": "Chords API Key"
+    },
+    "influxdb_password": {
+      "type": "string",
+      "description": "influx db password"
+    },
+    "service_password": {
+      "type": "string",
+      "description": "streams password"
+    },
+    "kapacitor_password": {
+      "type": "string",
+      "description": "kapacitor password"
+    }
   }
 }
