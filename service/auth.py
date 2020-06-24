@@ -47,7 +47,7 @@ def authentication():
         logger.debug(request.endpoint)
         skip_sk = True
         logger.debug(skip_sk)
-        if request.headers['alert_secret'] == conf.alert_secret:
+        if request.headers['alert-secret'] == conf.alert_secret:
             return skip_sk
         else:
             return False
