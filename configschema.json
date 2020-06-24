@@ -17,6 +17,10 @@
     "kapacitor_password": {
       "type": "string",
       "description": "kapacitor password"
+    },
+    "alert_secret": {
+      "type": "string",
+      "description": "alert secret"
     }
   }
 }
