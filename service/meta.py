@@ -123,7 +123,7 @@ def update_project(project_id, put_body):
 #strip out id and _etag fields
 def list_sites(project_id):
     logger.debug("Before")
-    result = t.meta.listDocuments(db='StreamsTACCDB',collection=project_id)
+    result = t.meta.listDocuments(db=conf.stream_db,collection=project_id)
     logger.debug("After")
     if len(result) > 0 :
         message = "Sites found"
