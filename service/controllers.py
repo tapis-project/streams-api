@@ -553,8 +553,8 @@ class ChannelResource(Resource):
 
         body = request.json
         # TODO need to check the user permission to update channel status
-        if body['channel_id'] != channel_id:
-            raise errors.ResourceError(msg=f'Invalid PUT data: {body}. You cannot change channel id')
+        #if body['channel_id'] != channel_id:
+        #    raise errors.ResourceError(msg=f'Invalid PUT data: {body}. You cannot change channel id')
         result = {}
         try:
             result, msg = kapacitor.update_channel(channel_id, body)

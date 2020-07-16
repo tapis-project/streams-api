@@ -27,6 +27,7 @@ def authentication():
     # authorization.
     # we always try to call the primary tapis authentication function to add authentication information to the
     # thread-local. If it fails due to a missing token, we then check if there is a p
+    logger.debug(request.headers)
     try:
         auth.authentication()
     except common_errors.NoTokenError as e:
@@ -41,6 +42,17 @@ def authentication():
         skip_sk = True
         logger.debug(skip_sk)
         return skip_sk
+    if request.method == 'POST' and (request.endpoint == 'alertspostresource'):
+        #Check alert_secret
+        logger.debug('SK Flag value')
+        logger.debug(request.endpoint)
+        skip_sk = True
+        logger.debug(skip_sk)
+
+        if request.headers['alert-secret'] == conf.alert_secret:
+            return skip_sk
+        else:
+            return False
 
 
     # this role is stored in the security kernel
@@ -76,4 +88,3 @@ def authorization(skip_sk):
     else:
         logger.info(f"user {g.username} has role {ROLE}")
         return True
-
