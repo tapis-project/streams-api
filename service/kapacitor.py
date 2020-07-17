@@ -14,7 +14,7 @@ from requests.auth import HTTPBasicAuth
 import subprocess
 import meta
 #access the dynatpy instance
-#t = auth.t
+t = auth.t
 
 ########################### Kapacitor Task ##########################################
 #create a Kapacitor task and return the result content and status code

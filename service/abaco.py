@@ -15,7 +15,7 @@ logger = get_logger(__name__)
 
 
 #access the dynatpy instance
-#t = auth.t
+t = auth.t
 
 def create_alert(channel, req_data):
     actor_id = channel['triggers_with_actions'][0]['action']['actor_id']

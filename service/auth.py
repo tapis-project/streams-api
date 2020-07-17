@@ -30,10 +30,7 @@ def authentication():
     logger.debug(request.headers)
     try:
         auth.authentication()
-        global t
         logger.debug(conf.tenant[g.tenant_id])
-        t = auth.get_service_tapy_client(tenant_id=g.tenant_id,base_url=conf.tenant[g.tenant_id]['tapis_base_url'])
-        t.x_username = conf.streams_user
     except common_errors.NoTokenError as e:
         logger.debug(f"Caught NoTokenError: {e}")
         g.no_token = True
@@ -61,9 +58,9 @@ def authentication():
 
     # this role is stored in the security kernel
 ROLE = 'streams_user'
-    # this is the Tapis client that tenants will use for interacting with other services, such as the security kernel.
-#t = auth.get_service_tapy_client(tenant_id='master')
-#t.x_username = conf.streams_user
+# this is the Tapis client that tenants will use for interacting with other services, such as the security kernel.
+t = auth.get_service_tapy_client(tenant_id='master')
+t.x_username = conf.streams_user
 
 def authorization(skip_sk):
     """
