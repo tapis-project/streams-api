@@ -75,6 +75,7 @@ def authorization(skip_sk):
         return True
     logger.debug(f"calling SK to check users assigned to role: {ROLE}")
     try:
+        t.x_tenant_id = g.tenant_id
         users = t.sk.getUsersWithRole(roleName=ROLE, tenant=g.tenant_id)
     except Exception as e:
         msg = f'Got an error calling the SK. Exception: {e}'
