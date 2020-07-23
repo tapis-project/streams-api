@@ -206,8 +206,12 @@ def list_channels():
     return json.loads(result.decode('utf-8')), message
 
 def get_channel(channel_id):
-    logger.debug('In GET Channel')
+    logger.debug('In GET Channel' + channel_id)
+    logger.debug(g.tenant_id)
+    logger.debug(conf.tenant[g.tenant_id]['stream_db'])
+    
     result = t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_channel_metadata',filter='{"channel_id":"'+channel_id+'"}')
+    
     if len(result.decode('utf-8')) > 0:
         message = "Channel found."
         channel_result = json.loads(result.decode('utf-8'))[0]

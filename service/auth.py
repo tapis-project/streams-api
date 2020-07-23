@@ -49,7 +49,12 @@ def authentication():
         logger.debug(request.endpoint)
         skip_sk = True
         logger.debug(skip_sk)
+<<<<<<< HEAD
         g.tenant_id = request.url.split('.')[0].split('//')[1]
+=======
+        g.tenant_id = request.host.split('.')[0]
+        logger.debug(g.tenant_id)
+>>>>>>> ba1db1a9d6eefa018feb97457b81cb44e352da65
         if request.headers['alert-secret'] == conf.alert_secret:
             return skip_sk
         else:
