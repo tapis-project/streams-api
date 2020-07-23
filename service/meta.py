@@ -40,7 +40,7 @@ def strip_meta_list(meta_list):
 def list_projects():
     #get user role with permission ?
     logger.debug('in META list project')
-    result= t.meta.listDocuments(db=conf.stream_db,collection='streams_project_metadata',filter='{"permissions.users":"'+g.username+'"}')
+    result= t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_project_metadata',filter='{"permissions.users":"'+g.username+'"}')
     logger.debug(result)
     if len(result.decode('utf-8')) > 0:
         message = "Projects found"
@@ -52,7 +52,7 @@ def list_projects():
 #TODO add project get
 def get_project(project_id):
     logger.debug('In GET Project')
-    result = t.meta.listDocuments(db=conf.stream_db,collection='streams_project_metadata',filter='{"project_id":"'+project_id+'"}')
+    result = t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_project_metadata',filter='{"project_id":"'+project_id+'"}')
     logger.debug(result)
     if len(result.decode('utf-8')) > 0:
         logger.debug('PROJECT FOUND')
@@ -77,16 +77,16 @@ def create_project(body):
     req_body['permissions']={'users':[g.username]}
     logger.debug(req_body)
     #Check if project_id exists by creating collection - if so add something to id to unique it.
-    col_result, col_bug =t.meta.createCollection(db=conf.stream_db,collection=req_body['project_id'], _tapis_debug=True)
+    col_result, col_bug =t.meta.createCollection(db=conf.tenant[g.tenant_id]['stream_db'],collection=req_body['project_id'], _tapis_debug=True)
     if col_bug.response.status_code == 201:
         logger.debug('Created project metadata')
         #create project collection
-        result, bug =t.meta.createDocument(db=conf.stream_db, collection='streams_project_metadata', request_body=req_body, _tapis_debug=True)
+        result, bug =t.meta.createDocument(db=conf.tenant[g.tenant_id]['stream_db'], collection='streams_project_metadata', request_body=req_body, _tapis_debug=True)
         logger.debug("Status_Code: " + str(bug.response.status_code))
         logger.debug(result)
         if str(bug.response.status_code) == '201':
             message = "Project Created"
-            index_result, index_bug = t.meta.createIndex(db=conf.stream_db, collection=req_body['project_id'],indexName=body['project_id']+"_loc_index", request_body={"keys":{"location": "2dsphere"}}, _tapis_debug=True)
+            index_result, index_bug = t.meta.createIndex(db=conf.tenant[g.tenant_id]['stream_db'], collection=req_body['project_id'],indexName=body['project_id']+"_loc_index", request_body={"keys":{"location": "2dsphere"}}, _tapis_debug=True)
             #create location index
             logger.debug(index_result)
             results, bug= get_project(req_body['project_id'])
@@ -111,7 +111,7 @@ def update_project(project_id, put_body):
         logger.debug(proj_result)
         result={}
         message=""
-        result, put_bug =t.meta.replaceDocument(db=conf.stream_db, collection='streams_project_metadata', docId=proj_result['_id']['$oid'], request_body=proj_result, _tapis_debug=True)
+        result, put_bug =t.meta.replaceDocument(db=conf.tenant[g.tenant_id]['stream_db'], collection='streams_project_metadata', docId=proj_result['_id']['$oid'], request_body=proj_result, _tapis_debug=True)
         logger.debug(put_bug.response.status_code)
         if put_bug.response.status_code == 200:
             result = proj_result
@@ -123,7 +123,7 @@ def update_project(project_id, put_body):
 #strip out id and _etag fields
 def list_sites(project_id):
     logger.debug("Before")
-    result = t.meta.listDocuments(db=conf.stream_db,collection=project_id)
+    result = t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection=project_id)
     logger.debug("After")
     if len(result) > 0 :
         message = "Sites found"
@@ -135,7 +135,7 @@ def list_sites(project_id):
 #strip out id and _etag fields
 def get_site(project_id, site_id):
     logger.debug('In GET Site')
-    result = t.meta.listDocuments(db=conf.stream_db,collection=project_id,filter='{"site_id":"'+site_id+'"}')
+    result = t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection=project_id,filter='{"site_id":"'+site_id+'"}')
     if len(result.decode('utf-8')) > 0:
         message = "Site found."
         #result should be an object not an array
@@ -162,7 +162,7 @@ def create_site(project_id, chords_site_id, body):
     req_body['location'] = {"type":"Point", "coordinates":[float(req_body['longitude']),float(req_body['latitude'])]}
     #TODO validate fields
     logger.debug(body)
-    result, bug =t.meta.createDocument(db=conf.stream_db, collection=project_id, request_body=req_body, _tapis_debug=True)
+    result, bug =t.meta.createDocument(db=conf.tenant[g.tenant_id]['stream_db'], collection=project_id, request_body=req_body, _tapis_debug=True)
     logger.debug(bug.response.status_code)
     logger.debug(result)
     if bug.response.status_code == 201:
@@ -191,7 +191,7 @@ def update_site(project_id, site_id, put_body):
         logger.debug(site_result)
         result={}
         message=""
-        result, put_bug =t.meta.replaceDocument(db=conf.stream_db, collection=project_id, docId=site_result['_id']['$oid'], request_body=site_result, _tapis_debug=True)
+        result, put_bug =t.meta.replaceDocument(db=conf.tenant[g.tenant_id]['stream_db'], collection=project_id, docId=site_result['_id']['$oid'], request_body=site_result, _tapis_debug=True)
         logger.debug(put_bug.response.status_code)
         if put_bug.response.status_code == 200:
             result = site_result
@@ -258,7 +258,7 @@ def create_instrument(project_id, site_id, post_body):
             site_result['instruments'] = [inst_body]
         logger.debug("ADD INSTRUMENT")
         logger.debug(site_result)
-        result, post_bug =t.meta.replaceDocument(db=conf.stream_db, collection=project_id, docId=site_result['_id']['$oid'], request_body=site_result, _tapis_debug=True)
+        result, post_bug =t.meta.replaceDocument(db=conf.tenant[g.tenant_id]['stream_db'], collection=project_id, docId=site_result['_id']['$oid'], request_body=site_result, _tapis_debug=True)
         logger.debug(post_bug.response.status_code)
         if post_bug.response.status_code == 200:
             result = inst_body
@@ -307,7 +307,7 @@ def update_instrument(project_id, site_id, instrument_id, put_body, remove_instr
             site_result['instruments'] = updated_instruments
             logger.debug("UPDATE/DELETE INSTRUMENT")
             logger.debug(site_result)
-            result, put_bug =t.meta.replaceDocument(db=conf.stream_db, collection=project_id, docId=site_result['_id']['$oid'], request_body=site_result, _tapis_debug=True)
+            result, put_bug =t.meta.replaceDocument(db=conf.tenant[g.tenant_id]['stream_db'], collection=project_id, docId=site_result['_id']['$oid'], request_body=site_result, _tapis_debug=True)
             logger.debug(put_bug.response.status_code)
             if put_bug.response.status_code == 200:
                 result = inst_body
@@ -396,7 +396,7 @@ def create_variable(project_id, site_id, instrument_id, post_body):
             site_result['instruments'] = updated_instruments
             logger.debug("ADD VARIABLE")
             logger.debug(site_result)
-            result, put_bug =t.meta.replaceDocument(db=conf.stream_db, collection=project_id, docId=site_result['_id']['$oid'], request_body=site_result, _tapis_debug=True)
+            result, put_bug =t.meta.replaceDocument(db=conf.tenant[g.tenant_id]['stream_db'], collection=project_id, docId=site_result['_id']['$oid'], request_body=site_result, _tapis_debug=True)
             logger.debug(put_bug.response.status_code)
             if put_bug.response.status_code == 200:
                 result = var_body
@@ -444,7 +444,7 @@ def update_variable(project_id, site_id, instrument_id, variable_id, put_body, r
             site_result['instruments'] = updated_instruments
             logger.debug("UPDATE/DELETE VARIABLE")
             logger.debug(site_result)
-            result, put_bug =t.meta.replaceDocument(db=conf.stream_db, collection=project_id, docId=site_result['_id']['$oid'], request_body=site_result, _tapis_debug=True)
+            result, put_bug =t.meta.replaceDocument(db=conf.tenant[g.tenant_id]['stream_db'], collection=project_id, docId=site_result['_id']['$oid'], request_body=site_result, _tapis_debug=True)
             logger.debug(put_bug.response.status_code)
             if put_bug.response.status_code == 200:
                 result = var_body
@@ -471,16 +471,16 @@ def update_variable(project_id, site_id, instrument_id, variable_id, put_body, r
 
 def create_instrument_index(project_id, site_id, instrument_id, chords_inst_id):
     req_body = {'project_id':project_id, 'site_id': site_id, 'instrument_id': instrument_id, 'chords_inst_id':chords_inst_id}
-    result, bug =t.meta.createDocument(db=conf.stream_db, collection='streams_instrument_index', request_body=req_body, _tapis_debug=True)
+    result, bug =t.meta.createDocument(db=conf.tenant[g.tenant_id]['stream_db'], collection='streams_instrument_index', request_body=req_body, _tapis_debug=True)
     return result, str(bug.response.status_code)
 
 def fetch_instrument_index(instrument_id):
-    result= t.meta.listDocuments(db=conf.stream_db,collection='streams_instrument_index',filter='{"instrument_id":"'+instrument_id+'"}')
+    result= t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_instrument_index',filter='{"instrument_id":"'+instrument_id+'"}')
     return json.loads(result.decode('utf-8'))
 
 # create alert metadata
 def create_alert(alert):
-    alert_result,alert_bug = t.meta.createDocument(db=conf.stream_db, collection='streams_alerts_metadata', request_body=alert, _tapis_debug=True)
+    alert_result,alert_bug = t.meta.createDocument(db=conf.tenant[g.tenant_id]['stream_db'], collection='streams_alerts_metadata', request_body=alert, _tapis_debug=True)
     if str(alert_bug.response.status_code) == '201':
         logger.debug(alert_bug.response)
         logger.debug(alert_result)
@@ -496,7 +496,7 @@ def create_alert(alert):
 #strip out id and _etag fields
 def get_alert(channel_id,alert_id):
     logger.debug('In GET alert')
-    result = t.meta.listDocuments(db=conf.stream_db,collection='streams_alerts_metadata',filter='{"alert_id":"'+ alert_id +'"}')
+    result = t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_alerts_metadata',filter='{"alert_id":"'+ alert_id +'"}')
     #logger.debug("meta_alert_bug" + str(alert_bug.response))
     #if str(alert_bug.response.status_code) == '200':
 
@@ -518,7 +518,7 @@ def get_alert(channel_id,alert_id):
 #strip out id and _etag fields
 def list_alerts(channel_id):
     logger.debug("Before")
-    result = t.meta.listDocuments(db=conf.stream_db,collection='streams_alerts_metadata',filter='{"channel_id":"'+ channel_id+'"}')
+    result = t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_alerts_metadata',filter='{"channel_id":"'+ channel_id+'"}')
     #if str(alerts_bug.response.status_code) == '200':
     logger.debug("After")
     if len(result) > 0 :
@@ -533,7 +533,7 @@ def list_alerts(channel_id):
 
 def list_templates():
     logger.debug("Before")
-    result = t.meta.listDocuments(db=conf.stream_db,collection='streams_templates_metadata',filter='{"permissions.users":"'+ g.username+'"}')
+    result = t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_templates_metadata',filter='{"permissions.users":"'+ g.username+'"}')
     #if str(alerts_bug.response.status_code) == '200':
     logger.debug("After")
     if len(result) > 0 :
@@ -548,7 +548,7 @@ def update_template(template):
     logger.debug('In META update_template')
     logger.debug('Channel: ' + template['template_id'] + ': ' + str(template['_id']['$oid']))
     result = {}
-    result, put_bug = t.meta.replaceDocument(db=conf.stream_db, collection='streams_templates_metadata', docId=template['_id']['$oid'],
+    result, put_bug = t.meta.replaceDocument(db=conf.tenant[g.tenant_id]['stream_db'], collection='streams_templates_metadata', docId=template['_id']['$oid'],
                                              request_body=template, _tapis_debug=True)
     logger.debug(put_bug.response)
     if put_bug.response.status_code == 200:
@@ -565,7 +565,7 @@ def update_channel(channel):
     logger.debug('In META update_channel')
     logger.debug('Channel: ' + channel['channel_id'] + ': ' + str(channel['_id']['$oid']))
     result = {}
-    result, put_bug = t.meta.replaceDocument(db=conf.stream_db, collection='streams_channel_metadata', docId=channel['_id']['$oid'],
+    result, put_bug = t.meta.replaceDocument(db=conf.tenant[g.tenant_id]['stream_db'], collection='streams_channel_metadata', docId=channel['_id']['$oid'],
                                              request_body=channel, _tapis_debug=True)
     logger.debug(put_bug.response)
     if put_bug.response.status_code == 200:
