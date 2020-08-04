@@ -70,6 +70,3 @@ def create_alert(channel, req_data):
     else:
         msg = f"Abaco Actor: {actor_id} unable to perform the execution on the message: {message_data}. Check the Actor Status and the message"
         raise errors.ResourceError(msg=msg)
-
-
-

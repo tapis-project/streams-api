@@ -30,6 +30,7 @@ def authentication():
     logger.debug(request.headers)
     try:
         auth.authentication()
+        logger.debug(conf.tenant[g.tenant_id])
     except common_errors.NoTokenError as e:
         logger.debug(f"Caught NoTokenError: {e}")
         g.no_token = True
@@ -49,6 +50,8 @@ def authentication():
         skip_sk = True
         logger.debug(skip_sk)
 
+        g.tenant_id = request.args.get('tenant')
+        logger.debug(g.tenant_id)
         if request.headers['alert-secret'] == conf.alert_secret:
             return skip_sk
         else:
@@ -57,8 +60,8 @@ def authentication():
 
     # this role is stored in the security kernel
 ROLE = 'streams_user'
-    # this is the Tapis client that tenants will use for interacting with other services, such as the security kernel.
-t = auth.get_service_tapy_client()
+# this is the Tapis client that tenants will use for interacting with other services, such as the security kernel.
+t = auth.get_service_tapy_client(tenant_id='master')
 t.x_username = conf.streams_user
 
 def authorization(skip_sk):
@@ -69,12 +72,14 @@ def authorization(skip_sk):
     #global set_sk
     # todo - Call security kernel to check if user is authorized for the request.
     #
+
     logger.debug("top of authorization()")
     if skip_sk:
         logger.debug("not using SK; returning True")
         return True
     logger.debug(f"calling SK to check users assigned to role: {ROLE}")
     try:
+        t.x_tenant_id = g.tenant_id
         users = t.sk.getUsersWithRole(roleName=ROLE, tenant=g.tenant_id)
     except Exception as e:
         msg = f'Got an error calling the SK. Exception: {e}'
