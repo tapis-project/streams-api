@@ -114,7 +114,7 @@ def update_site(id, site:ChordsSite):
                 'site[elevation]': site.elevation
                 }
     logger.debug(postData)
-    path = "/sites/" + id + ".json"
+    path = "/sites/" + str(id) + ".json"
     res = create_put_request(path,postData)
     if (res.status_code == 200):
        message = "Site updated"

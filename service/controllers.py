@@ -147,15 +147,15 @@ class SiteResource(Resource):
 
     def put(self, project_id, site_id):
         body = request.json
-        putSite = ChordsSite(site_id,
+        site_result, msg = meta.update_site(project_id, site_id, body)
+        result = meta.strip_meta(site_result)
+        putSite = ChordsSite(result['chords_id'],
                               body['site_name'],
                               body['latitude'],
                               body['longitude'],
                               body['elevation'],
                               body['description'])
-        site_result, msg = meta.update_site(project_id, site_id, body)
-        result = meta.strip_meta(site_result)
-        chord_result, chord_msg = chords.update_site(site_id, putSite)
+        chord_result, chord_msg = chords.update_site(result['chords_id'], putSite)
         return utils.ok(result=result, msg=msg)
 
     def delete(self, project_id, site_id):
@@ -711,5 +711,3 @@ class InfluxResource(Resource):
         resp = influx.create_measurement(request.args.get('site_id'), request.args.get('inst_id'), request.args.get('var_id'),  float(request.args.get('value')), request.args.get('timestamp'), )
         logger.debug(resp)
         return resp
-
-
