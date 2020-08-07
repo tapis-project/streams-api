@@ -362,16 +362,23 @@ def get_variable(project_id, site_id, instrument_id, variable_id):
         for inst in site_result['instruments']:
             if inst['inst_id'] == instrument_id:
                 inst_exists = True
-                if 'variables' in inst:
-                    for variable in inst['variables']:
-                        if str(variable['var_id']) == str(variable_id):
-                            result = variable
-                            message = "Variable Found"
+                if 'variables' in inst :
+                    if len(inst['variables']) > 0:
+                        logger.debug('In Variables')
+                        for variable in inst['variables']:
+                            logger.debug(variable)
+                            if 'var_id' in variable:
+                                if str(variable['var_id']) == str(variable_id):
+                                    result = variable
+                                    message = "Variable Found"
+                                    logger.debug('Variable Found')
         if inst_exists == False:
             result = []
             message = "Instrument Not Found - No Variables Exist"
+        logger.debug('end of if')
     else:
         message ="Site Not Found - Instrument Does Not Exist - No Variables Exist"
+    logger.debug("END")
     return result, message
 
 def create_variable(project_id, site_id, instrument_id, post_body):
@@ -420,6 +427,7 @@ def update_variable(project_id, site_id, instrument_id, variable_id, put_body, r
     site_result, site_bug = get_site(project_id,site_id)
     #flag to track if the instrument exists in this site
     inst_exists = False;
+    inst_body ={}
     result={}
     if len(site_result) > 0:
         var_body = put_body
@@ -432,12 +440,18 @@ def update_variable(project_id, site_id, instrument_id, variable_id, put_body, r
                 inst_exists=True;
                 inst_body = inst
                 #add variable to current instrument
-                if 'variable' in inst_body:
+                if 'variables' in inst_body:
                     for variable in inst['variables']:
-                        if variable['var_id'] == variable_id:
-                            if remove_variable == False:
-                                #replace variable with new changes
-                                updated_variables.append(var_body)
+                        if 'var_id' in variable:
+                            if variable['var_id'] == variable_id:
+                                if remove_variable == False:
+                                    #replace variable with new changes
+                                    var_body['chords_id'] = variable['chords_id']
+                                    logger.debug("SETTING CHORDS ID")
+                                    updated_variables.append(var_body)
+                            else:
+                                #keep variable
+                                updated_variables.append(variable)
                         else:
                             #keep variable
                             updated_variables.append(variable)
@@ -452,7 +466,12 @@ def update_variable(project_id, site_id, instrument_id, variable_id, put_body, r
             result, put_bug =t.meta.replaceDocument(db=conf.tenant[g.tenant_id]['stream_db'], collection=project_id, docId=site_result['_id']['$oid'], request_body=site_result, _tapis_debug=True)
             logger.debug(put_bug.response.status_code)
             if put_bug.response.status_code == 200:
+                logger.debug(site_result)
+                logger.debug(inst_body)
+                var_body['site_chords_id'] = site_result['chords_id']
+                var_body['inst_chords_id'] = inst_body['chords_id']
                 result = var_body
+                logger.debug(result)
                 if remove_variable == False:
                     message = "Variable Updated"
                 else:

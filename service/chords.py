@@ -296,7 +296,7 @@ def create_variable(variable:ChordsVariable):
 #update a variable in CHORDS
 def update_variable(id,variable:ChordsVariable):
     #TODO validate the variable has all properties requirement and fields are correct
-    path="/vars/"+id+".json";
+    path="/vars/"+str(id)+".json";
     putData = {'email':conf.chords_user_email,
                   'api_key': conf.chords_api_key,
                   'var[name]': variable.name,
