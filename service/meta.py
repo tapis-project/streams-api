@@ -186,6 +186,8 @@ def update_site(project_id, site_id, put_body):
     if len(site_result) > 0:
         for field in put_body:
             site_result[field] = put_body[field]
+        if 'location' not in put_body:
+            site_result['location'] = {"type":"Point", "coordinates":[float(put_body['longitude']),float(put_body['latitude'])]}
         site_result['last_updated'] = str(datetime.datetime.now())
         #validate fields
         logger.debug(site_result)
