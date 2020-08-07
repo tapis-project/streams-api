@@ -906,7 +906,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UpdateInstRequest'
+              $ref: '#/components/schemas/NewInstrument'
       responses:
         '201':
           description: Updated
