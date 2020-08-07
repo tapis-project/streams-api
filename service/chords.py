@@ -213,7 +213,7 @@ def update_instrument(id, instrument:ChordsIntrument):
                 'instrument[sample_rate_seconds]': instrument.sample_rate_seconds
                 }
     logger.debug(putData)
-    path = "/instruments/"+id+".json"
+    path = "/instruments/"+str(id)+".json"
     res = create_put_request(path, putData)
     if (res.status_code == 200):
         message = "Instrument updated"

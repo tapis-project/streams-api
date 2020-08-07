@@ -290,14 +290,15 @@ def update_instrument(project_id, site_id, instrument_id, put_body, remove_instr
         updated_instruments = []
         for inst in site_result['instruments']:
             logger.debug("IN LOOP")
-            if 'instrument_id' in inst:
-                if str(inst['instrument_id']) == str(instrument_id):
+            logger.debug("A")
+            if 'inst_id' in inst:
+                if str(inst['inst_id']) == str(instrument_id):
                     logger.debug("INT ID MATCHES")
                     inst_exists=True;
                     if remove_instrument == False:
                         logger.debug("INT REM FALSE")
                         #add vars from current instrument so they are not removed
-                        inst_body['instrument_id'] = instrument_id
+                        inst_body['inst_id'] = instrument_id
                         inst_body['chords_id'] = inst['chords_id']
                         if 'variables' in inst:
                             inst_body['variables'] = inst['variables']
@@ -312,6 +313,8 @@ def update_instrument(project_id, site_id, instrument_id, put_body, remove_instr
             result, put_bug =t.meta.replaceDocument(db=conf.tenant[g.tenant_id]['stream_db'], collection=project_id, docId=site_result['_id']['$oid'], request_body=site_result, _tapis_debug=True)
             logger.debug(put_bug.response.status_code)
             if put_bug.response.status_code == 200:
+                logger.debug("In RESPONSE block")
+                inst_body['site_chords_id'] = site_result['chords_id']
                 result = inst_body
                 if remove_instrument:
                     message = "Instrument Deleted"
