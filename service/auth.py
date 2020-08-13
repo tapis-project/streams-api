@@ -37,7 +37,7 @@ def authentication():
         g.username = None
         g.tenant_id = None
         # for retrieval and informational methods, allow the request (with possibly limited information)
-    if request.method == 'GET' and (request.endpoint == 'helloresource' or request.endpoint == 'readyresource'):
+    if request.method == 'GET' and (request.endpoint == 'helloresource' or request.endpoint == 'readyresource' or request.endpoint == 'healthcheckresource'):
         logger.debug('SK Flag value')
         logger.debug(request.endpoint)
         skip_sk = True

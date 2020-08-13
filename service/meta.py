@@ -578,3 +578,7 @@ def update_channel(channel):
         message = 'Could not update Channel Status in meta'
         #TODO rollback the status change in the kapacitor task
     return result, message
+
+def healthcheck():
+    res = requests.get(conf.tenant[conf.tapis_tenant]['tapis_base_url'] +'/v3/meta/healthcheck')
+    return res.status_code
