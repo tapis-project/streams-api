@@ -234,7 +234,7 @@ def update_channel(channel_id, req_body):
 
     # TODO check if Kapacitor Task exist
     logger.debug('UPDATING ... Kapacitor Task')
-    task_id = req_body['channel_id']
+    task_id = channel_id
     task_body = {'id': task_id,
                  'dbrps': [{"db": "chords_ts_production", "rp": "autogen"}]}
 
