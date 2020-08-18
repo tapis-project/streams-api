@@ -224,6 +224,7 @@ def get_channel(channel_id):
 
 def update_channel(channel_id, req_body):
     logger.debug('Top of update_channel')
+    req_body['channel_id'] = channel_id 
 
     # Get channel information from Meta
     try:
