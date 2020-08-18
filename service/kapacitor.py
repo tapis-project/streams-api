@@ -391,12 +391,12 @@ def update_template(template_id, body):
     logger.debug('UPDATING ... Kapacitor Template')
 
     template_body = {}
-    template_body['id'] = body['template_id']
+    template_body['id'] = template_id
     template_body['type'] = body['type']
     template_body['script'] = body['script']
 
     try:
-        result,status_code = update_kapacitor_template(body['template_id'],template_body)
+        result,status_code = update_kapacitor_template(template_id,template_body)
     except Exception as e:
         msg = f" Not able to connect to Kapacitor for the template {body['template_id']} update; exception: {e}"
         raise errors.ResourceError(msg=msg)
