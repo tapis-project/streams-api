@@ -678,8 +678,8 @@ class TemplateResource(Resource):
         body = request.json
         # TODO need to check the user permission to update template
 
-        if body['template_id'] != template_id:
-            raise errors.ResourceError(msg=f'Invalid PUT data: {body}. You cannot change template_id')
+        #if body['template_id'] != template_id:
+        #    raise errors.ResourceError(msg=f'Invalid PUT data: {body}. You cannot change template_id')
 
         result = {}
         try:
