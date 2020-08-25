@@ -447,7 +447,7 @@ def update_variable(project_id, site_id, instrument_id, variable_id, put_body, r
                                 if remove_variable == False:
                                     #replace variable with new changes
                                     var_body['chords_id'] = variable['chords_id']
-                                    logger.debug("SETTING CHORDS ID")
+                                    logger.debug("SETTING CHORDS ID*****************************")
                                     updated_variables.append(var_body)
                             else:
                                 #keep variable
@@ -455,7 +455,7 @@ def update_variable(project_id, site_id, instrument_id, variable_id, put_body, r
                         else:
                             #keep variable
                             updated_variables.append(variable)
-                inst_body['variables'].append(updated_variables)
+                inst_body['variables']= updated_variables
                 updated_instruments.append(inst_body)
             else:
                 updated_instruments.append(inst)
@@ -468,7 +468,7 @@ def update_variable(project_id, site_id, instrument_id, variable_id, put_body, r
             if put_bug.response.status_code == 200:
                 logger.debug(site_result)
                 logger.debug(inst_body)
-                var_body['site_chords_id'] = site_result['chords_id']
+                #var_body['site_chords_id'] = site_result['chords_id']
                 var_body['inst_chords_id'] = inst_body['chords_id']
                 result = var_body
                 logger.debug(result)
