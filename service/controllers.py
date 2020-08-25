@@ -249,7 +249,7 @@ class InstrumentResource(Resource):
             body = request.json[0]
 
         result, msg = meta.update_instrument(project_id, site_id, instrument_id, body)
-        putInst = ChordsIntrument(int(result['chords_id']),site_id,
+        putInst = ChordsIntrument(int(result['chords_id']),result['site_chords_id'],
                                     body['inst_name'],
                                     "",
                                     "",
@@ -310,7 +310,7 @@ class VariableResource(Resource):
     Work with Variables objects
     """
     def get(self, project_id, site_id, instrument_id, variable_id):
-        chords_result,chords_msg = chords.get_variable(variable_id)
+        #chords_result,chords_msg = chords.get_variable(variable_id)
         result, msg = meta.get_variable(project_id, site_id, instrument_id, variable_id)
         logger.debug(result)
         return utils.ok(result=result, msg=msg)
@@ -325,13 +325,13 @@ class VariableResource(Resource):
         else:
             body = request.json[0]
         # id, name, instrument_id, shortname, commit
-        putInst = ChordsVariable(variable_id,instrument_id,
+        result, msg = meta.update_variable(project_id, site_id, instrument_id, variable_id, body)
+        putInst = ChordsVariable(result['chords_id'],result['inst_chords_id'],
                                     body['var_name'],
                                     body['shortname'],
                                     "")
         logger.debug(putInst)
-        chord_result,chord_msg = chords.update_variable(variable_id,putInst)
-        result, msg = meta.update_variable(project_id, site_id, instrument_id, variable_id, body)
+        chord_result,chord_msg = chords.update_variable(result['chords_id'],putInst)
         logger.debug(result)
         return utils.ok(result=result, msg=msg)
 
@@ -678,8 +678,8 @@ class TemplateResource(Resource):
         body = request.json
         # TODO need to check the user permission to update template
 
-        if body['template_id'] != template_id:
-            raise errors.ResourceError(msg=f'Invalid PUT data: {body}. You cannot change template_id')
+        #if body['template_id'] != template_id:
+        #    raise errors.ResourceError(msg=f'Invalid PUT data: {body}. You cannot change template_id')
 
         result = {}
         try:
