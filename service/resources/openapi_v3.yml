@@ -2814,7 +2814,6 @@ components:
         metadata:
           type: string
           description: User enetered metadata on instruments
-      required: [inst_name, inst_description, inst_id]
 
     UpdateInstRequest:
       type: array
