@@ -122,21 +122,19 @@ def update_project(project_id, put_body):
 
 #strip out id and _etag fields
 def list_sites(project_id):
-    logger.debug("Before")
-    result = t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection=project_id)
-    logger.debug("After")
-    if len(result) > 0 :
+    result = t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection=project_id,filter='{"tapis_deleted":{ "$exists" : false }}')
+    if len(json.loads(result)) > 0:
         message = "Sites found"
     else:
-        raise errors.ResourceError(msg=f'No Site found')
+        raise errors.ResourceError(msg='No Sites found')
     logger.debug(result)
     return json.loads(result.decode('utf-8')), message
 
 #strip out id and _etag fields
 def get_site(project_id, site_id):
     logger.debug('In GET Site')
-    result = t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection=project_id,filter='{"site_id":"'+site_id+'"}')
-    if len(result.decode('utf-8')) > 0:
+    result = t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection=project_id,filter='{"$and":[{"site_id":"'+site_id+'"},{"tapis_deleted":{ "$exists" : false }}]}')
+    if len(json.loads(result)) > 0:
         message = "Site found."
         #result should be an object not an array
         #TODO strip out _id and _etag
@@ -148,7 +146,7 @@ def get_site(project_id, site_id):
         logger.debug("SITE FOUND")
     else:
         logger.debug("NO SITE FOUND")
-        raise errors.ResourceError(msg=f'No Site found')
+        raise errors.ResourceError(msg='No Site Found Matching Site ID: '+site_id+' In Project: '+project_id)
         result = ''
     return result, message
 
@@ -204,7 +202,12 @@ def update_site(project_id, site_id, put_body):
 
 
 def delete_site(project_id, site_id):
-    return ""
+    site_result, msg = get_site(project_id,site_id)
+    site_result['tapis_deleted'] = True
+    result, up_message = update_site(project_id, site_id, site_result)
+    if up_message == 'Site Updated':
+        message = 'Site Deleted'
+    return {},message
 
 def get_instrument(project_id, site_id, instrument_id):
     result = {}
