@@ -897,7 +897,7 @@ paths:
            type: string
         - name: inst_id
           in: path
-          description: Instrument ID defined by user
+          description: User defined instrument id
           required: true
           schema:
             type: string
@@ -906,7 +906,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UpdateInst'
+              $ref: '#/components/schemas/NewInstrument'
       responses:
         '201':
           description: Updated
@@ -2814,7 +2814,7 @@ components:
         metadata:
           type: string
           description: User enetered metadata on instruments
-      required: [inst_name, inst_description, inst_id]
+      required: [inst_name, inst_description]
 
     UpdateInstRequest:
       type: array
