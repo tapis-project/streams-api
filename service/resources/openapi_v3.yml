@@ -898,7 +898,7 @@ paths:
         - name: inst_id
           in: path
           description: Instrument ID defined by user
-          required: false
+          required: true
           schema:
             type: string
       requestBody:
