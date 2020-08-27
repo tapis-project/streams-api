@@ -2878,7 +2878,6 @@ components:
         shortname:
           type: string
           description: User entered short name
-      required: [var_name, shortname, var_id]
 
     Variable:
       type: object
