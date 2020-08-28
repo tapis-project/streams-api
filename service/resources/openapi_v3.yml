@@ -109,13 +109,13 @@ paths:
       tags:
         - Healthcheck
       summary: Healthcheck
-      description: Healthcheck
+      description: Checks health of meta, kapacitor, influx and chords
       operationId: healthcheck
       x-swagger-router-controller: connexContr
       parameters:
         - name: tenant
           in: query
-          description: Tenant id to run healthcheck in
+          description: Tenant id to check healthcheck
           required: true
           schema:
             type: string
@@ -150,7 +150,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  ### Begin of Projects
+### Begin of Projects
   /v3/streams/projects:
     get:
       tags:
@@ -2925,6 +2925,7 @@ components:
         shortname:
           type: string
           description: User entered short name
+
 
     Variable:
       type: object
