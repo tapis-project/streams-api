@@ -2879,7 +2879,6 @@ components:
           type: string
           description: User entered short name
 
-
     Variable:
       type: object
       properties:
