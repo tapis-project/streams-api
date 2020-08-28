@@ -43,13 +43,21 @@ def authentication():
         skip_sk = True
         logger.debug(skip_sk)
         return skip_sk
+    if request.method == 'GET' and (request.endpoint == 'healthcheckresource'):
+        #Check alert_secret
+        logger.debug('SK Flag value')
+        logger.debug(request.endpoint)
+        skip_sk = True
+        logger.debug(skip_sk)
+        g.tenant_id = request.args.get('tenant')
+        logger.debug(g.tenant_id)
+        return skip_sk
     if request.method == 'POST' and (request.endpoint == 'alertspostresource'):
         #Check alert_secret
         logger.debug('SK Flag value')
         logger.debug(request.endpoint)
         skip_sk = True
         logger.debug(skip_sk)
-
         g.tenant_id = request.args.get('tenant')
         logger.debug(g.tenant_id)
         if request.headers['alert-secret'] == conf.alert_secret:

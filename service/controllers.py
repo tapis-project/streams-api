@@ -46,6 +46,34 @@ class ReadyResource(Resource):
         except:
             raise errors.ResourceError(msg=f'Service not ready')
 
+class HealthcheckResource(Resource):
+    def get(self):
+        try:
+            status_kapacitor = kapacitor.ping()
+            logger.debug('Kapacitor status')
+            logger.debug(status_kapacitor)
+        except:
+            raise errors.ResourceError(msg=f'Kapacitor not ready')
+        try:
+            status_chords = chords.ping()
+            logger.debug('Chords status')
+            logger.debug(status_chords)
+        except:
+            raise errors.ResourceError(msg=f'Chords not ready')
+        try:
+            status_influx = influx.ping()
+            logger.debug('Influx status')
+            logger.debug(status_influx)
+        except:
+            raise errors.ResourceError(msg=f'Influx DB not ready')
+        try:
+            logger.debug('Meta status')
+            status_meta = meta.healthcheck()
+            logger.debug(status_meta)
+        except:
+            raise errors.ResourceError(msg=f'Metadata not ready')
+        return utils.ok(result='',msg="Streams in good health")
+
 class ProjectsResource(Resource):
     """
     Work with Project objects
