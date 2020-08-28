@@ -103,53 +103,6 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
 ### End of Ready
 
-### Begin of Healthcheck
-  /v3/streams/healthcheck:
-    get:
-      tags:
-        - Healthcheck
-      summary: Healthcheck
-      description: Checks health of meta, kapacitor, influx and chords
-      operationId: healthcheck
-      x-swagger-router-controller: connexContr
-      parameters:
-        - name: tenant
-          in: query
-          description: Tenant id to check healthcheck
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/BasicResponse'
-                properties:
-                  result:
-                    type: string
-        '400':
-          description: Input error.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
-        '401':
-          description: Not authorized.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '500':
-          description: Server error.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
 ### Begin of Projects
   /v3/streams/projects:
     get:
