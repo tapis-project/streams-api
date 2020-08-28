@@ -589,7 +589,7 @@ def update_channel(channel):
     logger.debug('In META update_channel')
     logger.debug('Channel: ' + channel['channel_id'] + ': ' + str(channel['_id']['$oid']))
     result = {}
-    result, put_bug = t.meta.replaceDocument(db=conf.tenant[g.tenant_id]['stream_db'], collection='streams_channel_metadata', docId=channel['_id']['$oid'],
+    result, put_bug = t.meta.replaceDocument(db=conf.tenant[tenant_id]['stream_db'], collection='streams_channel_metadata', docId=channel['_id']['$oid'],
                                              request_body=channel, _tapis_debug=True)
     logger.debug(put_bug.response)
     if put_bug.response.status_code == 200:
@@ -600,3 +600,9 @@ def update_channel(channel):
         message = 'Could not update Channel Status in meta'
         #TODO rollback the status change in the kapacitor task
     return result, message
+
+def healthcheck():
+    logger.debug('tenant arg')
+    logger.debug(g.tenant_id)
+    res = requests.get(conf.tenant[g.tenant_id]['tapis_base_url'] +'/v3/meta/healthcheck')
+    return res.status_code

@@ -5,7 +5,7 @@ from common.utils import TapisApi, handle_error, flask_errors_dict
 from service.auth import authn_and_authz
 from service.controllers import ProjectsResource, ProjectResource, SitesResource, SiteResource, InstrumentsResource, InstrumentResource, VariablesResource, \
     VariableResource, MeasurementsWriteResource, MeasurementsReadResource, MeasurementsResource, MeasurementResource, ChannelsResource, ChannelResource, AlertsResource, \
-    AlertsPostResource, TemplatesResource, TemplateResource, InfluxResource, HelloResource, ReadyResource
+    AlertsPostResource, TemplatesResource, TemplateResource, InfluxResource, HelloResource, ReadyResource, HealthcheckResource
 
 from service.models import app
 
@@ -33,6 +33,7 @@ api.handle_user_exception = handle_error
 # Add resources
 api.add_resource(HelloResource, '/v3/streams/hello')
 api.add_resource(ReadyResource, '/v3/streams/ready')
+api.add_resource(HealthcheckResource, '/v3/streams/healthcheck')
 
 
 api.add_resource(ProjectsResource, '/v3/streams/projects')
