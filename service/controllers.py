@@ -187,9 +187,10 @@ class SiteResource(Resource):
         return utils.ok(result=result, msg=msg)
 
     def delete(self, project_id, site_id):
-        result, msg = chords.delete_site(site_id)
+        #result, msg = chords.delete_site(site_id)
+        site_result, msg = meta.delete_site(project_id,site_id)
         logger.debug(msg)
-        return utils.ok(result='null', msg=f'Site {site_id} deleted.')
+        return utils.ok(result=site_result, msg=f'Site {site_id} deleted.')
 
 
 class InstrumentsResource(Resource):
@@ -291,9 +292,9 @@ class InstrumentResource(Resource):
 
 
     def delete(self, project_id, site_id, instrument_id):
-        chord_result,chord_msg = chords.delete_instrument(instrument_id)
+        #chord_result,chord_msg = chords.delete_instrument(instrument_id)
         result, msg = meta.update_instrument(project_id, site_id, instrument_id, {},True)
-        return utils.ok(result="null", msg=msg)
+        return utils.ok(result={}, msg=msg)
 
 
 class VariablesResource(Resource):
