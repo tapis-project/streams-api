@@ -216,15 +216,17 @@ def get_instrument(project_id, site_id, instrument_id):
         logger.debug("Site  FOUND")
         for inst in site_result['instruments']:
             logger.debug(inst)
-            #make sure this object has the inst_id key
-            if 'inst_id' in inst:
-                #check id for match
-                if str(inst['inst_id']) == str(instrument_id):
-                    logger.debug("INSTRUMENT FOUND")
-                    result = inst
-                    message = "Instrument Found"
+            if 'tapis_deleted' not in inst:
+                #make sure this object has the inst_id key
+                if 'inst_id' in inst:
+                    #check id for match
+                    if str(inst['inst_id']) == str(instrument_id):
+                        logger.debug("INSTRUMENT FOUND")
+                        result = inst
+                        message = "Instrument Found"
         if len(result) == 0:
             message = "Instrument Not Found"
+            raise errors.ResourceError(msg=f'Instrument Not Found With Instrument ID: '+instrument_id)
     else:
         message ="Site Not Found - Instrument Does Not Exist"
     return result, message
@@ -243,10 +245,22 @@ def get_instrument_by_id(inst_id):
 def list_instruments(project_id, site_id):
     site_result, site_bug = get_site(project_id,site_id)
     if len(site_result) > 0:
-        result = site_result['instruments']
-        message = "Instruments Found"
+        instruments = []
+        if 'instruments' in site_result:
+            if len(site_result['instruments']) > 0:
+                for inst in site_result['instruments']:
+                    if 'tapis_deleted' not in inst:
+                        instruments.append(inst)
+                result = instruments
+                message = "Instruments Found"
+            else:
+                result = {}
+                message = "No Instruments Found"
+                raise errors.ResourceError(msg=f'"No Instruments Found for Site ID:'+str(site_id))
     else:
+        result = {}
         message ="Site Not Found - No Instruments Exist"
+        raise errors.ResourceError(msg=f'"Site Not Found With Site ID:'+str(site_id))
     return result, message
 
 def create_instrument(project_id, site_id, post_body):
@@ -306,6 +320,10 @@ def update_instrument(project_id, site_id, instrument_id, put_body, remove_instr
                         if 'variables' in inst:
                             inst_body['variables'] = inst['variables']
                         updated_instruments.append(inst_body)
+                    else:
+                        #soft delete instrument
+                        inst['tapis_deleted']=True
+                        updated_instruments.append(inst)
                 else:
                     updated_instruments.append(inst)
         if inst_exists:

@@ -264,9 +264,9 @@ class InstrumentResource(Resource):
 
 
     def delete(self, project_id, site_id, instrument_id):
-        chord_result,chord_msg = chords.delete_instrument(instrument_id)
+        #chord_result,chord_msg = chords.delete_instrument(instrument_id)
         result, msg = meta.update_instrument(project_id, site_id, instrument_id, {},True)
-        return utils.ok(result="null", msg=msg)
+        return utils.ok(result={}, msg=msg)
 
 
 class VariablesResource(Resource):
