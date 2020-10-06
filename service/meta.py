@@ -40,9 +40,9 @@ def strip_meta_list(meta_list):
 def list_projects():
     #get user role with permission ?
     logger.debug('in META list project')
-    result= t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_project_metadata',filter='{"permissions.users":"'+g.username+'"}')
+    result= t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_project_metadata',filter='{"permissions.users":"'+g.username+'","tapis_deleted":null}')
     logger.debug(result)
-    if len(result.decode('utf-8')) > 0:
+    if len(json.loads(result.decode('utf-8'))) > 0:
         message = "Projects found"
     else:
         raise errors.ResourceError(msg=f'No Projects found')
@@ -52,9 +52,10 @@ def list_projects():
 #TODO add project get
 def get_project(project_id):
     logger.debug('In GET Project')
-    result = t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_project_metadata',filter='{"project_id":"'+project_id+'"}')
+    result = t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_project_metadata', filter='{"permissions.users":"'+g.username+'", "project_id":"'+project_id+'","tapis_deleted":null}')
     logger.debug(result)
-    if len(result.decode('utf-8')) > 0:
+    logger.debug(len(result.decode('utf-8')))
+    if len(json.loads(result.decode('utf-8'))) > 0:
         logger.debug('PROJECT FOUND')
         message = "Project found."
         proj_result = json.loads(result.decode('utf-8'))[0]
@@ -116,6 +117,25 @@ def update_project(project_id, put_body):
         if put_bug.response.status_code == 200:
             result = proj_result
             message = 'Project Updated'
+    else:
+        raise errors.ResourceError(msg=f'Project Does Not Exist For Project ID:'+str(project_id))
+    return result, message
+
+def delete_project(project_id):
+    logger.debug("IN DELETE Project META")
+    proj_result, proj_bug = get_project(project_id)
+    if len(proj_result) > 0:
+        proj_result['last_updated'] = str(datetime.datetime.now())
+        proj_result['tapis_deleted'] = True
+        #validate fields
+        logger.debug(proj_result)
+        result={}
+        message=""
+        result, put_bug =t.meta.replaceDocument(db=conf.tenant[g.tenant_id]['stream_db'], collection='streams_project_metadata', docId=proj_result['_id']['$oid'], request_body=proj_result, _tapis_debug=True)
+        logger.debug(put_bug.response.status_code)
+        if put_bug.response.status_code == 200:
+            result = proj_result
+            message = 'Project Deleted'
     else:
         raise errors.ResourceError(msg=f'Project Does Not Exist For Project ID:'+str(project_id))
     return result, message
@@ -364,8 +384,17 @@ def list_variables(project_id, site_id, instrument_id):
         for inst in site_result['instruments']:
             if inst['inst_id'] == instrument_id:
                 inst_exists = True
-                result = inst['variables']
-                message = "Variables Found"
+                if 'variables' in inst:
+                    variables =[]
+                    for variable in inst['variables']:
+                        if 'tapis_deleted' not in inst:
+                            variables.append(variable)
+                    result = variables
+                if len(result) > 0 :
+                    message = "Variables Found"
+                else:
+                    message = "No Variables Found"
+                    raise errors.ResourceError(msg=f'"Site Not Found With Site ID:'+str(site_id))
         if inst_exists == False:
             result = []
             message = "Instrument Not Found - No Variables Exist"
@@ -610,7 +639,7 @@ def update_channel(channel):
     logger.debug('In META update_channel')
     logger.debug('Channel: ' + channel['channel_id'] + ': ' + str(channel['_id']['$oid']))
     result = {}
-    result, put_bug = t.meta.replaceDocument(db=conf.tenant[tenant_id]['stream_db'], collection='streams_channel_metadata', docId=channel['_id']['$oid'],
+    result, put_bug = t.meta.replaceDocument(db=conf.tenant[g.tenant_id]['stream_db'], collection='streams_channel_metadata', docId=channel['_id']['$oid'],
                                              request_body=channel, _tapis_debug=True)
     logger.debug(put_bug.response)
     if put_bug.response.status_code == 200:
@@ -621,9 +650,3 @@ def update_channel(channel):
         message = 'Could not update Channel Status in meta'
         #TODO rollback the status change in the kapacitor task
     return result, message
-
-def healthcheck():
-    logger.debug('tenant arg')
-    logger.debug(g.tenant_id)
-    res = requests.get(conf.tenant[g.tenant_id]['tapis_base_url'] +'/v3/meta/healthcheck')
-    return res.status_code
