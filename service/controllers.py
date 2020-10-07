@@ -114,7 +114,10 @@ class ProjectResource(Resource):
         return utils.ok(result=result, msg=msg)
 
     def delete(self, project_id):
-        return ""
+        #return ""
+        proj_result, msg = meta.delete_project(project_id)
+        result = meta.strip_meta(proj_result)
+        return utils.ok(result=result, msg=msg)
 
 class SitesResource(Resource):
     """
