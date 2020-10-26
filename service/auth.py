@@ -52,6 +52,15 @@ def authentication():
         g.tenant_id = request.args.get('tenant')
         logger.debug(g.tenant_id)
         return skip_sk
+    if request.method == 'POST' and (request.endpoint == 'projectsresource'):
+        #Check alert_secret
+        logger.debug('SK Flag value')
+        logger.debug(request.endpoint)
+        logger.debug(g.tenant_id)
+        logger.debug(g.username)
+        skip_sk = True
+        logger.debug(skip_sk)
+        return skip_sk
     if request.method == 'POST' and (request.endpoint == 'alertspostresource'):
         #Check alert_secret
         logger.debug('SK Flag value')
@@ -69,7 +78,7 @@ def authentication():
     # this role is stored in the security kernel
 ROLE = 'streams_user'
 # this is the Tapis client that tenants will use for interacting with other services, such as the security kernel.
-t = auth.get_service_tapy_client(tenant_id='master')
+t = auth.get_service_tapis_client(tenant_id='master')
 t.x_username = conf.streams_user
 
 def authorization(skip_sk):
@@ -85,7 +94,8 @@ def authorization(skip_sk):
     if skip_sk:
         logger.debug("not using SK; returning True")
         return True
-    logger.debug(f"calling SK to check users assigned to role: {ROLE}")
+    #logger.debug(f"calling SK to check users assigned to role: {ROLE}")
+    '''
     try:
         t.x_tenant_id = g.tenant_id
         users = t.sk.getUsersWithRole(roleName=ROLE, tenant=g.tenant_id)
@@ -101,3 +111,5 @@ def authorization(skip_sk):
     else:
         logger.info(f"user {g.username} has role {ROLE}")
         return True
+    '''
+    return True

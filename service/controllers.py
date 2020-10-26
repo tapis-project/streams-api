@@ -10,10 +10,12 @@ import influx
 import meta
 import kapacitor
 import abaco
+import sk
 from models import ChordsSite, ChordsIntrument, ChordsVariable
 from common import utils, errors
 from common.config import conf
 from requests.auth import HTTPBasicAuth
+from common import errors as common_errors
 
 #from service.models import db, LDAPConnection, TenantOwner, Tenant
 
@@ -79,22 +81,50 @@ class ProjectsResource(Resource):
     Work with Project objects
     """
     def get(self):
-        logger.debug('In list projects')
-        proj_result, msg = meta.list_projects()
-        result = meta.strip_meta_list(proj_result)
-        logger.debug('After list projects')
-        return utils.ok(result=result,msg=msg)
+            logger.debug('In list projects')
+            proj_result, msg = meta.list_projects()
+            result = meta.strip_meta_list(proj_result)
+            logger.debug('After list projects')
+            return utils.ok(result=result,msg=msg)
+
 
     def post(self):
         logger.debug(request.json)
         body = request.json
-        proj_result, msg = meta.create_project(body)
-        logger.debug(proj_result)
-        result = meta.strip_meta(proj_result)
+        req_body = body
+        proj_admin_role = 'streams_' + req_body['project_id'] + '_admin'
+        logger.debug(proj_admin_role)
+        try:
+            create_role_status = sk.create_role(proj_admin_role, 'Project Admin Role')
+            if (create_role_status == 'success'):
+               grant_role_status = sk.grant_role(proj_admin_role)
+               if (grant_role_status == 'success'):
+                   proj_result, msg = meta.create_project(body)
+                   logger.debug(proj_result)
+                   if (str(proj_result) != 'null'):
+                    result = meta.strip_meta(proj_result)
+                    return utils.ok(result, msg=msg)
+               else:
+                   try:
+                     delete_role_sk = sk.deleteRoleByName(roleName=proj_admin_role,tenant=g.tenant_id)
+                     logger.debug('proj admin role deleted from SK')
+                     msg = f"Could not create project"
+                     return utils.error(result='null', msg=msg)
+                   except Exception as e:
+                       msg = f"Cound not delete role: {proj_admin_role};"
+                       return utils.error(result='null', msg=msg)
+            else:
+                msg = f"Could not create project"
+                return utils.error(result='null', msg=msg)
+        except Exception as e:
+              msg = f"Could not create project: {proj_admin_role};"
+              return utils.error(result='null', msg=msg)
+        #msg = 'Project creation failed'
+        return utils.error(result='null', msg=msg)
         #resp['status'] = result['status']
         #logger.debug(meta_resp['status'])
         #logger.debug(resp)
-        return utils.ok(result, msg=msg)
+
 
 class ProjectResource(Resource):
     """
@@ -102,16 +132,24 @@ class ProjectResource(Resource):
     """
 
     def get(self, project_id):
-        proj_result, msg = meta.get_project(project_id)
-        result = meta.strip_meta(proj_result)
-        logger.debug(result)
-        return utils.ok(result=result, msg=msg)
+        if(sk.check_if_authorized_get(project_id)):
+            logger.debug("Authorized user")
+            proj_result, msg = meta.get_project(project_id)
+            result = meta.strip_meta(proj_result)
+            logger.debug(result)
+            return utils.ok(result=result, msg=msg)
+        else:
+            logger.debug('User does not have any role on the project')
+            raise common_errors.PermissionsError(msg=f'Could not verify permissions with the Security Kernel')
 
     def put(self, project_id):
-        body = request.json
-        proj_result, msg = meta.update_project(project_id, body)
-        result = meta.strip_meta(proj_result)
-        return utils.ok(result=result, msg=msg)
+        if (sk.check_if_authorized_get(project_id)):
+            body = request.json
+            proj_result, msg = meta.update_project(project_id, body)
+            result = meta.strip_meta(proj_result)
+            return utils.ok(result=result, msg=msg)
+        else:
+            raise common_errors.PermissionsError(msg=f'Could not verify permissions with the Security Kernel')
 
     def delete(self, project_id):
         return ""
