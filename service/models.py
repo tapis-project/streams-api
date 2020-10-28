@@ -3,7 +3,8 @@ import enum
 from flask import g, Flask
 from flask_cors import CORS
 app = Flask(__name__)
-CORS(app,resources={r"/v3/streams/*": {"origins": "*"}})
+#CORS(app)
+#CORS(app,resources={r"/v3/streams/*": {"origins": "*"}})
 
 class ChordsSite:
     def __init__(self,id, name, lat, long, elevation, description):

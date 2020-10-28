@@ -152,7 +152,10 @@ class ProjectResource(Resource):
             raise common_errors.PermissionsError(msg=f'Could not verify permissions with the Security Kernel')
 
     def delete(self, project_id):
-        return ""
+        #return ""
+        proj_result, msg = meta.delete_project(project_id)
+        result = meta.strip_meta(proj_result)
+        return utils.ok(result=result, msg=msg)
 
 class SitesResource(Resource):
     """

@@ -1,6 +1,6 @@
 from flask import g, request
 from common.config import conf
-from common import auth
+from common import auth 
 from common import errors as common_errors
 from common.auth import tenants
 
