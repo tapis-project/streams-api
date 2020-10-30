@@ -13,6 +13,7 @@ import auth
 from requests.auth import HTTPBasicAuth
 import subprocess
 import meta
+import parse_condition_expr
 #access the dynatpy instance
 t = auth.t
 
@@ -101,11 +102,11 @@ def update_kapacitor_task(task_id,body):
 
 ####################### CHANNEL ########################################
 #Expected values for req_body:
-#  channel_id, channel_name, triggers_with_actions, status, template_id, vars
+#  channel_id, channel_name, triggers_with_actions, status, template_id
 def create_channel(req_body):
     logger.debug("IN CREATE CHANNEL")
-    #create a kapacitor task
 
+    #create a kapacitor task
     # channel_id is same as task_id
     # if task_id already exists in kapacitor, task creation will fail. This will in turn lead to channel creation failure
     task_id = req_body['channel_id']
@@ -113,8 +114,16 @@ def create_channel(req_body):
                  'dbrps': [{"db": "chords_ts_production", "rp": "autogen"}], 'status': 'enabled'}
 
     task_body['template-id'] = req_body['template_id']
+
+    # parse condition and convert it to vars for kapacitor task creation
+    # vars is of the form :
     vars = {}
-    vars = convert_conditions_to_vars(req_body)
+    if(isinstance(req_body['triggers_with_actions'][0]['condition'],dict)):
+        vars = convert_conditions_to_vars(req_body)
+    else:
+        condn_list = json.loads(json.dumps(req_body['triggers_with_actions'][0]['condition']))
+        lambda_expr, lambda_expr_list = parse_condition_expr.get_all_crit_vars(condn_list, '', [], '', 1, [])
+        vars = convert_condition_list_to_vars( lambda_expr, lambda_expr_list)
     task_body['vars'] = vars
     logger.debug('create task request body: ' + str(task_body))
     # create task call to Kapacitor
