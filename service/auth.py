@@ -77,7 +77,7 @@ def authentication():
 
 
     # this role is stored in the security kernel
-ROLE = 'streams_user'
+#ROLE = 'streams_user'
 # this is the Tapis client that tenants will use for interacting with other services, such as the security kernel.
 t = auth.get_service_tapis_client(tenant_id='master', tenants=tenants)
 t.x_username = conf.streams_user

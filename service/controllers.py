@@ -92,13 +92,16 @@ class ProjectsResource(Resource):
         logger.debug(request.json)
         body = request.json
         req_body = body
+        # Project creator will be assigned admin role.
         proj_admin_role = 'streams_' + req_body['project_id'] + '_admin'
         logger.debug(proj_admin_role)
         try:
+            # Create role in SK. If role creation is successful then grant it.
             create_role_status = sk.create_role(proj_admin_role, 'Project Admin Role')
             if (create_role_status == 'success'):
                grant_role_status = sk.grant_role(proj_admin_role)
                if (grant_role_status == 'success'):
+                   # Only if the role is granted, call metadata to create project collection
                    proj_result, msg = meta.create_project(body)
                    logger.debug(proj_result)
                    if (str(proj_result) != 'null'):
@@ -106,6 +109,7 @@ class ProjectsResource(Resource):
                     return utils.ok(result, msg=msg)
                else:
                    try:
+                     # If role granting was not success, we should cleanup the role from sk
                      delete_role_sk = sk.deleteRoleByName(roleName=proj_admin_role,tenant=g.tenant_id)
                      logger.debug('proj admin role deleted from SK')
                      msg = f"Could not create project"
@@ -117,7 +121,7 @@ class ProjectsResource(Resource):
                 msg = f"Could not create project"
                 return utils.error(result='null', msg=msg)
         except Exception as e:
-              msg = f"Could not create project: {proj_admin_role};"
+              msg = f"Could not create project"
               return utils.error(result='null', msg=msg)
         #msg = 'Project creation failed'
         return utils.error(result='null', msg=msg)
@@ -143,7 +147,7 @@ class ProjectResource(Resource):
             raise common_errors.PermissionsError(msg=f'Could not verify permissions with the Security Kernel')
 
     def put(self, project_id):
-        if (sk.check_if_authorized_get(project_id)):
+        if (sk.check_if_authorized_put(project_id)):
             body = request.json
             proj_result, msg = meta.update_project(project_id, body)
             result = meta.strip_meta(proj_result)
@@ -153,9 +157,13 @@ class ProjectResource(Resource):
 
     def delete(self, project_id):
         #return ""
-        proj_result, msg = meta.delete_project(project_id)
-        result = meta.strip_meta(proj_result)
-        return utils.ok(result=result, msg=msg)
+        if (sk.check_if_authorized_put(project_id)):
+             proj_result, msg = meta.delete_project(project_id)
+             result = meta.strip_meta(proj_result)
+             return utils.ok(result=result, msg=msg)
+        else:
+            raise common_errors.PermissionsError(msg=f'Could not verify permissions with the Security Kernel')
+
 
 class SitesResource(Resource):
     """
