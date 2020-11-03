@@ -38,7 +38,6 @@ def strip_meta_list(meta_list):
 #List projects a user has permission to read
 #strip out id and _etag fields
 def list_projects():
-    #get user role with permission ?
     logger.debug('in META list project')
     result= t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_project_metadata',filter='{"permissions.users":"'+g.username+'","tapis_deleted":null}')
     logger.debug(result)
@@ -79,6 +78,7 @@ def create_project(body):
     logger.debug(req_body)
     #Check if project_id exists by creating collection - if so add something to id to unique it.
     col_result, col_bug =t.meta.createCollection(db=conf.tenant[g.tenant_id]['stream_db'],collection=req_body['project_id'], _tapis_debug=True)
+    logger.debug(col_bug.response.status_code)
     if col_bug.response.status_code == 201:
         logger.debug('Created project metadata')
         #create project collection
@@ -97,8 +97,10 @@ def create_project(body):
             raise errors.ResourceError(msg=f'Project Creation Failed')
             results=bug.response
     else:
-        raise errors.ResourceError(msg=f'Project Creation Failed')
-        results = bug.response
+        logger.debug('Project id already exists')
+        results = 'null'
+        logger.debug(results)
+        message='Project id already exists'
     return results, message
 
 def update_project(project_id, put_body):
