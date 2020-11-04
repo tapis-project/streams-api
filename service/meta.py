@@ -380,18 +380,23 @@ def update_instrument(project_id, site_id, instrument_id, put_body, remove_instr
 
 def list_variables(project_id, site_id, instrument_id):
     site_result, site_bug = get_site(project_id,site_id)
+    logger.debug(site_result)
     inst_exists = False
     result =[]
     if len(site_result) > 0:
+        logger.debug('inside if')
         for inst in site_result['instruments']:
             if inst['inst_id'] == instrument_id:
                 inst_exists = True
                 if 'variables' in inst:
+                    logger.debug('inside if variables')
                     variables =[]
                     for variable in inst['variables']:
+                        logger.debug(variable)
                         if 'tapis_deleted' not in inst:
                             variables.append(variable)
-                    result = variables
+                        result = variable
+                        logger.debug(result)
                 if len(result) > 0 :
                     message = "Variables Found"
                 else:
