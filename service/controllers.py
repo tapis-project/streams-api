@@ -34,8 +34,8 @@ class HelloResource(Resource):
 class ReadyResource(Resource):
     def get(self):
         try:
-            status_kapacitor=kapacitor.ping()
             logger.debug('Kapacitor status')
+            status_kapacitor=kapacitor.ping()
             logger.debug(status_kapacitor)
             status_chords=chords.ping()
             logger.debug('Chords status')
@@ -136,7 +136,8 @@ class ProjectResource(Resource):
     """
 
     def get(self, project_id):
-        if(sk.check_if_authorized_get(project_id)):
+        authorized = sk.check_if_authorized_get(project_id)
+        if(authorized) is True:
             logger.debug("Authorized user")
             proj_result, msg = meta.get_project(project_id)
             result = meta.strip_meta(proj_result)
@@ -144,25 +145,29 @@ class ProjectResource(Resource):
             return utils.ok(result=result, msg=msg)
         else:
             logger.debug('User does not have any role on the project')
-            raise common_errors.PermissionsError(msg=f'Could not verify permissions with the Security Kernel')
+            raise common_errors.PermissionsError(msg=f'User not authorized to access the resource')
 
     def put(self, project_id):
-        if (sk.check_if_authorized_put(project_id)):
+        authorized = sk.check_if_authorized_put(project_id)
+        if (authorized):
             body = request.json
             proj_result, msg = meta.update_project(project_id, body)
             result = meta.strip_meta(proj_result)
             return utils.ok(result=result, msg=msg)
         else:
-            raise common_errors.PermissionsError(msg=f'Could not verify permissions with the Security Kernel')
+            logger.debug('User does not have Admin or Manager role on the project')
+            raise common_errors.PermissionsError(msg=f'User not authorized to access the resource')
 
     def delete(self, project_id):
         #return ""
-        if (sk.check_if_authorized_put(project_id)):
+        authorized = sk.check_if_authorized_delete(project_id)
+        if (authorized):
              proj_result, msg = meta.delete_project(project_id)
              result = meta.strip_meta(proj_result)
              return utils.ok(result=result, msg=msg)
         else:
-            raise common_errors.PermissionsError(msg=f'Could not verify permissions with the Security Kernel')
+            logger.debug('User does not have Admin role on the project')
+            raise common_errors.PermissionsError(msg=f'User not authorized to access the resource')
 
 
 class SitesResource(Resource):
@@ -172,10 +177,16 @@ class SitesResource(Resource):
 
     #TODO metadata integration - need to use query, limit and offset
     def get(self, project_id):
-        site_result, msg = meta.list_sites(project_id)
-        result = meta.strip_meta_list(site_result)
-        return utils.ok(result=result,msg=msg)
-
+        authorized = sk.check_if_authorized_get(project_id)
+        logger.debug(authorized)
+        if (authorized):
+            site_result, msg = meta.list_sites(project_id)
+            result = meta.strip_meta_list(site_result)
+            return utils.ok(result=result,msg=msg)
+        else:
+            logger.debug('authorization failed')
+            logger.debug('User does not have role on the project')
+            raise common_errors.PermissionsError(msg=f'User not authorized to access the resource')
 
     def post(self, project_id):
         # validator = RequestValidator(utils.spec)
@@ -187,59 +198,78 @@ class SitesResource(Resource):
         # logger.debug(f"validated_body: {dir(validated_body)}")
 
         #need to add check for project permission & project exists before chords insertion
-        logger.debug('omg')
-        logger.debug(request.json)
-        body = request.json
-        postSite = ChordsSite("",body['site_name'],
-                                body['latitude'],
-                                body['longitude'],
-                                body['elevation'],
-                                body['description'])
-        resp, msg = chords.create_site(postSite)
-        if msg == "Site created":
-            site_result, message = meta.create_site(project_id, resp['id'],body)
-            #resp['results']=meta_resp['results']
-            logger.debug('success')
-            logger.debug(site_result)
-            result = meta.strip_meta(site_result)
-            #meta_resp, getmsg = meta.get_site(project_id, resp['id'])
+        authorized = sk.check_if_authorized_post(project_id)
+        logger.debug(authorized)
+        if (authorized):
+                logger.debug("Inside if")
+                logger.debug(request.json)
+                body = request.json
+                postSite = ChordsSite("",body['site_name'],
+                                        body['latitude'],
+                                        body['longitude'],
+                                        body['elevation'],
+                                        body['description'])
+                resp, msg = chords.create_site(postSite)
+                if msg == "Site created":
+                    site_result, message = meta.create_site(project_id, resp['id'],body)
+                    #resp['results']=meta_resp['results']
+                    logger.debug('success')
+                    logger.debug(site_result)
+                    result = meta.strip_meta(site_result)
+                    #meta_resp, getmsg = meta.get_site(project_id, resp['id'])
+                else:
+                    logger.debug('failed')
+                    message = msg
+                    result=''
+                return utils.ok(result=result,msg=message)
         else:
-            logger.debug('failed')
-            message = msg
-            result=''
-        return utils.ok(result=result,msg=message)
-
+            logger.debug('User does not have Admin or Manager role on the project')
+            raise common_errors.PermissionsError(msg=f'User not authorized to access the resource')
 
 
 class SiteResource(Resource):
     """
     Work with Sites objects
     """
-
     def get(self, project_id, site_id):
-        site_result, msg = meta.get_site(project_id,site_id)
-        result = meta.strip_meta(site_result)
-        logger.debug(result)
-        return utils.ok(result=result, msg=msg)
+        authorized = sk.check_if_authorized_get(project_id)
+        if(authorized):
+            site_result, msg = meta.get_site(project_id,site_id)
+            result = meta.strip_meta(site_result)
+            logger.debug(result)
+            return utils.ok(result=result, msg=msg)
+        else:
+            logger.debug('User does not have any role on project')
+            raise common_errors.PermissionsError(msg=f'User not authorized to access the resource')
 
     def put(self, project_id, site_id):
-        body = request.json
-        site_result, msg = meta.update_site(project_id, site_id, body)
-        result = meta.strip_meta(site_result)
-        putSite = ChordsSite(result['chords_id'],
-                              body['site_name'],
-                              body['latitude'],
-                              body['longitude'],
-                              body['elevation'],
-                              body['description'])
-        chord_result, chord_msg = chords.update_site(result['chords_id'], putSite)
-        return utils.ok(result=result, msg=msg)
+        authorized = sk.check_if_authorized_put(project_id)
+        if (authorized):
+            body = request.json
+            site_result, msg = meta.update_site(project_id, site_id, body)
+            result = meta.strip_meta(site_result)
+            putSite = ChordsSite(result['chords_id'],
+                                  body['site_name'],
+                                  body['latitude'],
+                                  body['longitude'],
+                                  body['elevation'],
+                                  body['description'])
+            chord_result, chord_msg = chords.update_site(result['chords_id'], putSite)
+            return utils.ok(result=result, msg=msg)
+        else:
+            logger.debug('User does not have Admin or Manager role on the project')
+            raise common_errors.PermissionsError(msg=f'User not authorized to access the resource')
 
     def delete(self, project_id, site_id):
-        #result, msg = chords.delete_site(site_id)
-        site_result, msg = meta.delete_site(project_id,site_id)
-        logger.debug(msg)
-        return utils.ok(result=site_result, msg=f'Site {site_id} deleted.')
+        authorized = sk.check_if_authorized_delete(project_id)
+        if (authorized):
+            #result, msg = chords.delete_site(site_id)
+            site_result, msg = meta.delete_site(project_id,site_id)
+            logger.debug(msg)
+            return utils.ok(result=site_result, msg=f'Site {site_id} deleted.')
+        else:
+            logger.debug('User does not have Admin role on the project')
+            raise common_errors.PermissionsError(msg=f'User not authorized to access the resource')
 
 
 class InstrumentsResource(Resource):
@@ -247,64 +277,75 @@ class InstrumentsResource(Resource):
     Work with Instruments objects
     """
     def get(self,project_id,site_id):
+        authorized = sk.check_if_authorized_get(project_id)
+        if (authorized):
         #result,msg = chords.list_instruments()
-        result,msg = meta.list_instruments(project_id, site_id)
-        logger.debug(site_id)
-        '''
-        #logic to filter instruments based on site id
-        filtered_res = []
-        list_index = 0
-        logger.debug(site_id)
-        for i in range(len(result)):
-            if (result[i]["site_id"] == int(site_id)):
-                filtered_res.insert(list_index, result[i])
-                list_index = list_index + 1
-                logger.debug(filtered_res)
-            if (len(filtered_res)!=0):
-                return utils.ok(result=filtered_res, msg=msg)
-            else:
-                return utils.ok(result="null", msg=f'No instruments found with this site')
-        '''
-        return utils.ok(result=result, msg=msg)
+            result,msg = meta.list_instruments(project_id, site_id)
+            logger.debug(site_id)
+            '''
+            #logic to filter instruments based on site id
+            filtered_res = []
+            list_index = 0
+            logger.debug(site_id)
+            for i in range(len(result)):
+                if (result[i]["site_id"] == int(site_id)):
+                    filtered_res.insert(list_index, result[i])
+                    list_index = list_index + 1
+                    logger.debug(filtered_res)
+                if (len(filtered_res)!=0):
+                    return utils.ok(result=filtered_res, msg=msg)
+                else:
+                    return utils.ok(result="null", msg=f'No instruments found with this site')
+            '''
+            return utils.ok(result=result, msg=msg)
+        else:
+            logger.debug('User does not have any role on project')
+            raise common_errors.PermissionsError(msg=f'User not authorized to access the resource')
+
 
     #TODO support bulk create operations
     def post(self, project_id, site_id):
-        logger.debug(type(request.json))
-        logger.debug(request.json)
-        result={}
-        #TODO loop through list objects to support build operations
-        if type(request.json) is dict:
-            body = request.json
-        else:
-            body = request.json[0]
-        logger.debug('before ChordsInstrument assignment')
-        #id, site_id, name, sensor_id, topic_category_id, description, display_points, plot_offset_value, plot_offset_units, sample_rate_seconds):
-        site_result, site_bug = meta.get_site(project_id, site_id)
-        if site_bug == "Site found.":
-            postInst = ChordsIntrument("",site_result['chords_id'],
-                                        body['inst_name'],
-                                        "",
-                                        "",
-                                        body['inst_description'],
-                                        "120",
-                                        "1",
-                                        "weeks",
-                                        "60")
-            logger.debug('after ChordsInstrument assignment')
-            chord_result, chord_msg = chords.create_instrument(postInst)
-            if chord_msg == "Instrument created":
-                body['chords_id'] = chord_result['id']
-                #body['instrument_id'] = instrument_id
-                inst_result, inst_msg = meta.create_instrument(project_id, site_id, body)
-                logger.debug(inst_msg)
-                if len(inst_result) >0:
-                    result = inst_result
-                    message = inst_msg
+        authorized = sk.check_if_authorized_post(project_id)
+        if (authorized):
+            logger.debug(type(request.json))
+            logger.debug(request.json)
+            result={}
+            #TODO loop through list objects to support build operations
+            if type(request.json) is dict:
+                body = request.json
             else:
-                message = chord_msg
+                body = request.json[0]
+            logger.debug('before ChordsInstrument assignment')
+            #id, site_id, name, sensor_id, topic_category_id, description, display_points, plot_offset_value, plot_offset_units, sample_rate_seconds):
+            site_result, site_bug = meta.get_site(project_id, site_id)
+            if site_bug == "Site found.":
+                postInst = ChordsIntrument("",site_result['chords_id'],
+                                            body['inst_name'],
+                                            "",
+                                            "",
+                                            body['inst_description'],
+                                            "120",
+                                            "1",
+                                            "weeks",
+                                            "60")
+                logger.debug('after ChordsInstrument assignment')
+                chord_result, chord_msg = chords.create_instrument(postInst)
+                if chord_msg == "Instrument created":
+                    body['chords_id'] = chord_result['id']
+                    #body['instrument_id'] = instrument_id
+                    inst_result, inst_msg = meta.create_instrument(project_id, site_id, body)
+                    logger.debug(inst_msg)
+                    if len(inst_result) >0:
+                        result = inst_result
+                        message = inst_msg
+                else:
+                    message = chord_msg
+            else:
+                message = "Site Failed To Create"
+            return utils.ok(result=result, msg=message)
         else:
-            message = "Site Failed To Create"
-        return utils.ok(result=result, msg=message)
+            logger.debug('User does not have Admin or Manager role on project')
+            raise common_errors.PermissionsError(msg=f'User not authorized to access the resource')
 
 
 class InstrumentResource(Resource):
@@ -312,38 +353,52 @@ class InstrumentResource(Resource):
     Work with Instruments objects
     """
     def get(self, project_id, site_id, instrument_id):
-        #result,msg = chords.get_instrument(instrument_id)
-        result,msg = meta.get_instrument(project_id, site_id,instrument_id)
-        return utils.ok(result=result, msg=msg)
-
+        authorized = sk.check_if_authorized_get(project_id)
+        if (authorized):
+            #result,msg = chords.get_instrument(instrument_id)
+            result,msg = meta.get_instrument(project_id, site_id,instrument_id)
+            return utils.ok(result=result, msg=msg)
+        else:
+            logger.debug('User does not have any role on project')
+            raise common_errors.PermissionsError(msg=f'User not authorized to access the resource')
 
     def put(self, project_id, site_id, instrument_id):
-        logger.debug(type(request.json))
-        logger.debug(request.json)
-        #TODO loop through list objects to support buld operations
-        if type(request.json) is dict:
-            body = request.json
-        else:
-            body = request.json[0]
+        authorized = sk.check_if_authorized_put(project_id)
+        if (authorized):
+            logger.debug(type(request.json))
+            logger.debug(request.json)
+            #TODO loop through list objects to support buld operations
+            if type(request.json) is dict:
+                body = request.json
+            else:
+                body = request.json[0]
 
-        result, msg = meta.update_instrument(project_id, site_id, instrument_id, body)
-        putInst = ChordsIntrument(int(result['chords_id']),result['site_chords_id'],
-                                    body['inst_name'],
-                                    "",
-                                    "",
-                                    body['inst_description'],
-                                    "",
-                                    "",
-                                    "",
-                                    "")
-        chord_result, chord_msg = chords.update_instrument(str(result['chords_id']), putInst)
-        return utils.ok(result=result, msg=msg)
+            result, msg = meta.update_instrument(project_id, site_id, instrument_id, body)
+            putInst = ChordsIntrument(int(result['chords_id']),result['site_chords_id'],
+                                        body['inst_name'],
+                                        "",
+                                        "",
+                                        body['inst_description'],
+                                        "",
+                                        "",
+                                        "",
+                                        "")
+            chord_result, chord_msg = chords.update_instrument(str(result['chords_id']), putInst)
+            return utils.ok(result=result, msg=msg)
+        else:
+            logger.debug('User does not have Admin or Manager role on the project')
+            raise common_errors.PermissionsError(msg=f'User not authorized to access the resource')
 
 
     def delete(self, project_id, site_id, instrument_id):
-        #chord_result,chord_msg = chords.delete_instrument(instrument_id)
-        result, msg = meta.update_instrument(project_id, site_id, instrument_id, {},True)
-        return utils.ok(result={}, msg=msg)
+        authorized = sk.check_if_authorized_delete(project_id)
+        if (authorized):
+            #chord_result,chord_msg = chords.delete_instrument(instrument_id)
+            result, msg = meta.update_instrument(project_id, site_id, instrument_id, {},True)
+            return utils.ok(result={}, msg=msg)
+        else:
+            logger.debug('User does not have admin role on the project')
+            raise common_errors.PermissionsError(msg=f'User not authorized to access the resource')
 
 
 class VariablesResource(Resource):
@@ -352,35 +407,45 @@ class VariablesResource(Resource):
     """
 
     def get(self, project_id, site_id, instrument_id):
-        #result,msg = chords.list_variables()
-        result, msg = meta.list_variables(project_id, site_id, instrument_id)
-        logger.debug(instrument_id)
-        return utils.ok(result=result, msg=msg)
+        authorized = sk.check_if_authorized_get(project_id)
+        if (authorized):
+            #result,msg = chords.list_variables()
+            result, msg = meta.list_variables(project_id, site_id, instrument_id)
+            logger.debug(instrument_id)
+            return utils.ok(result=result, msg=msg)
+        else:
+            logger.debug('User does not have any role on project')
+            raise common_errors.PermissionsError(msg=f'User not authorized to access the resource')
 
 
     def post(self, project_id, site_id, instrument_id):
         #logger.debug(type(request.json))
-        logger.debug(request.json)
-        #TODO loop through list objects to support buld operations
-        if type(request.json) is dict:
-            body = request.json
+        authorized = sk.check_if_authorized_post(project_id)
+        if (authorized):
+            logger.debug(request.json)
+            #TODO loop through list objects to support buld operations
+            if type(request.json) is dict:
+                body = request.json
+            else:
+                body = request.json[0]
+            inst_result, bug = meta.get_instrument(project_id, site_id, instrument_id)
+            # id, name, instrument_id, shortname, commit
+            postInst = ChordsVariable("test",inst_result['chords_id'],
+                                        body['var_name'],
+                                        body['var_id'],
+                                        "")
+            logger.debug(postInst)
+            chord_result, chord_msg = chords.create_variable(postInst)
+            if chord_msg == "Variable created":
+                body['chords_id'] = chord_result['id']
+                result, msg = meta.create_variable(project_id, site_id, instrument_id, body)
+            else:
+                message = chord_msg
+            logger.debug(result)
+            return utils.ok(result=result, msg=msg)
         else:
-            body = request.json[0]
-        inst_result, bug = meta.get_instrument(project_id, site_id, instrument_id)
-        # id, name, instrument_id, shortname, commit
-        postInst = ChordsVariable("test",inst_result['chords_id'],
-                                    body['var_name'],
-                                    body['var_id'],
-                                    "")
-        logger.debug(postInst)
-        chord_result, chord_msg = chords.create_variable(postInst)
-        if chord_msg == "Variable created":
-            body['chords_id'] = chord_result['id']
-            result, msg = meta.create_variable(project_id, site_id, instrument_id, body)
-        else:
-            message = chord_msg
-        logger.debug(result)
-        return utils.ok(result=result, msg=msg)
+            logger.debug('User does not have admin or manager role on project')
+            raise common_errors.PermissionsError(msg=f'User not authorized to access the resource')
 
 
 class VariableResource(Resource):
@@ -388,36 +453,51 @@ class VariableResource(Resource):
     Work with Variables objects
     """
     def get(self, project_id, site_id, instrument_id, variable_id):
-        #chords_result,chords_msg = chords.get_variable(variable_id)
-        result, msg = meta.get_variable(project_id, site_id, instrument_id, variable_id)
-        logger.debug(result)
-        return utils.ok(result=result, msg=msg)
-
+        authorized = sk.check_if_authorized_get(project_id)
+        if (authorized):
+            #chords_result,chords_msg = chords.get_variable(variable_id)
+            result, msg = meta.get_variable(project_id, site_id, instrument_id, variable_id)
+            logger.debug(result)
+            return utils.ok(result=result, msg=msg)
+        else:
+            logger.debug('User does not have any role on project')
+            raise common_errors.PermissionsError(msg=f'User not authorized to access the resource')
 
     def put(self,project_id, site_id, instrument_id,  variable_id):
-        logger.debug(type(request.json))
-        logger.debug(request.json)
-        #TODO loop through list objects to support buld operations
-        if type(request.json) is dict:
-            body = request.json
+        authorized = sk.check_if_authorized_put(project_id)
+        if (authorized):
+            logger.debug(type(request.json))
+            logger.debug(request.json)
+            #TODO loop through list objects to support buld operations
+            if type(request.json) is dict:
+                body = request.json
+            else:
+                body = request.json[0]
+            # id, name, instrument_id, shortname, commit
+            result, msg = meta.update_variable(project_id, site_id, instrument_id, variable_id, body)
+            putInst = ChordsVariable(result['chords_id'],result['inst_chords_id'],
+                                        body['var_name'],
+                                        body['shortname'],
+                                        "")
+            logger.debug(putInst)
+            chord_result,chord_msg = chords.update_variable(result['chords_id'],putInst)
+            logger.debug(result)
+            return utils.ok(result=result, msg=msg)
         else:
-            body = request.json[0]
-        # id, name, instrument_id, shortname, commit
-        result, msg = meta.update_variable(project_id, site_id, instrument_id, variable_id, body)
-        putInst = ChordsVariable(result['chords_id'],result['inst_chords_id'],
-                                    body['var_name'],
-                                    body['shortname'],
-                                    "")
-        logger.debug(putInst)
-        chord_result,chord_msg = chords.update_variable(result['chords_id'],putInst)
-        logger.debug(result)
-        return utils.ok(result=result, msg=msg)
+            logger.debug('User does not have admin or manager role on project')
+            raise common_errors.PermissionsError(msg=f'User not authorized to access the resource')
+
 
     def delete(self, project_id, site_id, instrument_id, variable_id):
-        result,msg = chords.delete_variable(variable_id)
-        result, msg = meta.update_variable(project_id, site_id, instrument_id, variable_id, {},True)
-        logger.debug(result)
-        return utils.ok(result=result, msg=msg)
+        authorized = sk.check_if_authorized_delete(project_id)
+        if (authorized):
+            result,msg = chords.delete_variable(variable_id)
+            result, msg = meta.update_variable(project_id, site_id, instrument_id, variable_id, {},True)
+            logger.debug(result)
+            return utils.ok(result=result, msg=msg)
+        else:
+            logger.debug('User does not have admin role on project')
+            raise common_errors.PermissionsError(msg=f'User not authorized to access the resource')
 
 
 class MeasurementsWriteResource(Resource):
@@ -451,74 +531,72 @@ class MeasurementsResource(Resource):
     """
     Work with Measurements objects
     """
-
-
     def get(self, project_id, site_id, instrument_id):
-        result =[]
-        msg=""
-        logger.debug("top of GET /measurements")
-        #inst_result = meta.get_instrument(project_id,site_id,instrument_id)
-        site,msg = meta.get_site(project_id,site_id)
-        logger.debug(site)
-        replace_cols = {}
-        for inst in site['instruments']:
-            logger.debug(inst)
-            if inst['inst_id'] == instrument_id:
-                instrument = inst
+            result =[]
+            msg=""
+            logger.debug("top of GET /measurements")
+            #inst_result = meta.get_instrument(project_id,site_id,instrument_id)
+            site,msg = meta.get_site(project_id,site_id)
+            logger.debug(site)
+            replace_cols = {}
+            for inst in site['instruments']:
                 logger.debug(inst)
-                for v in inst['variables']:
-                    logger.debug(v)
-                    replace_cols[str(v['chords_id'])]=v['var_id']
-        js= influx.query_measurments([{"inst":str(instrument['chords_id'])},{"start_date": request.args.get('start_date')},{"end_date": request.args.get('end_date')}])
-        logger.debug(js)
-        if len(js) > 1 and len(js['series']) > 0:
-            df = pd.DataFrame(js['series'][0]['values'],columns=js['series'][0]['columns'])
-            pv = df.pivot(index='time', columns='var', values=['value'])
-            df1 = pv
-            df1.columns = df1.columns.droplevel(0)
-            df1 = df1.reset_index().rename_axis(None, axis=1)
-            df1.rename(columns=replace_cols,inplace=True)
-            df1.set_index('time',inplace=True)
-            if request.args.get('format') == "csv":
-                logger.debug("CSV")
-                # csv_response = Response(result, mimetype="text/csv")
-                # si = StringIO.StringIO()
-                #cw = csv.write(si)
-                # cw.writerows(csvList)
-                output = make_response(df1.to_csv())
-                output.headers["Content-Disposition"] = "attachment; filename=export.csv"
-                output.headers["Content-type"] = "text/csv"
-                return output
+                if inst['inst_id'] == instrument_id:
+                    instrument = inst
+                    logger.debug(inst)
+                    for v in inst['variables']:
+                        logger.debug(v)
+                        replace_cols[str(v['chords_id'])]=v['var_id']
+            js= influx.query_measurments([{"inst":str(instrument['chords_id'])},{"start_date": request.args.get('start_date')},{"end_date": request.args.get('end_date')}])
+            logger.debug(js)
+            if len(js) > 1 and len(js['series']) > 0:
+                df = pd.DataFrame(js['series'][0]['values'],columns=js['series'][0]['columns'])
+                pv = df.pivot(index='time', columns='var', values=['value'])
+                df1 = pv
+                df1.columns = df1.columns.droplevel(0)
+                df1 = df1.reset_index().rename_axis(None, axis=1)
+                df1.rename(columns=replace_cols,inplace=True)
+                df1.set_index('time',inplace=True)
+                if request.args.get('format') == "csv":
+                    logger.debug("CSV")
+                    # csv_response = Response(result, mimetype="text/csv")
+                    # si = StringIO.StringIO()
+                    #cw = csv.write(si)
+                    # cw.writerows(csvList)
+                    output = make_response(df1.to_csv())
+                    output.headers["Content-Disposition"] = "attachment; filename=export.csv"
+                    output.headers["Content-type"] = "text/csv"
+                    return output
+                else:
+                    result = json.loads(df1.to_json())
+                    result['measurements_in_file'] = len(df1.index)
+                    result['instrument'] = instrument
+                    site.pop('instruments',None)
+                    result['site'] = meta.strip_meta(site)
+                    return utils.ok(result=result, msg="Measurements Found")
             else:
-                result = json.loads(df1.to_json())
-                result['measurements_in_file'] = len(df1.index)
-                result['instrument'] = instrument
-                site.pop('instruments',None)
-                result['site'] = meta.strip_meta(site)
-                return utils.ok(result=result, msg="Measurements Found")
-        else:
-            return utils.ok(result=[], msg="No Measurements Founds")
-        # logger.debug("top of GET /measurements")
-        # #inst_result = meta.get_instrument(project_id,site_id,instrument_id)
-        # inst_index = meta.fetch_instrument_index(instrument_id)
-        # logger.debug(inst_index)
-        # if len(inst_index) > 0:
-        #     result,msg = chords.get_measurements(str(inst_index[0]['chords_inst_id']),request.args.get('start_date'),request.args.get('end_date'),request.args.get('format'))
-        #     logger.debug(result)
-        # #return utils.ok(result=list(map(lambda t: list(map(lambda r: {'units':r.units,'value':r.value,'variable_name':r.variable_name,'varable_id':r.shortname}, t['vars'])),result['features'][0 ]['properties']['data'])), msg=msg)
-        # if request.args.get('format') == "csv":
-        #     logger.debug("CSV")
-        #     # csv_response = Response(result, mimetype="text/csv")
-        #     # si = StringIO.StringIO()
-        #     #cw = csv.write(si)
-        #     # cw.writerows(csvList)
-        #     output = make_response(result)
-        #     output.headers["Content-Disposition"] = "attachment; filename=export.csv"
-        #     output.headers["Content-type"] = "text/csv"
-        #     return output
-        # else:
-        #     logger.debug("JSON")
-        #     return utils.ok(result={"data":result['features'][0 ]['properties']['data'],"measurements_in_file": result['features'][0 ]['properties']['measurements_in_file']}, msg=msg)
+                return utils.ok(result=[], msg="No Measurements Founds")
+            # logger.debug("top of GET /measurements")
+            # #inst_result = meta.get_instrument(project_id,site_id,instrument_id)
+            # inst_index = meta.fetch_instrument_index(instrument_id)
+            # logger.debug(inst_index)
+            # if len(inst_index) > 0:
+            #     result,msg = chords.get_measurements(str(inst_index[0]['chords_inst_id']),request.args.get('start_date'),request.args.get('end_date'),request.args.get('format'))
+            #     logger.debug(result)
+            # #return utils.ok(result=list(map(lambda t: list(map(lambda r: {'units':r.units,'value':r.value,'variable_name':r.variable_name,'varable_id':r.shortname}, t['vars'])),result['features'][0 ]['properties']['data'])), msg=msg)
+            # if request.args.get('format') == "csv":
+            #     logger.debug("CSV")
+            #     # csv_response = Response(result, mimetype="text/csv")
+            #     # si = StringIO.StringIO()
+            #     #cw = csv.write(si)
+            #     # cw.writerows(csvList)
+            #     output = make_response(result)
+            #     output.headers["Content-Disposition"] = "attachment; filename=export.csv"
+            #     output.headers["Content-type"] = "text/csv"
+            #     return output
+            # else:
+            #     logger.debug("JSON")
+            #     return utils.ok(result={"data":result['features'][0 ]['properties']['data'],"measurements_in_file": result['features'][0 ]['properties']['measurements_in_file']}, msg=msg)
 
 
 class MeasurementsReadResource(Resource):

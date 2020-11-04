@@ -61,7 +61,18 @@ def check_if_authorized_get(project_id):
     authorized = t.sk.hasRoleAny(tenant=g.tenant_id, user=g.username, roleNames=[admin, manager, user],
                                  orAdmin=False)
     logger.debug(authorized)
-    return authorized
+    return authorized.isAuthorized
+
+
+# User in any of the roles: Admin, Manager,can perform POST
+def check_if_authorized_post(project_id):
+    logger.debug('Checking if the user is authorized')
+    admin = 'streams_'+ project_id+"_admin"
+    manager = 'streams_'+ project_id+"_manager"
+    authorized = t.sk.hasRoleAny(tenant=g.tenant_id, user=g.username, roleNames=[admin, manager],
+                                 orAdmin=False)
+    logger.debug(authorized.isAuthorized)
+    return authorized.isAuthorized
 
 # User in any of the roles: Admin or Manager can perform PUT
 def check_if_authorized_put(project_id):
@@ -71,7 +82,7 @@ def check_if_authorized_put(project_id):
     authorized = t.sk.hasRoleAny(tenant=g.tenant_id, user=g.username, roleNames=[admin, manager],
                                  orAdmin=False)
     logger.debug(authorized)
-    return authorized
+    return authorized.isAuthorized
 
 # Only the Admin can delete project
 def check_if_authorized_delete(project_id):
@@ -80,4 +91,4 @@ def check_if_authorized_delete(project_id):
     authorized = t.sk.hasRoleAny(tenant=g.tenant_id, user=g.username, roleNames=[admin],
                                  orAdmin=False)
     logger.debug('Checking if the user is authorized')
-    return authorized
+    return authorized.isAuthorized

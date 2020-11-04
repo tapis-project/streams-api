@@ -82,6 +82,7 @@ def authentication():
 t = auth.get_service_tapis_client(tenant_id='master', tenants=tenants)
 t.x_username = conf.streams_user
 
+# This is a dummy method. Role based authorization is now checked for each resource class in controller
 def authorization(skip_sk):
     """
     Entry point for checking authorization for all requests to the authenticator.
