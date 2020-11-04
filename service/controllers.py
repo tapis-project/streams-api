@@ -93,7 +93,7 @@ class ProjectsResource(Resource):
         body = request.json
         req_body = body
         # Project creator will be assigned admin role.
-        proj_admin_role = 'streams_' + req_body['project_id'] + '_admin'
+        proj_admin_role = 'streams_' + req_body['project_name'] + '_admin'
         logger.debug(proj_admin_role)
         try:
             # Create role in SK. If role creation is successful then grant it.
