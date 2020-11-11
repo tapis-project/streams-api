@@ -2,6 +2,7 @@ from flask import g, request
 from common.config import conf
 from common import auth
 from common import errors as common_errors
+from common.auth import tenants
 
 # get the logger instance -
 from common.logs import get_logger
@@ -46,7 +47,7 @@ def authentication():
     # this role is stored in the security kernel
 ROLE = 'streams_user'
     # this is the Tapis client that tenants will use for interacting with other services, such as the security kernel.
-t = auth.get_service_tapy_client()
+t = auth.get_service_tapis_client(tenant_id='master', tenants=tenants)
 t.x_username = conf.streams_user
 
 def authorization(skip_sk):
