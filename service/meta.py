@@ -51,7 +51,7 @@ def list_projects():
 #TODO add project get
 def get_project(project_id):
     logger.debug('In GET Project')
-    result = t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_project_metadata', filter='{"permissions.users":"'+g.username+'", "project_id":"'+project_id+'","tapis_deleted":null}')
+    result = t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_project_metadata', filter='{"project_id":"'+project_id+'","tapis_deleted":null}')
     logger.debug(result)
     logger.debug(len(result.decode('utf-8')))
     if len(json.loads(result.decode('utf-8'))) > 0:
@@ -239,9 +239,9 @@ def get_instrument(project_id, site_id, instrument_id):
         for inst in site_result['instruments']:
             logger.debug(inst)
             if 'tapis_deleted' not in inst:
-                #make sure this object has the inst_id key
+                    #make sure this object has the inst_id key
                 if 'inst_id' in inst:
-                    #check id for match
+                        #check id for match
                     if str(inst['inst_id']) == str(instrument_id):
                         logger.debug("INSTRUMENT FOUND")
                         result = inst
@@ -278,7 +278,11 @@ def list_instruments(project_id, site_id):
             else:
                 result = {}
                 message = "No Instruments Found"
-                raise errors.ResourceError(msg=f'"No Instruments Found for Site ID:'+str(site_id))
+                raise errors.ResourceError(msg=f'"No Instruments Found for Site ID:' + str(site_id))
+        else:
+            result = {}
+            message = "No Instruments Found"
+            raise errors.ResourceError(msg=f'"No Instruments Found for Site ID:'+str(site_id))
     else:
         result = {}
         message ="Site Not Found - No Instruments Exist"
@@ -401,7 +405,7 @@ def list_variables(project_id, site_id, instrument_id):
                     message = "Variables Found"
                 else:
                     message = "No Variables Found"
-                    raise errors.ResourceError(msg=f'"Site Not Found With Site ID:'+str(site_id))
+                    raise errors.ResourceError(msg=f'" No Variables Found for Site ID:'+str(site_id))
         if inst_exists == False:
             result = []
             message = "Instrument Not Found - No Variables Exist"

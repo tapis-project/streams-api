@@ -1,6 +1,7 @@
 import enum
 import requests
 import json
+import meta
 from flask import g, Flask
 from common.config import conf
 from common import auth
@@ -55,9 +56,13 @@ def grant_role(role_name):
 # User in any of the roles: Admin, Manager, User can perform GET
 def check_if_authorized_get(project_id):
     logger.debug('Checking if the user is authorized')
-    admin = 'streams_'+ project_id+"_admin"
-    manager = 'streams_'+ project_id+"_manager"
-    user = 'streams_'+ project_id+"_user"
+    project_result,msg=meta.get_project(project_id)
+    #project_result = t.meta.getCollectionMetadata(db=conf.tenant[g.tenant_id]['stream_db'],collection=project_id)
+    project_oid = project_result['_id']['$oid']
+    logger.debug(project_oid)
+    admin = 'streams_'+ project_oid+"_admin"
+    manager = 'streams_'+ project_oid+"_manager"
+    user = 'streams_'+ project_oid+"_user"
     authorized = t.sk.hasRoleAny(tenant=g.tenant_id, user=g.username, roleNames=[admin, manager, user],
                                  orAdmin=False)
     logger.debug(authorized)
@@ -67,8 +72,12 @@ def check_if_authorized_get(project_id):
 # User in any of the roles: Admin, Manager,can perform POST
 def check_if_authorized_post(project_id):
     logger.debug('Checking if the user is authorized')
-    admin = 'streams_'+ project_id+"_admin"
-    manager = 'streams_'+ project_id+"_manager"
+    logger.debug(project_id)
+    project_result,msg=meta.get_project(project_id)
+    logger.debug(msg)
+    project_oid = project_result['_id']['$oid']
+    admin = 'streams_'+ project_oid+"_admin"
+    manager = 'streams_'+ project_oid+"_manager"
     authorized = t.sk.hasRoleAny(tenant=g.tenant_id, user=g.username, roleNames=[admin, manager],
                                  orAdmin=False)
     logger.debug(authorized.isAuthorized)
@@ -77,8 +86,10 @@ def check_if_authorized_post(project_id):
 # User in any of the roles: Admin or Manager can perform PUT
 def check_if_authorized_put(project_id):
     logger.debug('Checking if the user is authorized')
-    admin = 'streams_' + project_id + "_admin"
-    manager = 'streams_' + project_id + "_manager"
+    project_result, msg = meta.get_project(project_id)
+    project_oid = project_result['_id']['$oid']
+    admin = 'streams_' + project_oid + "_admin"
+    manager = 'streams_' + project_oid + "_manager"
     authorized = t.sk.hasRoleAny(tenant=g.tenant_id, user=g.username, roleNames=[admin, manager],
                                  orAdmin=False)
     logger.debug(authorized)
@@ -87,8 +98,10 @@ def check_if_authorized_put(project_id):
 # Only the Admin can delete project
 def check_if_authorized_delete(project_id):
     logger.debug('Checking if the user is authorized')
-    admin = 'streams_' + project_id + "_admin"
+    project_result, msg = meta.get_project(project_id)
+    project_oid = project_result['_id']['$oid']
+    admin = 'streams_' + project_oid + "_admin"
     authorized = t.sk.hasRoleAny(tenant=g.tenant_id, user=g.username, roleNames=[admin],
                                  orAdmin=False)
-    logger.debug('Checking if the user is authorized')
+    logger.debug(authorized)
     return authorized.isAuthorized

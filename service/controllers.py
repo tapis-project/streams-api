@@ -93,17 +93,19 @@ class ProjectsResource(Resource):
         body = request.json
         req_body = body
         # Project creator will be assigned admin role.
-        proj_admin_role = 'streams_' + req_body['project_name'] + '_admin'
-        logger.debug(proj_admin_role)
+
         try:
+            proj_result, msg = meta.create_project(body)
+            logger.debug(proj_result)
+            proj_admin_role = 'streams_' + proj_result['_id']['$oid'] + '_admin'
+            logger.debug(proj_admin_role)
             # Create role in SK. If role creation is successful then grant it.
             create_role_status = sk.create_role(proj_admin_role, 'Project Admin Role')
             if (create_role_status == 'success'):
                grant_role_status = sk.grant_role(proj_admin_role)
                if (grant_role_status == 'success'):
                    # Only if the role is granted, call metadata to create project collection
-                   proj_result, msg = meta.create_project(body)
-                   logger.debug(proj_result)
+
                    if (str(proj_result) != 'null'):
                     result = meta.strip_meta(proj_result)
                     return utils.ok(result, msg=msg)
@@ -160,6 +162,7 @@ class ProjectResource(Resource):
 
     def delete(self, project_id):
         #return ""
+        #proj_result, msg = meta.get_project(project_id)
         authorized = sk.check_if_authorized_delete(project_id)
         if (authorized):
              proj_result, msg = meta.delete_project(project_id)
@@ -520,11 +523,23 @@ class MeasurementsWriteResource(Resource):
                         if inst['inst_id'] == body['inst_id']:
                             instrument = inst
                     logger.debug(site_result)
+                    project_id=result[0]['project_id']
+                    logger.debug(project_id)
+                    authorized = sk.check_if_authorized_post(project_id)
+                    logger.debug(authorized)
+                    #if (authorized):
                     #resp = chords.create_measurement(result[0]['chords_inst_id'], body)
-                    resp = influx.write_measurements(site_result['chords_id'],instrument,body)
+                    if (authorized):
+                        resp = influx.write_measurements(site_result['chords_id'],instrument,body)
+                        logger.debug(resp)
+                        return utils.ok(result=[], msg="Measurements Saved")
+                    else:
+                        logger.debug('User does not have admin or manager role on project')
+                        raise common_errors.PermissionsError(msg=f'User not authorized to access the resource')
 
-                logger.debug(resp)
-        return utils.ok(result=[], msg="Measurements Saved")
+                    #else:
+                    #    logger.debug('User does not have admin role on project')
+                    #    raise common_errors.PermissionsError(msg=f'User not authorized to access the resource')
 
 
 class MeasurementsResource(Resource):
@@ -612,47 +627,55 @@ class MeasurementsReadResource(Resource):
         logger.debug(inst_index)
         if len(inst_index[0]) > 0:
             site,msg = meta.get_site(inst_index[0]['project_id'],inst_index[0]['site_id'])
-            logger.debug("in IF")
-            js= influx.query_measurments([{"inst":str(inst_index[0]['chords_inst_id'])},{"start_date": request.args.get('start_date')},{"end_date": request.args.get('end_date')}])
-            logger.debug(js)
-            if len(js) > 1 and len(js['series']) > 0:
-                df = pd.DataFrame(js['series'][0]['values'],columns=js['series'][0]['columns'])
-                pv = df.pivot(index='time', columns='var', values=['value'])
-                df1 = pv
-                df1.columns = df1.columns.droplevel(0)
-                df1 = df1.reset_index().rename_axis(None, axis=1)
-                replace_cols = {}
-                logger.debug(site)
-                for inst in site['instruments']:
-                    logger.debug(inst)
-                    if inst['inst_id'] == instrument_id:
-                        instrument = inst
+            project_id = inst_index[0]['project_id']
+            logger.debug(project_id)
+            authorized = sk.check_if_authorized_post(project_id)
+            logger.debug(authorized)
+            if (authorized):
+                js= influx.query_measurments([{"inst":str(inst_index[0]['chords_inst_id'])},{"start_date": request.args.get('start_date')},{"end_date": request.args.get('end_date')}])
+                logger.debug(js)
+                if len(js) > 1 and len(js['series']) > 0:
+                    df = pd.DataFrame(js['series'][0]['values'],columns=js['series'][0]['columns'])
+                    pv = df.pivot(index='time', columns='var', values=['value'])
+                    df1 = pv
+                    df1.columns = df1.columns.droplevel(0)
+                    df1 = df1.reset_index().rename_axis(None, axis=1)
+                    replace_cols = {}
+                    logger.debug(site)
+                    for inst in site['instruments']:
                         logger.debug(inst)
-                        for v in inst['variables']:
-                            logger.debug(v)
-                            replace_cols[str(v['chords_id'])]=v['var_id']
-                logger.debug(replace_cols)
-                df1.rename(columns=replace_cols,inplace=True)
-                df1.set_index('time',inplace=True)
-                if request.args.get('format') == "csv":
-                    logger.debug("CSV")
-                    # csv_response = Response(result, mimetype="text/csv")
-                    # si = StringIO.StringIO()
-                    #cw = csv.write(si)
-                    # cw.writerows(csvList)
-                    output = make_response(df1.to_csv())
-                    output.headers["Content-Disposition"] = "attachment; filename=export.csv"
-                    output.headers["Content-type"] = "text/csv"
-                    return output
+                        if inst['inst_id'] == instrument_id:
+                            instrument = inst
+                            logger.debug(inst)
+                            for v in inst['variables']:
+                                logger.debug(v)
+                                replace_cols[str(v['chords_id'])]=v['var_id']
+                    logger.debug(replace_cols)
+                    df1.rename(columns=replace_cols,inplace=True)
+                    df1.set_index('time',inplace=True)
+                    if request.args.get('format') == "csv":
+                        logger.debug("CSV")
+                        # csv_response = Response(result, mimetype="text/csv")
+                        # si = StringIO.StringIO()
+                        #cw = csv.write(si)
+                        # cw.writerows(csvList)
+                        output = make_response(df1.to_csv())
+                        output.headers["Content-Disposition"] = "attachment; filename=export.csv"
+                        output.headers["Content-type"] = "text/csv"
+                        return output
+                    else:
+                        result = json.loads(df1.to_json())
+                        result['measurements_in_file'] = len(df1.index)
+                        result['instrument'] = instrument
+                        site.pop('instruments',None)
+                        result['site'] = meta.strip_meta(site)
+                        return utils.ok(result=result, msg="Measurements Found")
                 else:
-                    result = json.loads(df1.to_json())
-                    result['measurements_in_file'] = len(df1.index)
-                    result['instrument'] = instrument
-                    site.pop('instruments',None)
-                    result['site'] = meta.strip_meta(site)
-                    return utils.ok(result=result, msg="Measurements Found")
+                    return utils.ok(result=[], msg="No Measurements Founds")
             else:
-                return utils.ok(result=[], msg="No Measurements Founds")
+                logger.debug('User does not have any role on project')
+                raise common_errors.PermissionsError(msg=f'User not authorized to access the resource')
+
 
 class MeasurementResource(Resource):
     """

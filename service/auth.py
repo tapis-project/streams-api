@@ -53,6 +53,7 @@ def authentication():
         g.tenant_id = request.args.get('tenant')
         logger.debug(g.tenant_id)
         return skip_sk
+    ''''
     if request.method == 'POST' and (request.endpoint == 'projectsresource'):
         #Check alert_secret
         logger.debug('SK Flag value')
@@ -62,6 +63,7 @@ def authentication():
         skip_sk = True
         logger.debug(skip_sk)
         return skip_sk
+    '''
     if request.method == 'POST' and (request.endpoint == 'alertspostresource'):
         #Check alert_secret
         logger.debug('SK Flag value')
