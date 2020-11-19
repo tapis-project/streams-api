@@ -494,8 +494,8 @@ class VariableResource(Resource):
     def delete(self, project_id, site_id, instrument_id, variable_id):
         authorized = sk.check_if_authorized_delete(project_id)
         if (authorized):
-            result,msg = chords.delete_variable(variable_id)
             result, msg = meta.update_variable(project_id, site_id, instrument_id, variable_id, {},True)
+            #chords_result, chords_msg = chords.delete_variable(result['chords_id'])
             logger.debug(result)
             return utils.ok(result=result, msg=msg)
         else:
