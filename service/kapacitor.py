@@ -137,7 +137,7 @@ def create_channel(req_body):
         req_body['last_updated'] = str(datetime.datetime.utcnow())
 
         #create a metadata record with kapacitor task id to the channel metadata collection
-        mchannel_result, mchannel_bug =t.meta.createDocument(db=conf.stream_db, collection='streams_channel_metadata', request_body=req_body, _tapis_debug=True)
+        mchannel_result, mchannel_bug =t.meta.createDocument(db=conf.tenant[g.tenant_id]['stream_db'], collection='streams_channel_metadata', request_body=req_body, _tapis_debug=True)
         logger.debug("Status_Code: " + str(mchannel_bug.response.status_code))
         logger.debug(mchannel_result)
         if str(mchannel_bug.response.status_code) == '201':
@@ -196,7 +196,7 @@ def convert_conditions_to_vars(req_body):
 
 def list_channels():
     logger.debug('in Channel list ')
-    result= t.meta.listDocuments(db=conf.stream_db,collection='streams_channel_metadata',filter='{"permissions.users":"'+g.username+'"}')
+    result= t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_channel_metadata',filter='{"permissions.users":"'+g.username+'"}')
     logger.debug(result)
     if len(result.decode('utf-8')) > 0:
         message = "Channels found"
@@ -206,8 +206,12 @@ def list_channels():
     return json.loads(result.decode('utf-8')), message
 
 def get_channel(channel_id):
-    logger.debug('In GET Channel')
-    result = t.meta.listDocuments(db=conf.stream_db,collection='streams_channel_metadata',filter='{"channel_id":"'+channel_id+'"}')
+    logger.debug('In GET Channel' + channel_id)
+    logger.debug(g.tenant_id)
+    logger.debug(conf.tenant[g.tenant_id]['stream_db'])
+    
+    result = t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_channel_metadata',filter='{"channel_id":"'+channel_id+'"}')
+    
     if len(result.decode('utf-8')) > 0:
         message = "Channel found."
         channel_result = json.loads(result.decode('utf-8'))[0]
@@ -220,6 +224,7 @@ def get_channel(channel_id):
 
 def update_channel(channel_id, req_body):
     logger.debug('Top of update_channel')
+    req_body['channel_id'] = channel_id 
 
     # Get channel information from Meta
     try:
@@ -230,7 +235,7 @@ def update_channel(channel_id, req_body):
 
     # TODO check if Kapacitor Task exist
     logger.debug('UPDATING ... Kapacitor Task')
-    task_id = req_body['channel_id']
+    task_id = channel_id
     task_body = {'id': task_id,
                  'dbrps': [{"db": "chords_ts_production", "rp": "autogen"}]}
 
@@ -341,7 +346,7 @@ def create_template(body):
         body['create_time'] = str(datetime.datetime.utcnow())
         body['last_updated'] = str(datetime.datetime.utcnow())
         body['permissions'] = {'users': [g.username]}
-        mtemplate_result, mtemplate_bug =t.meta.createDocument(db=conf.stream_db, collection='streams_templates_metadata', request_body=body, _tapis_debug=True)
+        mtemplate_result, mtemplate_bug =t.meta.createDocument(db=conf.tenant[g.tenant_id]['stream_db'], collection='streams_templates_metadata', request_body=body, _tapis_debug=True)
         logger.debug("Status_Code: " + str(mtemplate_bug.response.status_code))
         logger.debug(mtemplate_result)
         if str(mtemplate_bug.response.status_code) == '201':
@@ -364,7 +369,7 @@ def create_template(body):
 def get_template(template_id):
     logger.debug('In get_template')
     result = {}
-    result = t.meta.listDocuments(db=conf.stream_db, collection='streams_templates_metadata',filter='{"template_id":"' + template_id + '"}')
+    result = t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'], collection='streams_templates_metadata',filter='{"template_id":"' + template_id + '"}')
     if len(result.decode('utf-8')) > 0:
         message = "Template found."
         template_result = json.loads(result.decode('utf-8'))[0]
@@ -386,12 +391,12 @@ def update_template(template_id, body):
     logger.debug('UPDATING ... Kapacitor Template')
 
     template_body = {}
-    template_body['id'] = body['template_id']
+    template_body['id'] = template_id
     template_body['type'] = body['type']
     template_body['script'] = body['script']
 
     try:
-        result,status_code = update_kapacitor_template(body['template_id'],template_body)
+        result,status_code = update_kapacitor_template(template_id,template_body)
     except Exception as e:
         msg = f" Not able to connect to Kapacitor for the template {body['template_id']} update; exception: {e}"
         raise errors.ResourceError(msg=msg)
@@ -461,9 +466,9 @@ def remove_template():
 ############################ CHANNEL INDEX #############################
 def create_channel_index(project_id, channel_id):
     req_body = {'project_id':project_id, 'channel_id': channel_id}
-    result, bug =t.meta.createDocument(db=conf.stream_db, collection='streams_channel_index', request_body=req_body, _tapis_debug=True)
+    result, bug =t.meta.createDocument(db=conf.tenant[g.tenant_id]['stream_db'], collection='streams_channel_index', request_body=req_body, _tapis_debug=True)
     return result, str(bug.response.status_code)
 
 def fetch_channel_index(channel_id):
-    result= t.meta.listDocuments(db=conf.stream_db,collection='streams_channel_index',filter='{"channel_id":"'+channel_id+'"}')
+    result= t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_channel_index',filter='{"channel_id":"'+channel_id+'"}')
     return json.loads(result.decode('utf-8'))

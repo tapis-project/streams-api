@@ -1,6 +1,6 @@
 from flask import g, request
 from common.config import conf
-from common import auth
+from common import auth 
 from common import errors as common_errors
 from common.auth import tenants
 
@@ -28,8 +28,10 @@ def authentication():
     # authorization.
     # we always try to call the primary tapis authentication function to add authentication information to the
     # thread-local. If it fails due to a missing token, we then check if there is a p
+    logger.debug(request.headers)
     try:
         auth.authentication()
+        logger.debug(conf.tenant[g.tenant_id])
     except common_errors.NoTokenError as e:
         logger.debug(f"Caught NoTokenError: {e}")
         g.no_token = True
@@ -42,14 +44,52 @@ def authentication():
         skip_sk = True
         logger.debug(skip_sk)
         return skip_sk
+    if request.method == 'GET' and (request.endpoint == 'healthcheckresource'):
+        #Check alert_secret
+        logger.debug('SK Flag value')
+        logger.debug(request.endpoint)
+        skip_sk = True
+        logger.debug(skip_sk)
+        g.tenant_id = request.args.get('tenant')
+        logger.debug(g.tenant_id)
+        return skip_sk
+    ''''
+    if request.method == 'POST' and (request.endpoint == 'projectsresource'):
+        #Check alert_secret
+        logger.debug('SK Flag value')
+        logger.debug(request.endpoint)
+        logger.debug(g.tenant_id)
+        logger.debug(g.username)
+        skip_sk = True
+        logger.debug(skip_sk)
+        return skip_sk
+    '''
+    if request.method == 'POST' and (request.endpoint == 'alertspostresource'):
+        #Check alert_secret
+        logger.debug('SK Flag value')
+        logger.debug(request.endpoint)
+        skip_sk = True
+        logger.debug(skip_sk)
+        g.tenant_id = request.args.get('tenant')
+        logger.debug(g.tenant_id)
+        if request.headers['alert-secret'] == conf.alert_secret:
+            return skip_sk
+        else:
+            return False
 
 
     # this role is stored in the security kernel
+<<<<<<< HEAD
 ROLE = 'streams_user'
     # this is the Tapis client that tenants will use for interacting with other services, such as the security kernel.
+=======
+#ROLE = 'streams_user'
+# this is the Tapis client that tenants will use for interacting with other services, such as the security kernel.
+>>>>>>> acc2187e99ab81f47e92055027d60807bcb9cc4f
 t = auth.get_service_tapis_client(tenant_id='master', tenants=tenants)
 t.x_username = conf.streams_user
 
+# This is a dummy method. Role based authorization is now checked for each resource class in controller
 def authorization(skip_sk):
     """
     Entry point for checking authorization for all requests to the authenticator.
@@ -58,12 +98,15 @@ def authorization(skip_sk):
     #global set_sk
     # todo - Call security kernel to check if user is authorized for the request.
     #
+
     logger.debug("top of authorization()")
     if skip_sk:
         logger.debug("not using SK; returning True")
         return True
-    logger.debug(f"calling SK to check users assigned to role: {ROLE}")
+    #logger.debug(f"calling SK to check users assigned to role: {ROLE}")
+    '''
     try:
+        t.x_tenant_id = g.tenant_id
         users = t.sk.getUsersWithRole(roleName=ROLE, tenant=g.tenant_id)
     except Exception as e:
         msg = f'Got an error calling the SK. Exception: {e}'
@@ -77,4 +120,5 @@ def authorization(skip_sk):
     else:
         logger.info(f"user {g.username} has role {ROLE}")
         return True
-
+    '''
+    return True
