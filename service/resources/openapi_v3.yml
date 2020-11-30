@@ -2723,6 +2723,10 @@ components:
         active:
           type: boolean
           description: Current status of the project
+        metadata:
+          type: object
+          description: User defined metadata for the site
+
 
     NewProject:
       type: object
@@ -2748,6 +2752,9 @@ components:
         active:
           type: boolean
           description: Current status of the project
+        metadata:
+          type: object
+          description: User defined metadata for the site
       required: [project_name, owner, pi]
 
     Site:

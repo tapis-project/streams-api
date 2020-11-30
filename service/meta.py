@@ -38,7 +38,6 @@ def strip_meta_list(meta_list):
 #List projects a user has permission to read
 #strip out id and _etag fields
 def list_projects():
-    #get user role with permission ?
     logger.debug('in META list project')
     result= t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_project_metadata',filter='{"permissions.users":"'+g.username+'","tapis_deleted":null}')
     logger.debug(result)
@@ -52,7 +51,7 @@ def list_projects():
 #TODO add project get
 def get_project(project_id):
     logger.debug('In GET Project')
-    result = t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_project_metadata', filter='{"permissions.users":"'+g.username+'", "project_id":"'+project_id+'","tapis_deleted":null}')
+    result = t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_project_metadata', filter='{"project_id":"'+project_id+'","tapis_deleted":null}')
     logger.debug(result)
     logger.debug(len(result.decode('utf-8')))
     if len(json.loads(result.decode('utf-8'))) > 0:
@@ -79,6 +78,7 @@ def create_project(body):
     logger.debug(req_body)
     #Check if project_id exists by creating collection - if so add something to id to unique it.
     col_result, col_bug =t.meta.createCollection(db=conf.tenant[g.tenant_id]['stream_db'],collection=req_body['project_id'], _tapis_debug=True)
+    logger.debug(col_bug.response.status_code)
     if col_bug.response.status_code == 201:
         logger.debug('Created project metadata')
         #create project collection
@@ -97,8 +97,10 @@ def create_project(body):
             raise errors.ResourceError(msg=f'Project Creation Failed')
             results=bug.response
     else:
-        raise errors.ResourceError(msg=f'Project Creation Failed')
-        results = bug.response
+        logger.debug('Project id already exists')
+        results = 'null'
+        logger.debug(results)
+        message='Project id already exists'
     return results, message
 
 def update_project(project_id, put_body):
@@ -237,9 +239,9 @@ def get_instrument(project_id, site_id, instrument_id):
         for inst in site_result['instruments']:
             logger.debug(inst)
             if 'tapis_deleted' not in inst:
-                #make sure this object has the inst_id key
+                    #make sure this object has the inst_id key
                 if 'inst_id' in inst:
-                    #check id for match
+                        #check id for match
                     if str(inst['inst_id']) == str(instrument_id):
                         logger.debug("INSTRUMENT FOUND")
                         result = inst
@@ -276,7 +278,11 @@ def list_instruments(project_id, site_id):
             else:
                 result = {}
                 message = "No Instruments Found"
-                raise errors.ResourceError(msg=f'"No Instruments Found for Site ID:'+str(site_id))
+                raise errors.ResourceError(msg=f'"No Instruments Found for Site ID:' + str(site_id))
+        else:
+            result = {}
+            message = "No Instruments Found"
+            raise errors.ResourceError(msg=f'"No Instruments Found for Site ID:'+str(site_id))
     else:
         result = {}
         message ="Site Not Found - No Instruments Exist"
@@ -378,23 +384,28 @@ def update_instrument(project_id, site_id, instrument_id, put_body, remove_instr
 
 def list_variables(project_id, site_id, instrument_id):
     site_result, site_bug = get_site(project_id,site_id)
+    logger.debug(site_result)
     inst_exists = False
     result =[]
     if len(site_result) > 0:
+        logger.debug('inside if')
         for inst in site_result['instruments']:
             if inst['inst_id'] == instrument_id:
                 inst_exists = True
                 if 'variables' in inst:
+                    logger.debug('inside if variables')
                     variables =[]
                     for variable in inst['variables']:
-                        if 'tapis_deleted' not in inst:
+                        logger.debug(variable)
+                        if 'tapis_deleted' not in variable:
                             variables.append(variable)
-                    result = variables
+                        result = variable
+                        logger.debug(result)
                 if len(result) > 0 :
                     message = "Variables Found"
                 else:
                     message = "No Variables Found"
-                    raise errors.ResourceError(msg=f'"Site Not Found With Site ID:'+str(site_id))
+                    raise errors.ResourceError(msg=f'" No Variables Found for Site ID:'+str(site_id))
         if inst_exists == False:
             result = []
             message = "Instrument Not Found - No Variables Exist"
@@ -417,11 +428,12 @@ def get_variable(project_id, site_id, instrument_id, variable_id):
                         logger.debug('In Variables')
                         for variable in inst['variables']:
                             logger.debug(variable)
-                            if 'var_id' in variable:
-                                if str(variable['var_id']) == str(variable_id):
-                                    result = variable
-                                    message = "Variable Found"
-                                    logger.debug('Variable Found')
+                            if 'tapis_deleted' not in variable:
+                                if 'var_id' in variable:
+                                    if str(variable['var_id']) == str(variable_id):
+                                        result = variable
+                                        message = "Variable Found"
+                                        logger.debug('Variable Found')
         if inst_exists == False:
             result = []
             message = "Instrument Not Found - No Variables Exist"
@@ -499,6 +511,11 @@ def update_variable(project_id, site_id, instrument_id, variable_id, put_body, r
                                     var_body['chords_id'] = variable['chords_id']
                                     logger.debug("SETTING CHORDS ID*****************************")
                                     updated_variables.append(var_body)
+                                else:
+                                    #soft delete variable
+                                    variable['tapis_deleted'] =True;
+                                    variable['updated_at']=str(datetime.datetime.now())
+                                    updated_variables.append(variable)
                             else:
                                 #keep variable
                                 updated_variables.append(variable)
