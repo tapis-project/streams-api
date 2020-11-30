@@ -127,6 +127,7 @@ def create_channel(req_body):
         #lambda_expr, lambda_expr_list = parse_condition_expr.get_all_crit_vars(condn_list, '', [], '', 1, [])
         lambda_expr, lambda_expr_list, count, expr_list_keys = parse_condition_expr.parse_expr_list(condn_list,'',1,[], [])
         logger.debug(lambda_expr_list)
+        logger.debug(lambda_expr)
         vars = parse_condition_expr.convert_condition_list_to_vars( lambda_expr, lambda_expr_list, channel_id)
     task_body['vars'] = vars
     logger.debug('create task request body: ' + str(task_body))

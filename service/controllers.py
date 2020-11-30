@@ -383,7 +383,9 @@ class MeasurementsWriteResource(Resource):
         logger.debug(body)
         instrument = {}
         if 'inst_id' in body:
+            logger.debug("INSIDE IF : write measurement")
             result = meta.fetch_instrument_index(body['inst_id'])
+            logger.debug("After Meta : write measurement")
             logger.debug(result)
             if len(result) > 0:
                 logger.debug(result[0]['chords_inst_id'])
@@ -560,9 +562,10 @@ class ChannelsResource(Resource):
     def post(self):
         logger.debug("top of POST /channels")
         body = request.json
-        #TODO need to check our permissions
+        #TODO need to check user permissions
         result, msg = kapacitor.create_channel(body)
         logger.debug(result)
+        logger.debug("end of POST /channels.. returning result to user")
         return utils.ok(result=meta.strip_meta(result), msg=msg)
 
 
