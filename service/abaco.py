@@ -12,6 +12,7 @@ from common import utils, errors
 # get the logger instance -
 from common.logs import get_logger
 logger = get_logger(__name__)
+import parse_condition_expr
 
 
 #access the dynatpy instance
@@ -23,21 +24,40 @@ def create_alert(channel, req_data):
     abaco_base_url = channel['triggers_with_actions'][0]['action']['abaco_base_url']
     abaco_nonce = channel['triggers_with_actions'][0]['action']['nonces']
     abaco_url = abaco_base_url + '/actors/v2/' + actor_id + '/messages?x-nonce=' + abaco_nonce
-    logger.debug('abaco_url: ' +abaco_url)
+    logger.debug('abaco_url: ' + abaco_url)
 
     #prepare request for abaco
     headers = {'accept': 'application/json'}
     message_data = {}
     message_data['message'] = req_data
     message_data['message']['channel_id'] = channel['channel_id']
-
+    logger.debug('message_data so far ~~~: '+ str(message_data))
+    logger.debug('Fetching from Meta')
     result = meta.fetch_instrument_index(channel["triggers_with_actions"][0]['inst_ids'][0])
+    logger.debug(str(result))
     message_data['message']['project_id'] = result[0]['project_id']
     message_data['message']['site_id'] = result[0]['site_id']
     message_data['message']['inst_id'] = result[0]['instrument_id']
 
-    cond_key = channel['triggers_with_actions'][0]['condition']['key'].split(".")
-    message_data['message']['var_id'] = cond_key[1]
+    if (isinstance(channel['triggers_with_actions'][0]['condition'], dict)):
+        cond_key = channel['triggers_with_actions'][0]['condition']['key'].split(".")
+        message_data['message']['var_id'] = cond_key[1]
+    else:
+        condn_list = json.loads(json.dumps(channel['triggers_with_actions'][0]['condition']))
+        logger.debug( condn_list)
+        lambda_expr, lambda_expr_list, count, expr_list_keys = parse_condition_expr.parse_expr_list(condn_list, '', 1,[],[])
+        logger.debug(expr_list_keys)
+        message_data['message']['var_ids']=[]
+        for i in range(len(expr_list_keys)):
+            expr = {}
+            cond_expr_key = expr_list_keys[i][1].split(".")
+            expr['inst_id'] = cond_expr_key[0]
+            expr['var_id'] = cond_expr_key[1]
+            message_data['message']['var_ids'].append(expr)
+        cond_expr_key = expr_list_keys[0][1].split(".")
+
+        message_data['message']['var_id'] = cond_expr_key[1]
+
     logger.debug('message_data: '+ str(message_data))
 
     try:
