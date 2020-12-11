@@ -79,9 +79,12 @@ def authentication():
 
 
     # this role is stored in the security kernel
+
 #ROLE = 'streams_user'
 # this is the Tapis client that tenants will use for interacting with other services, such as the security kernel.
+
 t = auth.get_service_tapis_client(tenant_id='admin', tenants=tenants)
+
 t.x_username = conf.streams_user
 
 # This is a dummy method. Role based authorization is now checked for each resource class in controller
