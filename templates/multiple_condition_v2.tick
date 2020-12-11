@@ -1,0 +1,32 @@
+var measurement string
+var channel_id string
+var crit1 lambda
+var crit2 lambda
+var crit3  lambda 
+
+var var1 = stream
+|from()
+  .measurement(measurement)
+  .where(lambda:crit1)
+
+var var2 = stream
+|from()
+  .measurement(measurement)
+  .where(lambda:crit2)
+
+var1
+  |join(var2)
+    .as('var1','var2')
+    .tolerance(1ms)
+    .fill(0.0)
+    .streamName('multic')
+  |alert()
+    .id(channel_id +  ' {{ .Name }}/{{ .Group }}/{{.TaskName}}')
+    .crit(lambda:crit3)
+    .noRecoveries()
+    .message('{{.ID}} is {{ .Level}} at time: {{.Time}} as value exceeded the threshold')
+    .details('')
+    .post()
+    .endpoint('api-alert')
+    .captureResponse()
+  |httpOut('msg')

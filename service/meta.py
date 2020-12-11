@@ -397,7 +397,7 @@ def list_variables(project_id, site_id, instrument_id):
                     variables =[]
                     for variable in inst['variables']:
                         logger.debug(variable)
-                        if 'tapis_deleted' not in inst:
+                        if 'tapis_deleted' not in variable:
                             variables.append(variable)
                         result = variable
                         logger.debug(result)
@@ -428,11 +428,12 @@ def get_variable(project_id, site_id, instrument_id, variable_id):
                         logger.debug('In Variables')
                         for variable in inst['variables']:
                             logger.debug(variable)
-                            if 'var_id' in variable:
-                                if str(variable['var_id']) == str(variable_id):
-                                    result = variable
-                                    message = "Variable Found"
-                                    logger.debug('Variable Found')
+                            if 'tapis_deleted' not in variable:
+                                if 'var_id' in variable:
+                                    if str(variable['var_id']) == str(variable_id):
+                                        result = variable
+                                        message = "Variable Found"
+                                        logger.debug('Variable Found')
         if inst_exists == False:
             result = []
             message = "Instrument Not Found - No Variables Exist"
@@ -510,6 +511,11 @@ def update_variable(project_id, site_id, instrument_id, variable_id, put_body, r
                                     var_body['chords_id'] = variable['chords_id']
                                     logger.debug("SETTING CHORDS ID*****************************")
                                     updated_variables.append(var_body)
+                                else:
+                                    #soft delete variable
+                                    variable['tapis_deleted'] =True;
+                                    variable['updated_at']=str(datetime.datetime.now())
+                                    updated_variables.append(variable)
                             else:
                                 #keep variable
                                 updated_variables.append(variable)
