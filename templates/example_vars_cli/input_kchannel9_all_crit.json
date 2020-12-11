@@ -1,0 +1,29 @@
+{
+      "channel_id": {
+            "type": "string",
+            "value": "kchannel9",
+            "description": ""
+        },
+
+        "measurement": {
+            "type": "string",
+            "value": "tsdata",
+            "description": ""
+        },
+        "crit1": {
+            "type": "lambda",
+            "value": "(\"var\" == '10') AND (\"value\" > 91.0)",
+            "description": ""
+        },
+        "crit2": {
+            "type": "lambda",
+            "value": "(\"var\" == '9') AND (\"value\" > 200.0)",
+            "description": ""
+        },
+        "crit3": {
+            "type": "lambda",
+            "value": "(\"var1.value\" > 91.0) AND (\"var2.value\" > 200.0)",
+            "description": ""
+        }
+
+}

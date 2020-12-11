@@ -114,7 +114,7 @@ def update_site(id, site:ChordsSite):
                 'site[elevation]': site.elevation
                 }
     logger.debug(postData)
-    path = "/sites/" + id + ".json"
+    path = "/sites/" + str(id) + ".json"
     res = create_put_request(path,postData)
     if (res.status_code == 200):
        message = "Site updated"
@@ -213,7 +213,7 @@ def update_instrument(id, instrument:ChordsIntrument):
                 'instrument[sample_rate_seconds]': instrument.sample_rate_seconds
                 }
     logger.debug(putData)
-    path = "/instruments/"+id+".json"
+    path = "/instruments/"+str(id)+".json"
     res = create_put_request(path, putData)
     if (res.status_code == 200):
         message = "Instrument updated"
@@ -296,7 +296,7 @@ def create_variable(variable:ChordsVariable):
 #update a variable in CHORDS
 def update_variable(id,variable:ChordsVariable):
     #TODO validate the variable has all properties requirement and fields are correct
-    path="/vars/"+id+".json";
+    path="/vars/"+str(id)+".json";
     putData = {'email':conf.chords_user_email,
                   'api_key': conf.chords_api_key,
                   'var[name]': variable.name,

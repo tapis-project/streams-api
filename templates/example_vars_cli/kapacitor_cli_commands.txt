@@ -1,0 +1,27 @@
+For Kapacitor CLI, start a docker container in the same network as Kapacitor container is running with the following command:
+
+$ docker run --rm --net=container:chords_kapacitor \
+      -v $PWD:/root -w=/root -it \
+      kapacitor bash -l
+
+To run kapacitor cli commands, first export the KAPACITOR_URL with credentials:
+export KAPACITOR_URL=http://user:password@host_ip:9092
+
+- List tasks
+kapacitor list tasks
+
+- List templates
+kapacitor list templates
+
+
+- Define  a template
+kapacitor define-template template_name -tick path\to\tick_file
+
+- Show a template
+kapacitor show-template template-name
+
+- Define a task
+kapacitor define task_name -template template_name -vars vars_input_jon_file -dbrp chords_ts_production.autogen
+
+- Show a task
+kapacitor show task_name
