@@ -13,6 +13,7 @@ import auth
 from requests.auth import HTTPBasicAuth
 import subprocess
 import meta
+import parse_condition_expr
 #access the dynatpy instance
 t = auth.t
 
@@ -101,31 +102,39 @@ def update_kapacitor_task(task_id,body):
 
 ####################### CHANNEL ########################################
 #Expected values for req_body:
-#  channel_id, channel_name, triggers_with_actions, status, template_id, vars
+#  channel_id, channel_name, triggers_with_actions, status, template_id
 def create_channel(req_body):
     logger.debug("IN CREATE CHANNEL")
-    #create a kapacitor task
 
+    channel_id = req_body['channel_id']
+    template_id = req_body['template_id']
+    # create a kapacitor task
     # channel_id is same as task_id
     # if task_id already exists in kapacitor, task creation will fail. This will in turn lead to channel creation failure
-    task_id = req_body['channel_id']
+    task_id = channel_id
     task_body = {'id': task_id,
                  'dbrps': [{"db": "chords_ts_production", "rp": "autogen"}], 'status': 'enabled'}
 
-    task_body['template-id'] = req_body['template_id']
+    task_body['template-id'] = template_id
+
+    # parse condition and convert it to vars for kapacitor task creation
+    # vars is of the form :
     vars = {}
-    vars = convert_conditions_to_vars(req_body)
+    if(isinstance(req_body['triggers_with_actions'][0]['condition'],dict)):
+        vars = convert_conditions_to_vars(req_body)
+    else:
+        condn_list = json.loads(json.dumps(req_body['triggers_with_actions'][0]['condition']))
+        #lambda_expr, lambda_expr_list = parse_condition_expr.get_all_crit_vars(condn_list, '', [], '', 1, [])
+        lambda_expr, lambda_expr_list, count, expr_list_keys = parse_condition_expr.parse_expr_list(condn_list,'',1,[], [])
+        logger.debug(lambda_expr_list)
+        logger.debug(lambda_expr)
+        vars = parse_condition_expr.convert_condition_list_to_vars( lambda_expr, lambda_expr_list, channel_id)
     task_body['vars'] = vars
     logger.debug('create task request body: ' + str(task_body))
+
     # create task call to Kapacitor
     ktask_result, ktask_status = create_task(task_body)
-    logger.debug('Kapacitor task status ' + str(ktask_status))
-
-    # create request body for meta service
-    # it is same as the request received from the user with two added fields permissions and status
-    #req_body['permissions'] = {'users':[g.username]}
-    #req_body['status'] = 'ACTIVE'
-
+    logger.debug('Kapacitor task status: ' + str(ktask_status))
     if ktask_status == 200:
         # if Kapacitor task is sucessfully created, sends a request to meta service to store the channel information
 
@@ -137,14 +146,14 @@ def create_channel(req_body):
         req_body['last_updated'] = str(datetime.datetime.utcnow())
 
         #create a metadata record with kapacitor task id to the channel metadata collection
-        mchannel_result, mchannel_bug =t.meta.createDocument(db=conf.stream_db, collection='streams_channel_metadata', request_body=req_body, _tapis_debug=True)
+        mchannel_result, mchannel_bug = t.meta.createDocument(db=conf.tenant[g.tenant_id]['stream_db'], collection='streams_channel_metadata', request_body=req_body, _tapis_debug=True)
         logger.debug("Status_Code: " + str(mchannel_bug.response.status_code))
         logger.debug(mchannel_result)
         if str(mchannel_bug.response.status_code) == '201':
             message = "Channel Created"
             #get the newly created channel object to return
             result, bug = get_channel(req_body['channel_id'])
-            logger.debug('Channel Returned From Meta'+ str(result))
+            logger.debug('Channel Returned From Meta: ' + str(result))
         else:
             #TODO need to remove task from kapacitor if this failed
             raise errors.ResourceError(msg=f'Meta Channel Creation Failed')
@@ -196,7 +205,7 @@ def convert_conditions_to_vars(req_body):
 
 def list_channels():
     logger.debug('in Channel list ')
-    result= t.meta.listDocuments(db=conf.stream_db,collection='streams_channel_metadata',filter='{"permissions.users":"'+g.username+'"}')
+    result= t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_channel_metadata',filter='{"permissions.users":"'+g.username+'"}')
     logger.debug(result)
     if len(result.decode('utf-8')) > 0:
         message = "Channels found"
@@ -206,8 +215,12 @@ def list_channels():
     return json.loads(result.decode('utf-8')), message
 
 def get_channel(channel_id):
-    logger.debug('In GET Channel')
-    result = t.meta.listDocuments(db=conf.stream_db,collection='streams_channel_metadata',filter='{"channel_id":"'+channel_id+'"}')
+    logger.debug('In GET Channel' + channel_id)
+    logger.debug(g.tenant_id)
+    logger.debug(conf.tenant[g.tenant_id]['stream_db'])
+    
+    result = t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_channel_metadata',filter='{"channel_id":"'+channel_id+'"}')
+    
     if len(result.decode('utf-8')) > 0:
         message = "Channel found."
         channel_result = json.loads(result.decode('utf-8'))[0]
@@ -220,6 +233,7 @@ def get_channel(channel_id):
 
 def update_channel(channel_id, req_body):
     logger.debug('Top of update_channel')
+    req_body['channel_id'] = channel_id 
 
     # Get channel information from Meta
     try:
@@ -230,7 +244,7 @@ def update_channel(channel_id, req_body):
 
     # TODO check if Kapacitor Task exist
     logger.debug('UPDATING ... Kapacitor Task')
-    task_id = req_body['channel_id']
+    task_id = channel_id
     task_body = {'id': task_id,
                  'dbrps': [{"db": "chords_ts_production", "rp": "autogen"}]}
 
@@ -341,7 +355,7 @@ def create_template(body):
         body['create_time'] = str(datetime.datetime.utcnow())
         body['last_updated'] = str(datetime.datetime.utcnow())
         body['permissions'] = {'users': [g.username]}
-        mtemplate_result, mtemplate_bug =t.meta.createDocument(db=conf.stream_db, collection='streams_templates_metadata', request_body=body, _tapis_debug=True)
+        mtemplate_result, mtemplate_bug =t.meta.createDocument(db=conf.tenant[g.tenant_id]['stream_db'], collection='streams_templates_metadata', request_body=body, _tapis_debug=True)
         logger.debug("Status_Code: " + str(mtemplate_bug.response.status_code))
         logger.debug(mtemplate_result)
         if str(mtemplate_bug.response.status_code) == '201':
@@ -364,7 +378,7 @@ def create_template(body):
 def get_template(template_id):
     logger.debug('In get_template')
     result = {}
-    result = t.meta.listDocuments(db=conf.stream_db, collection='streams_templates_metadata',filter='{"template_id":"' + template_id + '"}')
+    result = t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'], collection='streams_templates_metadata',filter='{"template_id":"' + template_id + '"}')
     if len(result.decode('utf-8')) > 0:
         message = "Template found."
         template_result = json.loads(result.decode('utf-8'))[0]
@@ -386,12 +400,12 @@ def update_template(template_id, body):
     logger.debug('UPDATING ... Kapacitor Template')
 
     template_body = {}
-    template_body['id'] = body['template_id']
+    template_body['id'] = template_id
     template_body['type'] = body['type']
     template_body['script'] = body['script']
 
     try:
-        result,status_code = update_kapacitor_template(body['template_id'],template_body)
+        result,status_code = update_kapacitor_template(template_id,template_body)
     except Exception as e:
         msg = f" Not able to connect to Kapacitor for the template {body['template_id']} update; exception: {e}"
         raise errors.ResourceError(msg=msg)
@@ -461,9 +475,9 @@ def remove_template():
 ############################ CHANNEL INDEX #############################
 def create_channel_index(project_id, channel_id):
     req_body = {'project_id':project_id, 'channel_id': channel_id}
-    result, bug =t.meta.createDocument(db=conf.stream_db, collection='streams_channel_index', request_body=req_body, _tapis_debug=True)
+    result, bug =t.meta.createDocument(db=conf.tenant[g.tenant_id]['stream_db'], collection='streams_channel_index', request_body=req_body, _tapis_debug=True)
     return result, str(bug.response.status_code)
 
 def fetch_channel_index(channel_id):
-    result= t.meta.listDocuments(db=conf.stream_db,collection='streams_channel_index',filter='{"channel_id":"'+channel_id+'"}')
+    result= t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_channel_index',filter='{"channel_id":"'+channel_id+'"}')
     return json.loads(result.decode('utf-8'))

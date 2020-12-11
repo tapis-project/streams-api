@@ -1,0 +1,16 @@
+var crit lambda
+var channel_id string
+stream
+    |from()
+     .measurement('tsdata')
+     .groupBy('var')
+    |alert()
+        .id(channel_id +  ' {{ .Name }}/{{ .Group }}/{{.TaskName}}/{{index .Tags \"var\" }}')
+        .crit(crit)
+        .noRecoveries()
+        .message('{{.ID}} is {{ .Level}} at time: {{.Time}} as value: {{ index .Fields \"value\" }} exceeded the threshold')
+        .details('')
+        .post()
+          .endpoint('api-alert')
+          .captureResponse()
+    |httpOut('msg')
