@@ -596,10 +596,13 @@ class MeasurementsResource(Resource):
                     # si = StringIO.StringIO()
                     #cw = csv.write(si)
                     # cw.writerows(csvList)
-                    logger.debug("CSV in Bytess: "+ sys.getsizeof(df1.to_csv))
+                    logger.debug("CSV in Bytess: "+ str(sys.getsizeof(df1.to_csv)))
                     output = make_response(df1.to_csv())
                     output.headers["Content-Disposition"] = "attachment; filename=export.csv"
                     output.headers["Content-type"] = "text/csv"
+                    metric = {'created_at':datetime.now().isoformat(),'type':'download','project_id':project_id,'username':g.username,'size': sys.getsizeof(df1.to_csv)}
+                    metric_result, metric_bug =auth.t.meta.createDocument(db=conf.tenant[g.tenant_id]['stream_db'], collection='streams_metrics', request_body=metric, _tapis_debug=True)
+                    logger.debug(metric_result)
                     return output
                 else:
                     result = json.loads(df1.to_json())
@@ -607,6 +610,10 @@ class MeasurementsResource(Resource):
                     result['instrument'] = instrument
                     site.pop('instruments',None)
                     result['site'] = meta.strip_meta(site)
+                    logger.debug("JSON in Bytes: "+ str(sys.getsizeof(result)))
+                    metric = {'created_at':datetime.now().isoformat(),'type':'download','project_id':project_id,'username':g.username,'size': str(sys.getsizeof(result))}
+                    metric_result, metric_bug =auth.t.meta.createDocument(db=conf.tenant[g.tenant_id]['stream_db'], collection='streams_metrics', request_body=metric, _tapis_debug=True)
+                    logger.debug(metric_result)
                     return utils.ok(result=result, msg="Measurements Found")
             else:
                 return utils.ok(result=[], msg="No Measurements Founds")
@@ -681,6 +688,9 @@ class MeasurementsReadResource(Resource):
                         output = make_response(df1.to_csv())
                         output.headers["Content-Disposition"] = "attachment; filename=export.csv"
                         output.headers["Content-type"] = "text/csv"
+                        metric = {'created_at':datetime.now().isoformat(),'type':'download','project_id':inst_idex['project_id'],'username':g.username,'size': sys.getsizeof(df1.to_csv)}
+                        metric_result, metric_bug =auth.t.meta.createDocument(db=conf.tenant[g.tenant_id]['stream_db'], collection='streams_metrics', request_body=metric, _tapis_debug=True)
+                        logger.debug(metric_result)
                         return output
                     else:
                         result = json.loads(df1.to_json())
@@ -688,6 +698,9 @@ class MeasurementsReadResource(Resource):
                         result['instrument'] = instrument
                         site.pop('instruments',None)
                         result['site'] = meta.strip_meta(site)
+                        metric = {'created_at':datetime.now().isoformat(),'type':'download','project_id':inst_index['project_id'],'username':g.username,'size': str(sys.getsizeof(result))}
+                        metric_result, metric_bug =auth.t.meta.createDocument(db=conf.tenant[g.tenant_id]['stream_db'], collection='streams_metrics', request_body=metric, _tapis_debug=True)
+                        logger.debug(metric_result)
                         return utils.ok(result=result, msg="Measurements Found")
                 else:
                     return utils.ok(result=[], msg="No Measurements Founds")
