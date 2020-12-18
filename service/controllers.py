@@ -1,5 +1,5 @@
 import datetime
-from flask import request, make_response
+from flask import g, request, make_response
 from flask_restful import Resource
 from openapi_core.shortcuts import RequestValidator
 from openapi_core.wrappers.flask import FlaskOpenAPIRequest
@@ -16,12 +16,15 @@ from common import utils, errors
 from common.config import conf
 from requests.auth import HTTPBasicAuth
 from common import errors as common_errors
+import auth
+from datetime import datetime
 
 #from service.models import db, LDAPConnection, TenantOwner, Tenant
 
 import requests
 import json
 import pandas as pd
+import sys
 # get the logger instance -
 from common.logs import get_logger
 logger = get_logger(__name__)
@@ -333,6 +336,7 @@ class InstrumentsResource(Resource):
                                             "60")
                 logger.debug('after ChordsInstrument assignment')
                 chord_result, chord_msg = chords.create_instrument(postInst)
+                logger.debug(chord_msg)
                 if chord_msg == "Instrument created":
                     body['chords_id'] = chord_result['id']
                     #body['instrument_id'] = instrument_id
@@ -342,9 +346,11 @@ class InstrumentsResource(Resource):
                         result = inst_result
                         message = inst_msg
                 else:
+                    logger.debug(chords_msg)
                     message = chord_msg
             else:
-                message = "Site Failed To Create"
+                logger.debug("INSTRUMENT FAILED TO CREATE")
+                message = "Instrument Failed To Create"
             return utils.ok(result=result, msg=message)
         else:
             logger.debug('User does not have Admin or Manager role on project')
@@ -494,8 +500,8 @@ class VariableResource(Resource):
     def delete(self, project_id, site_id, instrument_id, variable_id):
         authorized = sk.check_if_authorized_delete(project_id)
         if (authorized):
+            result,msg = chords.delete_variable(variable_id)
             result, msg = meta.update_variable(project_id, site_id, instrument_id, variable_id, {},True)
-            #chords_result, chords_msg = chords.delete_variable(result['chords_id'])
             logger.debug(result)
             return utils.ok(result=result, msg=msg)
         else:
@@ -511,21 +517,25 @@ class MeasurementsWriteResource(Resource):
         body = request.json
         logger.debug(body)
         instrument = {}
+        logger.debug("CONTENT_LENGTH: " + str(request.headers['content_length']))
+        #logger.debug("Bytes:" + str(sys.getsizeof(body)))
+        message = "Measurement Write Failed"
         if 'inst_id' in body:
-            logger.debug("INSIDE IF : write measurement")
             result = meta.fetch_instrument_index(body['inst_id'])
-            logger.debug("After Meta : write measurement")
             logger.debug(result)
             if len(result) > 0:
-                logger.debug(result[0]['chords_inst_id'])
-                #get isntrument
-                site_result, site_msg = meta.get_site(result[0]['project_id'],result[0]['site_id'])
+                logger.debug(result['chords_inst_id'])
+                #get instrument
+                #logger.debug("number of variables: "+ str(len(body['vars'])))
+                #metric = {'type':'upload','project_id':result['project_id'],'username':g.username,'size':request.headers['content_length'],'var_num':len(body['vars'])}
+                #logger.debug(metric)
+                site_result, site_msg = meta.get_site(result['project_id'],result['site_id'])
                 if 'instruments' in site_result:
                     for inst in site_result['instruments']:
                         if inst['inst_id'] == body['inst_id']:
                             instrument = inst
                     logger.debug(site_result)
-                    project_id=result[0]['project_id']
+                    project_id=result['project_id']
                     logger.debug(project_id)
                     authorized = sk.check_if_authorized_post(project_id)
                     logger.debug(authorized)
@@ -534,14 +544,20 @@ class MeasurementsWriteResource(Resource):
                     if (authorized):
                         resp = influx.write_measurements(site_result['chords_id'],instrument,body)
                         logger.debug(resp)
+                        metric = {'created_at':datetime.now().isoformat(),'type':'upload','project_id':result['project_id'],'username':g.username,'size':request.headers['content_length'],'var_num':len(body['vars'])}
+                        metric_result, metric_bug =auth.t.meta.createDocument(db=conf.tenant[g.tenant_id]['stream_db'], collection='streams_metrics', request_body=metric, _tapis_debug=True)
+                        logger.debug(metric_result)
                         return utils.ok(result=[], msg="Measurements Saved")
                     else:
                         logger.debug('User does not have admin or manager role on project')
                         raise common_errors.PermissionsError(msg=f'User not authorized to access the resource')
 
-                    #else:
-                    #    logger.debug('User does not have admin role on project')
-                    #    raise common_errors.PermissionsError(msg=f'User not authorized to access the resource')
+                logger.debug(resp)
+            else:
+                raise errors.ResourceError(msg=f'No Instrument found matching inst_id.')
+        else:
+            raise errors.ResourceError(msg=f'The inst_id field is missing and is required to write a Measurement.')
+        return utils.ok(result=[], msg=message)
 
 
 class MeasurementsResource(Resource):
@@ -580,9 +596,13 @@ class MeasurementsResource(Resource):
                     # si = StringIO.StringIO()
                     #cw = csv.write(si)
                     # cw.writerows(csvList)
+                    logger.debug("CSV in Bytess: "+ str(sys.getsizeof(df1.to_csv)))
                     output = make_response(df1.to_csv())
                     output.headers["Content-Disposition"] = "attachment; filename=export.csv"
                     output.headers["Content-type"] = "text/csv"
+                    metric = {'created_at':datetime.now().isoformat(),'type':'download','project_id':project_id,'username':g.username,'size': sys.getsizeof(df1.to_csv)}
+                    metric_result, metric_bug =auth.t.meta.createDocument(db=conf.tenant[g.tenant_id]['stream_db'], collection='streams_metrics', request_body=metric, _tapis_debug=True)
+                    logger.debug(metric_result)
                     return output
                 else:
                     result = json.loads(df1.to_json())
@@ -590,6 +610,10 @@ class MeasurementsResource(Resource):
                     result['instrument'] = instrument
                     site.pop('instruments',None)
                     result['site'] = meta.strip_meta(site)
+                    logger.debug("JSON in Bytes: "+ str(sys.getsizeof(result)))
+                    metric = {'created_at':datetime.now().isoformat(),'type':'download','project_id':project_id,'username':g.username,'size': str(sys.getsizeof(result))}
+                    metric_result, metric_bug =auth.t.meta.createDocument(db=conf.tenant[g.tenant_id]['stream_db'], collection='streams_metrics', request_body=metric, _tapis_debug=True)
+                    logger.debug(metric_result)
                     return utils.ok(result=result, msg="Measurements Found")
             else:
                 return utils.ok(result=[], msg="No Measurements Founds")
@@ -664,6 +688,9 @@ class MeasurementsReadResource(Resource):
                         output = make_response(df1.to_csv())
                         output.headers["Content-Disposition"] = "attachment; filename=export.csv"
                         output.headers["Content-type"] = "text/csv"
+                        metric = {'created_at':datetime.now().isoformat(),'type':'download','project_id':inst_idex['project_id'],'username':g.username,'size': sys.getsizeof(df1.to_csv)}
+                        metric_result, metric_bug =auth.t.meta.createDocument(db=conf.tenant[g.tenant_id]['stream_db'], collection='streams_metrics', request_body=metric, _tapis_debug=True)
+                        logger.debug(metric_result)
                         return output
                     else:
                         result = json.loads(df1.to_json())
@@ -671,6 +698,9 @@ class MeasurementsReadResource(Resource):
                         result['instrument'] = instrument
                         site.pop('instruments',None)
                         result['site'] = meta.strip_meta(site)
+                        metric = {'created_at':datetime.now().isoformat(),'type':'download','project_id':inst_index['project_id'],'username':g.username,'size': str(sys.getsizeof(result))}
+                        metric_result, metric_bug =auth.t.meta.createDocument(db=conf.tenant[g.tenant_id]['stream_db'], collection='streams_metrics', request_body=metric, _tapis_debug=True)
+                        logger.debug(metric_result)
                         return utils.ok(result=result, msg="Measurements Found")
                 else:
                     return utils.ok(result=[], msg="No Measurements Founds")
@@ -709,10 +739,9 @@ class ChannelsResource(Resource):
     def post(self):
         logger.debug("top of POST /channels")
         body = request.json
-        #TODO need to check user permissions
+        #TODO need to check our permissions
         result, msg = kapacitor.create_channel(body)
         logger.debug(result)
-        logger.debug("end of POST /channels.. returning result to user")
         return utils.ok(result=meta.strip_meta(result), msg=msg)
 
 
@@ -893,3 +922,12 @@ class InfluxResource(Resource):
         resp = influx.create_measurement(request.args.get('site_id'), request.args.get('inst_id'), request.args.get('var_id'),  float(request.args.get('value')), request.args.get('timestamp'), )
         logger.debug(resp)
         return resp
+
+class MetricsResource(Resource):
+
+    def get(self):
+      #expects instrument_id=1&vars[]={"somename":1.0}&vars[]={"other":2.0} in the request.args
+      #result=  auth.t.meta.createCollection(db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_metrics')
+      result = auth.t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_metrics')
+      logger.debug(json.loads(result.decode('utf-8')))
+      return json.loads(result.decode('utf-8'))
