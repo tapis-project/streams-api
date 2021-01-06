@@ -5,7 +5,7 @@ from common.utils import TapisApi, handle_error, flask_errors_dict
 from service.auth import authn_and_authz
 from service.controllers import ProjectsResource, ProjectResource, SitesResource, SiteResource, InstrumentsResource, InstrumentResource, VariablesResource, \
     VariableResource, MeasurementsWriteResource, MeasurementsReadResource, MeasurementsResource, MeasurementResource, ChannelsResource, ChannelResource, AlertsResource, \
-    AlertsPostResource, TemplatesResource, TemplateResource, InfluxResource, HelloResource, ReadyResource, HealthcheckResource
+    AlertsPostResource, TemplatesResource, TemplateResource, InfluxResource, HelloResource, ReadyResource, HealthcheckResource, MetricsResource
 
 from service.models import app
 
@@ -60,6 +60,8 @@ api.add_resource(AlertsResource, '/v3/streams/channels/<channel_id>/alerts')
 api.add_resource(AlertsPostResource, '/v3/streams/alerts')
 api.add_resource(TemplatesResource, '/v3/streams/templates')
 api.add_resource(TemplateResource, '/v3/streams/templates/<template_id>')
+
+api.add_resource(MetricsResource, '/v3/streams/metrics')
 
 api.add_resource(InfluxResource, '/influx')
 
