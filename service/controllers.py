@@ -128,12 +128,7 @@ class ProjectsResource(Resource):
         except Exception as e:
               msg = f"Could not create project"
               return utils.error(result='null', msg=msg)
-        #msg = 'Project creation failed'
         return utils.error(result='null', msg=msg)
-        #resp['status'] = result['status']
-        #logger.debug(meta_resp['status'])
-        #logger.debug(resp)
-
 
 class ProjectResource(Resource):
     """
@@ -164,8 +159,6 @@ class ProjectResource(Resource):
             raise common_errors.PermissionsError(msg=f'User not authorized to access the resource')
 
     def delete(self, project_id):
-        #return ""
-        #proj_result, msg = meta.get_project(project_id)
         authorized = sk.check_if_authorized_delete(project_id)
         if (authorized):
              proj_result, msg = meta.delete_project(project_id)
@@ -195,14 +188,6 @@ class SitesResource(Resource):
             raise common_errors.PermissionsError(msg=f'User not authorized to access the resource')
 
     def post(self, project_id):
-        # validator = RequestValidator(utils.spec)
-        # result = validator.validate(FlaskOpenAPIRequest(request))
-        # if result.errors:
-        #     raise errors.ResourceError(msg=f'Invalid POST data: {result.errors}.')
-        # validated_params = result.parameters
-        # validated_body = result.body
-        # logger.debug(f"validated_body: {dir(validated_body)}")
-
         #need to add check for project permission & project exists before chords insertion
         authorized = sk.check_if_authorized_post(project_id)
         logger.debug(authorized)
@@ -218,11 +203,9 @@ class SitesResource(Resource):
                 resp, msg = chords.create_site(postSite)
                 if msg == "Site created":
                     site_result, message = meta.create_site(project_id, resp['id'],body)
-                    #resp['results']=meta_resp['results']
                     logger.debug('success')
                     logger.debug(site_result)
                     result = meta.strip_meta(site_result)
-                    #meta_resp, getmsg = meta.get_site(project_id, resp['id'])
                 else:
                     logger.debug('failed')
                     message = msg
@@ -269,7 +252,6 @@ class SiteResource(Resource):
     def delete(self, project_id, site_id):
         authorized = sk.check_if_authorized_delete(project_id)
         if (authorized):
-            #result, msg = chords.delete_site(site_id)
             site_result, msg = meta.delete_site(project_id,site_id)
             logger.debug(msg)
             return utils.ok(result=site_result, msg=f'Site {site_id} deleted.')
@@ -285,24 +267,8 @@ class InstrumentsResource(Resource):
     def get(self,project_id,site_id):
         authorized = sk.check_if_authorized_get(project_id)
         if (authorized):
-        #result,msg = chords.list_instruments()
             result,msg = meta.list_instruments(project_id, site_id)
             logger.debug(site_id)
-            '''
-            #logic to filter instruments based on site id
-            filtered_res = []
-            list_index = 0
-            logger.debug(site_id)
-            for i in range(len(result)):
-                if (result[i]["site_id"] == int(site_id)):
-                    filtered_res.insert(list_index, result[i])
-                    list_index = list_index + 1
-                    logger.debug(filtered_res)
-                if (len(filtered_res)!=0):
-                    return utils.ok(result=filtered_res, msg=msg)
-                else:
-                    return utils.ok(result="null", msg=f'No instruments found with this site')
-            '''
             return utils.ok(result=result, msg=msg)
         else:
             logger.debug('User does not have any role on project')
@@ -364,7 +330,6 @@ class InstrumentResource(Resource):
     def get(self, project_id, site_id, instrument_id):
         authorized = sk.check_if_authorized_get(project_id)
         if (authorized):
-            #result,msg = chords.get_instrument(instrument_id)
             result,msg = meta.get_instrument(project_id, site_id,instrument_id)
             return utils.ok(result=result, msg=msg)
         else:
@@ -402,7 +367,6 @@ class InstrumentResource(Resource):
     def delete(self, project_id, site_id, instrument_id):
         authorized = sk.check_if_authorized_delete(project_id)
         if (authorized):
-            #chord_result,chord_msg = chords.delete_instrument(instrument_id)
             result, msg = meta.update_instrument(project_id, site_id, instrument_id, {},True)
             return utils.ok(result={}, msg=msg)
         else:
@@ -418,7 +382,6 @@ class VariablesResource(Resource):
     def get(self, project_id, site_id, instrument_id):
         authorized = sk.check_if_authorized_get(project_id)
         if (authorized):
-            #result,msg = chords.list_variables()
             result, msg = meta.list_variables(project_id, site_id, instrument_id)
             logger.debug(instrument_id)
             return utils.ok(result=result, msg=msg)
@@ -428,7 +391,6 @@ class VariablesResource(Resource):
 
 
     def post(self, project_id, site_id, instrument_id):
-        #logger.debug(type(request.json))
         authorized = sk.check_if_authorized_post(project_id)
         if (authorized):
             logger.debug(request.json)
@@ -464,7 +426,6 @@ class VariableResource(Resource):
     def get(self, project_id, site_id, instrument_id, variable_id):
         authorized = sk.check_if_authorized_get(project_id)
         if (authorized):
-            #chords_result,chords_msg = chords.get_variable(variable_id)
             result, msg = meta.get_variable(project_id, site_id, instrument_id, variable_id)
             logger.debug(result)
             return utils.ok(result=result, msg=msg)
@@ -482,7 +443,6 @@ class VariableResource(Resource):
                 body = request.json
             else:
                 body = request.json[0]
-            # id, name, instrument_id, shortname, commit
             result, msg = meta.update_variable(project_id, site_id, instrument_id, variable_id, body)
             putInst = ChordsVariable(result['chords_id'],result['inst_chords_id'],
                                         body['var_name'],
@@ -518,17 +478,12 @@ class MeasurementsWriteResource(Resource):
         logger.debug(body)
         instrument = {}
         logger.debug("CONTENT_LENGTH: " + str(request.headers['content_length']))
-        #logger.debug("Bytes:" + str(sys.getsizeof(body)))
         message = "Measurement Write Failed"
         if 'inst_id' in body:
             result = meta.fetch_instrument_index(body['inst_id'])
             logger.debug(result)
             if len(result) > 0:
                 logger.debug(result['chords_inst_id'])
-                #get instrument
-                #logger.debug("number of variables: "+ str(len(body['vars'])))
-                #metric = {'type':'upload','project_id':result['project_id'],'username':g.username,'size':request.headers['content_length'],'var_num':len(body['vars'])}
-                #logger.debug(metric)
                 site_result, site_msg = meta.get_site(result['project_id'],result['site_id'])
                 if 'instruments' in site_result:
                     for inst in site_result['instruments']:
@@ -539,8 +494,6 @@ class MeasurementsWriteResource(Resource):
                     logger.debug(project_id)
                     authorized = sk.check_if_authorized_post(project_id)
                     logger.debug(authorized)
-                    #if (authorized):
-                    #resp = chords.create_measurement(result[0]['chords_inst_id'], body)
                     if (authorized):
                         resp = influx.write_measurements(site_result['chords_id'],instrument,body)
                         logger.debug(resp)
@@ -568,7 +521,6 @@ class MeasurementsResource(Resource):
             result =[]
             msg=""
             logger.debug("top of GET /measurements")
-            #inst_result = meta.get_instrument(project_id,site_id,instrument_id)
             site,msg = meta.get_site(project_id,site_id)
             logger.debug(site)
             replace_cols = {}
@@ -592,10 +544,6 @@ class MeasurementsResource(Resource):
                 df1.set_index('time',inplace=True)
                 if request.args.get('format') == "csv":
                     logger.debug("CSV")
-                    # csv_response = Response(result, mimetype="text/csv")
-                    # si = StringIO.StringIO()
-                    #cw = csv.write(si)
-                    # cw.writerows(csvList)
                     logger.debug("CSV in Bytess: "+ str(sys.getsizeof(df1.to_csv)))
                     output = make_response(df1.to_csv())
                     output.headers["Content-Disposition"] = "attachment; filename=export.csv"
@@ -617,27 +565,6 @@ class MeasurementsResource(Resource):
                     return utils.ok(result=result, msg="Measurements Found")
             else:
                 return utils.ok(result=[], msg="No Measurements Founds")
-            # logger.debug("top of GET /measurements")
-            # #inst_result = meta.get_instrument(project_id,site_id,instrument_id)
-            # inst_index = meta.fetch_instrument_index(instrument_id)
-            # logger.debug(inst_index)
-            # if len(inst_index) > 0:
-            #     result,msg = chords.get_measurements(str(inst_index[0]['chords_inst_id']),request.args.get('start_date'),request.args.get('end_date'),request.args.get('format'))
-            #     logger.debug(result)
-            # #return utils.ok(result=list(map(lambda t: list(map(lambda r: {'units':r.units,'value':r.value,'variable_name':r.variable_name,'varable_id':r.shortname}, t['vars'])),result['features'][0 ]['properties']['data'])), msg=msg)
-            # if request.args.get('format') == "csv":
-            #     logger.debug("CSV")
-            #     # csv_response = Response(result, mimetype="text/csv")
-            #     # si = StringIO.StringIO()
-            #     #cw = csv.write(si)
-            #     # cw.writerows(csvList)
-            #     output = make_response(result)
-            #     output.headers["Content-Disposition"] = "attachment; filename=export.csv"
-            #     output.headers["Content-type"] = "text/csv"
-            #     return output
-            # else:
-            #     logger.debug("JSON")
-            #     return utils.ok(result={"data":result['features'][0 ]['properties']['data'],"measurements_in_file": result['features'][0 ]['properties']['measurements_in_file']}, msg=msg)
 
 
 class MeasurementsReadResource(Resource):
@@ -648,7 +575,6 @@ class MeasurementsReadResource(Resource):
         result =[]
         msg=""
         logger.debug("top of GET /measurements")
-        #inst_result = meta.get_instrument(project_id,site_id,instrument_id)
         inst_index = meta.fetch_instrument_index(instrument_id)
         logger.debug(inst_index)
         if len(inst_index[0]) > 0:
@@ -681,10 +607,6 @@ class MeasurementsReadResource(Resource):
                     df1.set_index('time',inplace=True)
                     if request.args.get('format') == "csv":
                         logger.debug("CSV")
-                        # csv_response = Response(result, mimetype="text/csv")
-                        # si = StringIO.StringIO()
-                        #cw = csv.write(si)
-                        # cw.writerows(csvList)
                         output = make_response(df1.to_csv())
                         output.headers["Content-Disposition"] = "attachment; filename=export.csv"
                         output.headers["Content-type"] = "text/csv"
@@ -764,8 +686,6 @@ class ChannelResource(Resource):
 
         body = request.json
         # TODO need to check the user permission to update channel status
-        #if body['channel_id'] != channel_id:
-        #    raise errors.ResourceError(msg=f'Invalid PUT data: {body}. You cannot change channel id')
         result = {}
         try:
             result, msg = kapacitor.update_channel(channel_id, body)
@@ -888,10 +808,6 @@ class TemplateResource(Resource):
         logger.debug("top of PUT /templates/{template_id}")
         body = request.json
         # TODO need to check the user permission to update template
-
-        #if body['template_id'] != template_id:
-        #    raise errors.ResourceError(msg=f'Invalid PUT data: {body}. You cannot change template_id')
-
         result = {}
         try:
             result, msg = kapacitor.update_template(template_id,body)
@@ -927,7 +843,6 @@ class MetricsResource(Resource):
 
     def get(self):
       #expects instrument_id=1&vars[]={"somename":1.0}&vars[]={"other":2.0} in the request.args
-      #result=  auth.t.meta.createCollection(db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_metrics')
       result = auth.t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_metrics')
       logger.debug(json.loads(result.decode('utf-8')))
       return json.loads(result.decode('utf-8'))
