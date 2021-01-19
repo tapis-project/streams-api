@@ -18,10 +18,6 @@ def authnz_for_authenticator():
     authn_and_authz()
     logger.debug("Authorization complete")
 
-# db and migrations ----
-#db.init_app(app)
-#migrate = Migrate(app, db)
-
 # flask restful API object ----
 api = TapisApi(app, errors=flask_errors_dict)
 
