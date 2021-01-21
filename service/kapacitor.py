@@ -183,11 +183,12 @@ def convert_conditions_to_vars(req_body):
     result = meta.fetch_instrument_index(cond_key[0])
     logger.debug(result)
     if len(result) > 0:
-        logger.debug(" chords instrument_ id: " + str(result[0]['chords_inst_id']))
-        inst_chords_id[cond_key[0]] = result[0]['chords_inst_id']
+        logger.debug("inside if")
+        logger.debug( str(result['chords_inst_id']))
+        inst_chords_id[cond_key[0]] = result['chords_inst_id']
 
         # fetch chords id for the variable
-        result_var, message = meta.get_variable(result[0]['project_id'], result[0]['site_id'], result[0]['instrument_id'], cond_key[1])
+        result_var, message = meta.get_variable(result['project_id'], result['site_id'], result['instrument_id'], cond_key[1])
         logger.debug("variable chords id : " + str(result_var['chords_id']))
         inst_var_chords_ids[triggers_with_actions['condition']['key']] = result_var['chords_id']
     # create vars dictionary

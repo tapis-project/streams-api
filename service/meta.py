@@ -281,15 +281,15 @@ def list_instruments(project_id, site_id):
             else:
                 result = {}
                 message = "No Instruments Found"
-                raise errors.ResourceError(msg=f'"No Instruments Found for Site ID:' + str(site_id))
+                raise errors.ResourceError(msg=f'No Instruments Found for Site ID:' + str(site_id))
         else:
             result = {}
             message = "No Instruments Found"
-            raise errors.ResourceError(msg=f'"No Instruments Found for Site ID:'+str(site_id))
+            raise errors.ResourceError(msg=f'No Instruments Found for Site ID:'+str(site_id))
     else:
         result = {}
         message ="Site Not Found - No Instruments Exist"
-        raise errors.ResourceError(msg=f'"Site Not Found With Site ID:'+str(site_id))
+        raise errors.ResourceError(msg=f'Site Not Found With Site ID:'+str(site_id))
     return result, message
 
 def create_instrument(project_id, site_id, post_body):
