@@ -1,0 +1,17 @@
+# inherit from the streams
+FROM tapis/streams-api
+
+USER root
+# install additional requirements for the tests
+COPY tests-requirements.txt /home/tapis/tests-requirements.txt
+RUN pip install -r /home/tapis/tests-requirements.txt
+
+# copy test source code
+COPY service/tests /home/tapis/service/tests
+
+# run service as non-root tapis user
+RUN chown -R tapis:tapis /home/tapis
+USER tapis
+
+# Testing
+ENTRYPOINT ["pytest"]
