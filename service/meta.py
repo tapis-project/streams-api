@@ -8,7 +8,7 @@ import datetime
 app = Flask(__name__)
 
 from common import utils, errors
-import auth
+from service import auth
 # get the logger instance -
 from common.logs import get_logger
 logger = get_logger(__name__)

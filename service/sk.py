@@ -1,7 +1,7 @@
 import enum
 import requests
 import json
-import meta
+from service import meta
 from flask import g, Flask
 from common.config import conf
 from common import auth
@@ -9,7 +9,7 @@ import datetime
 app = Flask(__name__)
 
 from common import utils, errors
-import auth
+from service import auth
 # get the logger instance -
 from common.logs import get_logger
 logger = get_logger(__name__)

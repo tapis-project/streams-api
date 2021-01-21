@@ -5,18 +5,18 @@ from openapi_core.shortcuts import RequestValidator
 from openapi_core.wrappers.flask import FlaskOpenAPIRequest
 # import psycopg2
 #import sqlalchemy
-import chords
-import influx
-import meta
-import kapacitor
-import abaco
-import sk
-from models import ChordsSite, ChordsIntrument, ChordsVariable
+from service import chords
+from service import influx
+from service import meta
+from service import kapacitor
+from service import abaco
+from service import sk
+from service.models import ChordsSite, ChordsIntrument, ChordsVariable
 from common import utils, errors
 from common.config import conf
 from requests.auth import HTTPBasicAuth
 from common import errors as common_errors
-import auth
+from service import auth
 from datetime import datetime
 
 #from service.models import db, LDAPConnection, TenantOwner, Tenant

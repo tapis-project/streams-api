@@ -96,7 +96,7 @@ def authorization(skip_sk):
     #global set_sk
     # todo - Call security kernel to check if user is authorized for the request.
     #
-
+ 
     logger.debug("top of authorization()")
     if skip_sk:
         logger.debug("not using SK; returning True")
