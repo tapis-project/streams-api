@@ -186,6 +186,7 @@ class ProjectResource(Resource):
     def delete(self, project_id):
         logger.debug(f'In delete project')
         # Check if the user is authorized to access the project by checking the user has project specific role in sk
+
         authorized = sk.check_if_authorized_delete(project_id)
         if (authorized):
              logger.debug(f'User is authorized to delete project : ' + str(project_id))
@@ -221,6 +222,7 @@ class SitesResource(Resource):
     def post(self, project_id):
         logger.debug(f'In create sites')
         # Check if the user is authorized to create the site by checking if the user has project specific role
+
         authorized = sk.check_if_authorized_post(project_id)
         logger.debug(authorized)
         if (authorized):
@@ -241,8 +243,8 @@ class SitesResource(Resource):
                     logger.debug(f'Metadata site creation success')
                     logger.debug(f'Site object' +str(site_result))
                     # Remove the _id and _etag for a list of metadata objects
+
                     result = meta.strip_meta(site_result)
-                    #meta_resp, getmsg = meta.get_site(project_id, resp['id'])
                 else:
                     logger.debug(f'Metadata site creation failed')
                     message = msg
@@ -309,6 +311,7 @@ class SiteResource(Resource):
             logger.debug(f'User is authorized to delete site : ' + str(site_id))
             #result, msg = chords.delete_site(site_id)
             # Update site metadata in MongoDB
+
             site_result, msg = meta.delete_site(project_id,site_id)
             logger.debug(msg)
             return utils.ok(result=site_result, msg=f'Site {site_id} deleted.')
@@ -493,6 +496,7 @@ class VariablesResource(Resource):
     def post(self, project_id, site_id, instrument_id):
         logger.debug(f'In create variables')
         # Check if the user is authorized to create variables by checking if the user has project specific role
+
         authorized = sk.check_if_authorized_post(project_id)
         if (authorized):
             logger.debug(f'User is authorized to create variables for : ' + str(instrument_id))
@@ -559,8 +563,6 @@ class VariableResource(Resource):
                 body = request.json
             else:
                 body = request.json[0]
-            # id, name, instrument_id, shortname, commit
-            # Update variable in mongo
             result, msg = meta.update_variable(project_id, site_id, instrument_id, variable_id, body)
             putInst = ChordsVariable(result['chords_id'],result['inst_chords_id'],
                                         body['var_name'],
@@ -609,10 +611,6 @@ class MeasurementsWriteResource(Resource):
             logger.debug(result)
             if len(result) > 0:
                 logger.debug(result['chords_inst_id'])
-                #get instrument
-                #logger.debug("number of variables: "+ str(len(body['vars'])))
-                #metric = {'type':'upload','project_id':result['project_id'],'username':g.username,'size':request.headers['content_length'],'var_num':len(body['vars'])}
-                #logger.debug(metric)
                 site_result, site_msg = meta.get_site(result['project_id'],result['site_id'])
                 if 'instruments' in site_result:
                     for inst in site_result['instruments']:
@@ -653,7 +651,7 @@ class MeasurementsResource(Resource):
     def get(self, project_id, site_id, instrument_id):
             result =[]
             msg=""
-            logger.debug("In get measurements")
+            logger.debug(f"In get measurements")
             site,msg = meta.get_site(project_id,site_id)
             logger.debug(site)
             replace_cols = {}
@@ -708,7 +706,7 @@ class MeasurementsReadResource(Resource):
     def get(self, instrument_id):
         result =[]
         msg=""
-        logger.debug(f"top of GET /measurements")
+        logger.debug("top of GET /measurements")
         #inst_result = meta.get_instrument(project_id,site_id,instrument_id)
         inst_index = meta.fetch_instrument_index(instrument_id)
         logger.debug(inst_index)
@@ -745,10 +743,6 @@ class MeasurementsReadResource(Resource):
                     df1.set_index('time',inplace=True)
                     if request.args.get('format') == "csv":
                         logger.debug("CSV")
-                        # csv_response = Response(result, mimetype="text/csv")
-                        # si = StringIO.StringIO()
-                        #cw = csv.write(si)
-                        # cw.writerows(csvList)
                         output = make_response(df1.to_csv())
                         output.headers["Content-Disposition"] = "attachment; filename=export.csv"
                         output.headers["Content-type"] = "text/csv"
@@ -995,10 +989,6 @@ class TemplateResource(Resource):
         logger.debug("top of PUT /templates/{template_id}")
         body = request.json
         # TODO need to check the user permission to update template
-
-        #if body['template_id'] != template_id:
-        #    raise errors.ResourceError(msg=f'Invalid PUT data: {body}. You cannot change template_id')
-
         result = {}
         try:
             result, msg = kapacitor.update_template(template_id,body)
@@ -1039,6 +1029,7 @@ class InfluxResource(Resource):
 class MetricsResource(Resource):
     # GET /v3/streams/metrics
     def get(self):
+      #expects instrument_id=1&vars[]={"somename":1.0}&vars[]={"other":2.0} in the request.args
       result = auth.t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_metrics')
       logger.debug(json.loads(result.decode('utf-8')))
       return json.loads(result.decode('utf-8'))

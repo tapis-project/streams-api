@@ -52,8 +52,6 @@ def get_project(project_id):
         logger.debug('PROJECT FOUND')
         message = "Project found."
         proj_result = json.loads(result.decode('utf-8'))[0]
-        #proj_result.pop('_id')
-        #proj_result.pop('_etag')
         result = proj_result
     else:
         logger.debug("NO PROJECT FOUND")
@@ -153,11 +151,8 @@ def get_site(project_id, site_id):
     if len(json.loads(result)) > 0:
         message = "Site found."
         #result should be an object not an array
-        #TODO strip out _id and _etag
         logger.debug(result)
         site_result = json.loads(result.decode('utf-8'))[0]
-        #site_result.pop('_id')
-        #site_result.pop('_etag')
         result = site_result
         logger.debug("SITE FOUND")
     else:
@@ -182,7 +177,6 @@ def create_site(project_id, chords_site_id, body):
     if bug.response.status_code == 201:
         message = "Site Created."
         #fetch site document to serve back
-        #TODO strip out _id and _etag
         result, site_bug = get_site(project_id, str(req_body['site_id']))
     else:
         #remove site from Chords
@@ -603,13 +597,9 @@ def create_alert(alert):
 def get_alert(channel_id,alert_id):
     logger.debug('In GET alert')
     result = t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_alerts_metadata',filter='{"alert_id":"'+ alert_id +'"}')
-    #logger.debug("meta_alert_bug" + str(alert_bug.response))
-    #if str(alert_bug.response.status_code) == '200':
-
     if len(result.decode('utf-8')) > 0:
         message = "Alert found."
         #result should be an object not an array
-        #TODO strip out _id and _etag
         alert_result = json.loads(result.decode('utf-8'))[0]
         result = alert_result
         logger.debug("ALERT FOUND")
@@ -617,15 +607,11 @@ def get_alert(channel_id,alert_id):
     else:
         logger.debug("NO ALERT FOUND")
         raise errors.ResourceError(msg=f'No Alert found: {alert_id}')
-    #else:
-    #    raise errors.ResourceError(msg=f'Unable to connect to Tapis Meta Server while requesting alert: {alert_id}')
 
 
-#strip out id and _etag fields
 def list_alerts(channel_id):
     logger.debug("Before")
     result = t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_alerts_metadata',filter='{"channel_id":"'+ channel_id+'"}')
-    #if str(alerts_bug.response.status_code) == '200':
     logger.debug("After")
     if len(result) > 0 :
         message = "Alerts found"
@@ -633,14 +619,10 @@ def list_alerts(channel_id):
         return json.loads(result.decode('utf-8')), message
     else:
         raise errors.ResourceError(msg=f'No Alert found')
-    #else:
-    #    logger.debug("NO ALERTS FOUND for Channel: " + channel_id)
-    #    raise errors.ResourceError(msg=f'No Alerts found for Channel: {channel_id}')
 
 def list_templates():
     logger.debug("Before")
     result = t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_templates_metadata',filter='{"permissions.users":"'+ g.username+'"}')
-    #if str(alerts_bug.response.status_code) == '200':
     logger.debug("After")
     if len(result) > 0 :
         message = "Templates found"

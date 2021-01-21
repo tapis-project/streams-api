@@ -25,6 +25,7 @@ def create_get_request(path):
 
 def create_post_request(path,postData):
     chords_uri = conf.chords_url + path;
+    logger.debug(chords_uri)
     headers = {
         'Content-Type': 'application/x-www-form-urlencoded'
     }
@@ -34,6 +35,7 @@ def create_post_request(path,postData):
 
 def create_put_request(path,postData):
     chords_uri = conf.chords_url + path;
+
     headers = {
         'Content-Type': 'application/x-www-form-urlencoded'
     }
@@ -178,7 +180,6 @@ def create_instrument(instrument:ChordsIntrument):
                 'api_key': conf.chords_api_key,
                 'instrument[site_id]':instrument.site_id,
                 'instrument[name]':instrument.name,
-                #'instrument[sensor_id]': instrument.sensor_id,
                 'instrument[topic_category_id]': instrument.topic_category_id,
                 'instrument[description]': instrument.description,
                 'instrument[display_points]': instrument.display_points,
@@ -219,8 +220,6 @@ def update_instrument(id, instrument:ChordsIntrument):
         message = "Instrument updated"
     else:
         raise errors.ResourceError(msg=f'Instrument not updated')
-    #logger.debug(message)
-    #logger.debug(res)
     return json.loads(res.content.decode('utf-8')), message
 
 
@@ -339,7 +338,7 @@ def get_measurements(instrument_id, start="", end="", format="json"):
     logger.debug("inside chords get measurement")
     if format is None:
         format = "json"
-    path="/instruments/"+ instrument_id +"."+format+"?"#"api/v1/data.json";
+    path="/instruments/"+ instrument_id +"."+format+"?"
     #start, end, instruments
     logger.debug(start)
     logger.debug(end)
@@ -360,7 +359,7 @@ def get_measurements(instrument_id, start="", end="", format="json"):
         return json.loads(res.content.decode('utf-8')), message
     else:
         return res.content, message
-#
+
 #create a new measurement in CHORDS
 def create_measurement(inst_chords_id, json_body):
     #TODO validate the measurement has all properties requirement and fields are correct
@@ -373,8 +372,6 @@ def create_measurement(inst_chords_id, json_body):
     for itm in json_body['vars']:
         vars = itm #json.loads(itm)
         getData[itm['var_id']]=itm['value']
-        # for k in vars:
-        #     getData[k]=vars[k]
     logger.debug(chords_uri)
     headers = {
         'Content-Type':'application/x-www-form-urlencoded'
