@@ -14,109 +14,50 @@ def authn_and_authz():
     Entry point for checking authentication and authorization for all requests to the authenticator.
     :return:
     """
-    skip_sk = False
-    skip_sk = authentication()
-    authorization(skip_sk)
+   # skip_sk = False
+    authentication()
+    #authorization(skip_sk)
 
 def authentication():
     """
     Entry point for checking authentication for all requests to the authenticator.
     :return:
     """
-    #global set_sk
     # The tenants API has both public endpoints that do not require a token as well as endpoints that require
     # authorization.
     # we always try to call the primary tapis authentication function to add authentication information to the
-    # thread-local. If it fails due to a missing token, we then check if there is a p
+    # thread-local. If it fails due to a missing token, we then check if there is a public endpoint
     logger.debug(request.headers)
     try:
         auth.authentication()
-        logger.debug(conf.tenant[g.tenant_id])
+        logger.debug(f"Threadlocal tenant id: "+str(conf.tenant[g.tenant_id]))
     except common_errors.NoTokenError as e:
-        logger.debug(f"Caught NoTokenError: {e}")
-        g.no_token = True
-        g.username = None
-        g.tenant_id = None
-        # for retrieval and informational methods, allow the request (with possibly limited information)
-    if request.method == 'GET' and (request.endpoint == 'helloresource' or request.endpoint == 'readyresource'):
-        logger.debug('SK Flag value')
-        logger.debug(request.endpoint)
-        skip_sk = True
-        logger.debug(skip_sk)
-        return skip_sk
-    if request.method == 'GET' and (request.endpoint == 'healthcheckresource'):
-        #Check alert_secret
-        logger.debug('SK Flag value')
-        logger.debug(request.endpoint)
-        skip_sk = True
-        logger.debug(skip_sk)
-        g.tenant_id = request.args.get('tenant')
-        logger.debug(g.tenant_id)
-        return skip_sk
-    ''''
-    if request.method == 'POST' and (request.endpoint == 'projectsresource'):
-        #Check alert_secret
-        logger.debug('SK Flag value')
-        logger.debug(request.endpoint)
-        logger.debug(g.tenant_id)
-        logger.debug(g.username)
-        skip_sk = True
-        logger.debug(skip_sk)
-        return skip_sk
-    '''
-    if request.method == 'POST' and (request.endpoint == 'alertspostresource'):
-        #Check alert_secret
-        logger.debug('SK Flag value')
-        logger.debug(request.endpoint)
-        skip_sk = True
-        logger.debug(skip_sk)
-        g.tenant_id = request.args.get('tenant')
-        logger.debug(g.tenant_id)
-        if request.headers['alert-secret'] == conf.alert_secret:
-            return skip_sk
-        else:
-            return False
+            logger.debug(f"Caught NoTokenError: {e}")
+            g.no_token = True
+            g.username = None
+            g.tenant_id = None
 
+            if request.method == 'GET' and (request.endpoint == 'helloresource' or request.endpoint == 'readyresource'):
+                return True
 
-    # this role is stored in the security kernel
+            # to check the heaalth of service we pass tenant_id as query parameter
+            if request.method == 'GET' and (request.endpoint == 'healthcheckresource'):
+                g.tenant_id = request.args.get('tenant')
+                logger.debug(f"Threadlocal tenant id: "+str(g.tenant_id))
+                return True
 
-#ROLE = 'streams_user'
+            if request.method == 'POST' and (request.endpoint == 'alertspostresource'):
+                logger.debug(request.endpoint)
+                g.tenant_id = request.args.get('tenant')
+                logger.debug(f"Threadlocal tenant id: "+str(g.tenant_id))
+                if request.headers['alert-secret'] == conf.alert_secret:
+                    return True
+                else:
+                    return False
+            raise e
+
 # this is the Tapis client that tenants will use for interacting with other services, such as the security kernel.
 
 t = auth.get_service_tapis_client(tenant_id='admin', tenants=tenants)
 
 t.x_username = conf.streams_user
-
-# This is a dummy method. Role based authorization is now checked for each resource class in controller
-def authorization(skip_sk):
-    """
-    Entry point for checking authorization for all requests to the authenticator.
-    :return:
-    """
-    #global set_sk
-    # todo - Call security kernel to check if user is authorized for the request.
-    #
- 
-    logger.debug("top of authorization()")
-    if skip_sk:
-        logger.debug("not using SK; returning True")
-        return True
-    #logger.debug(f"calling SK to check users assigned to role: {ROLE}")
-    '''
-    try:
-        t.x_tenant_id = g.tenant_id
-        users = t.sk.getUsersWithRole(roleName=ROLE, tenant=g.tenant_id)
-    except Exception as e:
-        msg = f'Got an error calling the SK. Exception: {e}'
-        logger.error(msg)
-        raise common_errors.PermissionsError(
-            msg=f'Could not verify permissions with the Security Kernel; additional info: {e}')
-    logger.debug(f"got users: {users.names}; checking if {g.username} is in role {ROLE}.")
-    if g.username not in users.names:
-        logger.info(f"user {g.username} was not in role. raising permissions error.")
-        raise common_errors.PermissionsError(msg='Not authorized to access streams resources.')
-    else:
-        logger.info(f"user {g.username} has role {ROLE}")
-        return True
-    '''
-    return True
