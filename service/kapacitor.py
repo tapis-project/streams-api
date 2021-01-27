@@ -9,11 +9,11 @@ from common import utils, errors
 # get the logger instance -
 from common.logs import get_logger
 logger = get_logger(__name__)
-import auth
+from service import auth
 from requests.auth import HTTPBasicAuth
 import subprocess
-import meta
-import parse_condition_expr
+from service import meta
+from service import parse_condition_expr
 #access the dynatpy instance
 t = auth.t
 
@@ -219,9 +219,9 @@ def get_channel(channel_id):
     logger.debug('In GET Channel' + channel_id)
     logger.debug(g.tenant_id)
     logger.debug(conf.tenant[g.tenant_id]['stream_db'])
-    
+
     result = t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_channel_metadata',filter='{"channel_id":"'+channel_id+'"}')
-    
+
     if len(result.decode('utf-8')) > 0:
         message = "Channel found."
         channel_result = json.loads(result.decode('utf-8'))[0]
@@ -234,7 +234,7 @@ def get_channel(channel_id):
 
 def update_channel(channel_id, req_body):
     logger.debug('Top of update_channel')
-    req_body['channel_id'] = channel_id 
+    req_body['channel_id'] = channel_id
 
     # Get channel information from Meta
     try:

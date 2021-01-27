@@ -1,11 +1,4 @@
 import datetime
-import chords
-import influx
-import meta
-import kapacitor
-import abaco
-import sk
-import auth
 import requests
 import json
 import pandas as pd
@@ -15,11 +8,21 @@ from flask import g, request, make_response
 from flask_restful import Resource
 from openapi_core.shortcuts import RequestValidator
 from openapi_core.wrappers.flask import FlaskOpenAPIRequest
-from models import ChordsSite, ChordsIntrument, ChordsVariable
+
+# import psycopg2
+#import sqlalchemy
+from service import chords
+from service import influx
+from service import meta
+from service import kapacitor
+from service import abaco
+from service import sk
+from service.models import ChordsSite, ChordsIntrument, ChordsVariable
 from common import utils, errors
 from common.config import conf
 from requests.auth import HTTPBasicAuth
 from common import errors as common_errors
+from service import auth
 from datetime import datetime
 
 # get the logger instance -

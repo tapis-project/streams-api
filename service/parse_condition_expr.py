@@ -9,10 +9,10 @@ from common import utils, errors
 # get the logger instance -
 from common.logs import get_logger
 logger = get_logger(__name__)
-import auth
+from service import auth
 from requests.auth import HTTPBasicAuth
 import subprocess
-import meta
+from service import meta
 
 t = auth.t
 

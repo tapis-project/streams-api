@@ -3,7 +3,7 @@ import enum
 import requests
 import json
 from flask import g, Flask
-from models import ChordsSite, ChordsIntrument, ChordsVariable#, ChordsMeasurement
+from service.models import ChordsSite, ChordsIntrument, ChordsVariable#, ChordsMeasurement
 from common.config import conf
 app = Flask(__name__)
 

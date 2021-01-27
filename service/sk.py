@@ -1,8 +1,9 @@
 import enum
 import requests
 import json
-import meta
-import kapacitor
+
+from service import meta
+from service import kapacitor
 
 from flask import g, Flask
 from common.config import conf
@@ -11,7 +12,7 @@ import datetime
 app = Flask(__name__)
 
 from common import utils, errors
-import auth
+from service import auth
 # get the logger instance -
 from common.logs import get_logger
 logger = get_logger(__name__)
@@ -156,3 +157,4 @@ def check_if_authorized_delete_channel(channel_id):
                                  orAdmin=False)
     logger.debug(authorized)
     return authorized.isAuthorized
+

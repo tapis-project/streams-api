@@ -1,8 +1,8 @@
 import datetime
 import requests
 import json
-import auth
-import meta
+from service import auth
+from service import meta
 import uuid
 
 from flask import g, Flask
@@ -12,7 +12,7 @@ from common import utils, errors
 # get the logger instance -
 from common.logs import get_logger
 logger = get_logger(__name__)
-import parse_condition_expr
+from service import parse_condition_expr
 
 
 #access the dynatpy instance
