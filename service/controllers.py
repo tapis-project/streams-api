@@ -925,7 +925,7 @@ class AlertsResource(Resource):
 
 class AlertsPostResource(Resource):
     def get(self):
-        logger.debug("top of GET /channels/{channel_id}/alerts")
+        logger.debug("top of GET /alerts")
         result = ''
         msg = ''
         return utils.ok(result=result,msg=msg)

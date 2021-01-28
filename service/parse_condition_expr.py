@@ -17,7 +17,7 @@ from service import meta
 t = auth.t
 
 #----------- Example of condn_list expression ----------------------------------------------
-#cond_expr = ["AND",{"key":"1bclocal.templocal1", "op":">", "val":91.0},
+#  cond_expr = ["AND",{"key":"1bclocal.templocal1", "op":">", "val":91.0},
 #                       ["OR",{"key":"1bclocal.templocal2", "op":">", "val":200.0},
 #                        {"key":"1bclocal.templocal3", "op":"<", "val":100.0}
 #                        ]
