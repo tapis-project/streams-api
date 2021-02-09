@@ -627,12 +627,15 @@ class MeasurementsWriteResource(Resource):
                     logger.debug(f'Authorization status' +str(authorized))
                     if (authorized):
                         logger.debug(f' User is authorized to create measurements')
-                        resp = influx.write_measurements(site_result['chords_id'],instrument,body)
+                        resp = influx.compact_write_measurements(site_result['chords_id'],instrument,body)
                         logger.debug(resp)
-                        metric = {'created_at':datetime.now().isoformat(),'type':'upload','project_id':result['project_id'],'username':g.username,'size':request.headers['content_length'],'var_count':len(body['vars'])}
-                        metric_result, metric_bug =auth.t.meta.createDocument(db=conf.tenant[g.tenant_id]['stream_db'], collection='streams_metrics', request_body=metric, _tapis_debug=True)
-                        logger.debug(metric_result)
-                        return utils.ok(result=[], msg="Measurements Saved")
+                        if resp['resp']:
+                            return utils.ok(result=body, msg="Measurements Saved")
+                            metric = {'created_at':datetime.now().isoformat(),'type':'upload','project_id':result['project_id'],'username':g.username,'size':request.headers['content_length'],'var_count':len(body['vars'])}
+                            metric_result, metric_bug =auth.t.meta.createDocument(db=conf.tenant[g.tenant_id]['stream_db'], collection='streams_metrics', request_body=metric, _tapis_debug=True)
+                            logger.debug(metric_result)
+                        else:
+                            raise common_errors.PermissionsError(msg=resp['msg']+ ' Measurement Failed to Save!')
                     else:
                         logger.debug(f'User does not have admin or manager role on project')
                         raise common_errors.PermissionsError(msg=f'User not authorized to access the resource')
@@ -1032,7 +1035,7 @@ class InfluxResource(Resource):
 class MetricsResource(Resource):
     # GET /v3/streams/metrics
     def get(self):
-      #expects instrument_id=1&vars[]={"somename":1.0}&vars[]={"other":2.0} in the request.args
+      #todo parse a start and end date for a query
       result = auth.t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_metrics')
       logger.debug(json.loads(result.decode('utf-8')))
       return json.loads(result.decode('utf-8'))
