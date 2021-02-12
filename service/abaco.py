@@ -32,13 +32,8 @@ This method creates an alert with the information received from Kapacitor alert 
 def create_alert(channel, req_data):
     actor_id = channel['triggers_with_actions'][0]['action']['actor_id']
     logger.debug('actor_id:' + actor_id)
-    abaco_base_url = channel['triggers_with_actions'][0]['action']['abaco_base_url']
-    abaco_nonce = channel['triggers_with_actions'][0]['action']['nonces']
-    abaco_url = abaco_base_url + '/actors/v2/' + actor_id + '/messages?x-nonce=' + abaco_nonce
-    logger.debug('abaco_url: ' + abaco_url)
 
-    # prepare request for abaco
-    headers = {'accept': 'application/json'}
+     # prepare request for abaco
     message_data = {}
     message_data['message'] = req_data
     message_data['message']['channel_id'] = channel['channel_id']
@@ -75,18 +70,21 @@ def create_alert(channel, req_data):
 
     # send request to Abaco with the nonce
     try:
-        res = requests.post(abaco_url, json=message_data, headers=headers, verify=False)
+        res, debug_msg = t.actors.sendMessage(actor_id=actor_id, request_body= json.dumps(message_data), headers={'X-Tapis-Tenant': g.tenant_id, "Content-Type":"application/json"},_tapis_debug=True)
     except Exception as e:
+        er = e
+        logger.debug(er.request.url)
+        logger.debug(er.request.headers)
+        logger.debug(er.response.json())
         msg = f"Got exception trying to post message to Abaco actor: {actor_id}; exception: {e}"
         raise errors.BaseTapyException(msg=msg, request=res.request)
-
-    logger.debug('abaco response:'+ res.text)
-    logger.debug('abaco response status code:' + str(res.status_code))
-
-    if res.status_code == 200:
+    logger.debug('abaco response status code:' + str(debug_msg.response.status_code))
+    logger.debug(debug_msg.request.body)
+    logger.debug(debug_msg.request.headers)
+    if str(debug_msg.response.status_code) == '200':
         # create alert response data
-        abaco_res = json.loads(res.text)
-        execution_id = abaco_res['result']['executionId']
+        logger.debug("saving executionId from Abaco and generating alert...")
+        execution_id =  res.executionId
         alert = {}
         alert['alert_id'] = str(uuid.uuid4())
         alert['channel_name'] = channel['channel_name']
