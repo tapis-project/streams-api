@@ -108,16 +108,18 @@ def create_channel(req_body):
     logger.debug("IN CREATE CHANNEL")
 
     # validating actor_id
-    actor_id = req_body['triggers_with_actions'][0]['action']["actor_id"]
+    actor_id = req_body['triggers_with_actions'][0]['action']['actor_id']
     if actor_id == '':
         logger.debug(f'actor_id cannot be blank')
         raise errors.ResourceError(msg=f'actor_id cannot be blank : {body}.')
     try:
-        res, debug_msg = t.actors.getActor(actor_id = actor_id)
+        res, debug_msg = t.actors.getActor(actor_id = actor_id,headers={'X-Tapis-Tenant': g.tenant_id},_tapis_debug=True)
     except Exception as e:
         er = e
-        logger.debug(er.response.json())
-        raise errors.ResourceError(msg=f'Invalid actor_id : {er.response.json()}.')
+        msg = er.response.json()
+        err_msg = msg['message']
+        logger.debug(msg['message'])
+        raise errors.ResourceError(msg=f'INVALID actor_id : {err_msg}.')
 
     logger.debug("actor_id " + actor_id + " is valid. Status is " + res.status)
     channel_id = req_body['channel_id']
