@@ -9,17 +9,18 @@ from common import utils, errors
 # get the logger instance -
 from common.logs import get_logger
 logger = get_logger(__name__)
-import auth
+from service import auth
 from requests.auth import HTTPBasicAuth
 import subprocess
-import meta
-import parse_condition_expr
-#access the dynatpy instance
+from service import meta
+from service import parse_condition_expr
+
+# access the tapipy instance
 t = auth.t
 
 ########################### Kapacitor Task ##########################################
-#create a Kapacitor task and return the result content and status code
-#Example body
+# create a Kapacitor task and return the result content and status code
+# Example body
 #  body = {
 #   "id" : "display",
 #   "type" : "stream",
@@ -28,7 +29,7 @@ t = auth.t
 #   "status": "enabled"
 #   }
 def create_task(body):
-    #TODO - need to confirm task_id is unqiue probably
+    #task_id is unqiue always
     logger.debug("IN CREATE TASK")
     headers = {
         'content-type': "application/json"
@@ -38,7 +39,7 @@ def create_task(body):
     logger.debug('status_code'+ str(res.status_code))
     return json.loads(res.content),res.status_code
 
-#list kapacitor tasks - probably will won't use much without adding query params
+# list kapacitor tasks - probably will won't use much without adding query params
 def list_tasks():
     headers = {
         'content-type': "application/json"
@@ -63,7 +64,7 @@ def ping():
 
 
 # enable/disable a task
-def change_task_status(task_id,body):
+def change_task_status(task_id, body):
     logger.debug("CHANGING TASK STATUS")
     logger.debug(conf.kapacitor_url + '/kapacitor/v1/tasks/' + task_id)
     logger.debug(body)
@@ -101,8 +102,8 @@ def update_kapacitor_task(task_id,body):
     return json.loads(res.content), res.status_code
 
 ####################### CHANNEL ########################################
-#Expected values for req_body:
-#  channel_id, channel_name, triggers_with_actions, status, template_id
+# Expected values for req_body:
+#  channel_id, channel_name, triggers_with_actions, template_id
 def create_channel(req_body):
     logger.debug("IN CREATE CHANNEL")
 
@@ -117,14 +118,13 @@ def create_channel(req_body):
 
     task_body['template-id'] = template_id
 
-    # parse condition and convert it to vars for kapacitor task creation
+    # parse condition and convert it to vars for kapacitor template used in task creation
     # vars is of the form :
     vars = {}
     if(isinstance(req_body['triggers_with_actions'][0]['condition'],dict)):
         vars = convert_conditions_to_vars(req_body)
     else:
         condn_list = json.loads(json.dumps(req_body['triggers_with_actions'][0]['condition']))
-        #lambda_expr, lambda_expr_list = parse_condition_expr.get_all_crit_vars(condn_list, '', [], '', 1, [])
         lambda_expr, lambda_expr_list, count, expr_list_keys = parse_condition_expr.parse_expr_list(condn_list,'',1,[], [])
         logger.debug(lambda_expr_list)
         logger.debug(lambda_expr)
@@ -136,8 +136,7 @@ def create_channel(req_body):
     ktask_result, ktask_status = create_task(task_body)
     logger.debug('Kapacitor task status: ' + str(ktask_status))
     if ktask_status == 200:
-        # if Kapacitor task is sucessfully created, sends a request to meta service to store the channel information
-
+        # if the Kapacitor task is successfully created, sends a request to meta service to store the channel information
         # create request body for meta service
         # it is same as the request received from the user with four added fields: permissions, status, create_time, last_updated
         req_body['permissions'] = {'users': [g.username]}
@@ -151,23 +150,21 @@ def create_channel(req_body):
         logger.debug(mchannel_result)
         if str(mchannel_bug.response.status_code) == '201':
             message = "Channel Created"
-            #get the newly created channel object to return
+            # get the newly created channel object to return
             result, bug = get_channel(req_body['channel_id'])
             logger.debug('Channel Returned From Meta: ' + str(result))
         else:
             #TODO need to remove task from kapacitor if this failed
             raise errors.ResourceError(msg=f'Meta Channel Creation Failed')
-            #result = mchannel_bug.response
-            #message = "Channel Creation Failed"
+
     else:
         msg = str(ktask_result) + 'Channel Creation Failed'
         raise errors.ResourceError(msg=msg)
-        #result=ktask_result
-        #message = "Channel Creation Failed"
+
     return result, message
 
 # Converts a condition provided by the user to vars for Kapacitor tasks creation API request
-# TODO multiple conditions
+# multiple conditions
 def convert_conditions_to_vars(req_body):
     logger.debug("CONVERTING condition to vars ...")
     triggers_with_actions = {}
@@ -183,11 +180,12 @@ def convert_conditions_to_vars(req_body):
     result = meta.fetch_instrument_index(cond_key[0])
     logger.debug(result)
     if len(result) > 0:
-        logger.debug(" chords instrument_ id: " + str(result[0]['chords_inst_id']))
-        inst_chords_id[cond_key[0]] = result[0]['chords_inst_id']
+        logger.debug("inside if")
+        logger.debug( str(result['chords_inst_id']))
+        inst_chords_id[cond_key[0]] = result['chords_inst_id']
 
         # fetch chords id for the variable
-        result_var, message = meta.get_variable(result[0]['project_id'], result[0]['site_id'], result[0]['instrument_id'], cond_key[1])
+        result_var, message = meta.get_variable(result['project_id'], result['site_id'], result['instrument_id'], cond_key[1])
         logger.debug("variable chords id : " + str(result_var['chords_id']))
         inst_var_chords_ids[triggers_with_actions['condition']['key']] = result_var['chords_id']
     # create vars dictionary
@@ -218,9 +216,9 @@ def get_channel(channel_id):
     logger.debug('In GET Channel' + channel_id)
     logger.debug(g.tenant_id)
     logger.debug(conf.tenant[g.tenant_id]['stream_db'])
-    
+
     result = t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_channel_metadata',filter='{"channel_id":"'+channel_id+'"}')
-    
+
     if len(result.decode('utf-8')) > 0:
         message = "Channel found."
         channel_result = json.loads(result.decode('utf-8'))[0]
@@ -233,7 +231,7 @@ def get_channel(channel_id):
 
 def update_channel(channel_id, req_body):
     logger.debug('Top of update_channel')
-    req_body['channel_id'] = channel_id 
+    req_body['channel_id'] = channel_id
 
     # Get channel information from Meta
     try:

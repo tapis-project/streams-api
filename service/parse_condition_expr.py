@@ -9,15 +9,15 @@ from common import utils, errors
 # get the logger instance -
 from common.logs import get_logger
 logger = get_logger(__name__)
-import auth
+from service import auth
 from requests.auth import HTTPBasicAuth
 import subprocess
-import meta
+from service import meta
 
 t = auth.t
 
 #----------- Example of condn_list expression ----------------------------------------------
-#cond_expr = ["AND",{"key":"1bclocal.templocal1", "op":">", "val":91.0},
+#  cond_expr = ["AND",{"key":"1bclocal.templocal1", "op":">", "val":91.0},
 #                       ["OR",{"key":"1bclocal.templocal2", "op":">", "val":200.0},
 #                        {"key":"1bclocal.templocal3", "op":"<", "val":100.0}
 #                        ]

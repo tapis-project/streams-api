@@ -8,19 +8,13 @@ import datetime
 app = Flask(__name__)
 
 from common import utils, errors
-import auth
+from service import auth
 # get the logger instance -
 from common.logs import get_logger
 logger = get_logger(__name__)
 
-#pull out tenant from JWT
-# t = DynaTapy(base_url=conf.tapis_base_url, username=conf.streams_user, service_password=conf.service_password, account_type=conf.streams_account_type, tenant_id='master')
-# t.get_tokens()
+
 t = auth.t
-# result=t.meta.createDocument(db='StreamsTACCDB', collection='Proj1', request_body={ "site_id" : 1234299, "lat" : 70.5, "lon" : 90, "instruments" : [ { "inst_id" : 2334, "inst_name" : "myinstrument", "variables" : [ { "var_id" : 34, "var_name" : "a", "abbrev" : "whatever", "unit" : "myunit" } ] }, { "inst_id" : 2435, "inst_name" : "myinstrument2","variables" : [ { "var_id" : 33, "var_name" : "a", "abbrev" : "whatever", "unit" : "myunit" }, { "var_id" : 32, "var_name" : "b", "abbrev" : "whatever2", "unit" : "myunit3" } ] } ] })
-# result=t.meta.listCollectionNames(db='StreamsTACCDB')
-# t.meta.listDocuments(db='StreamsTACCDB',collection='Proj1')
-# result, debug = t.meta.listCollectionNames(db='StreamsTACCDB', _tapis_debug=True)
 
 #strip off the _id and _etag from metadata objects
 def strip_meta(meta_object):
@@ -58,8 +52,6 @@ def get_project(project_id):
         logger.debug('PROJECT FOUND')
         message = "Project found."
         proj_result = json.loads(result.decode('utf-8'))[0]
-        #proj_result.pop('_id')
-        #proj_result.pop('_etag')
         result = proj_result
     else:
         logger.debug("NO PROJECT FOUND")
@@ -159,17 +151,14 @@ def get_site(project_id, site_id):
     if len(json.loads(result)) > 0:
         message = "Site found."
         #result should be an object not an array
-        #TODO strip out _id and _etag
         logger.debug(result)
         site_result = json.loads(result.decode('utf-8'))[0]
-        #site_result.pop('_id')
-        #site_result.pop('_etag')
         result = site_result
         logger.debug("SITE FOUND")
     else:
         logger.debug("NO SITE FOUND")
         raise errors.ResourceError(msg='No Site Found Matching Site ID: '+site_id+' In Project: '+project_id)
-        result = ''
+        #result = ''
     return result, message
 
 #TODO need to validate required fields and GEOJSON field
@@ -188,7 +177,6 @@ def create_site(project_id, chords_site_id, body):
     if bug.response.status_code == 201:
         message = "Site Created."
         #fetch site document to serve back
-        #TODO strip out _id and _etag
         result, site_bug = get_site(project_id, str(req_body['site_id']))
     else:
         #remove site from Chords
@@ -244,6 +232,15 @@ def get_instrument(project_id, site_id, instrument_id):
                         #check id for match
                     if str(inst['inst_id']) == str(instrument_id):
                         logger.debug("INSTRUMENT FOUND")
+                        if 'variables' in inst :
+                            if len(inst['variables']) > 0:
+                                logger.debug('In Variables')
+                                cur_variables = []
+                                for variable in inst['variables']:
+                                    logger.debug(variable)
+                                    if 'tapis_deleted' not in variable:
+                                        cur_variables.append(variable)
+                                inst['variables'] = cur_variables
                         result = inst
                         message = "Instrument Found"
         if len(result) == 0:
@@ -278,42 +275,50 @@ def list_instruments(project_id, site_id):
             else:
                 result = {}
                 message = "No Instruments Found"
-                raise errors.ResourceError(msg=f'"No Instruments Found for Site ID:' + str(site_id))
+                raise errors.ResourceError(msg=f'No Instruments Found for Site ID:' + str(site_id))
         else:
             result = {}
             message = "No Instruments Found"
-            raise errors.ResourceError(msg=f'"No Instruments Found for Site ID:'+str(site_id))
+            raise errors.ResourceError(msg=f'No Instruments Found for Site ID:'+str(site_id))
     else:
         result = {}
         message ="Site Not Found - No Instruments Exist"
-        raise errors.ResourceError(msg=f'"Site Not Found With Site ID:'+str(site_id))
+        raise errors.ResourceError(msg=f'Site Not Found With Site ID:'+str(site_id))
     return result, message
 
 def create_instrument(project_id, site_id, post_body):
-    site_result, site_bug = get_site(project_id,site_id)
-    result ={}
-    logger.debug(site_result)
-    logger.debug(len(site_result))
-    if len(site_result) > 0:
-        inst_body = post_body
-        inst_body['created_at'] = str(datetime.datetime.now())
-        if 'instruments' in site_result:
-            site_result['instruments'].append(inst_body)
-        else:
-            site_result['instruments'] = [inst_body]
-        logger.debug("ADD INSTRUMENT")
+    #check for existing instrument id
+    logger.debug("In Create Instrument")
+    inst_index_result = fetch_instrument_index(post_body['inst_id'])
+    logger.debug(inst_index_result)
+    logger.debug("AFTER FETCH INST")
+    if len(inst_index_result) == 0 and 'instrument_id' not in inst_index_result:
+        site_result, site_bug = get_site(project_id,site_id)
+        result ={}
         logger.debug(site_result)
-        result, post_bug =t.meta.replaceDocument(db=conf.tenant[g.tenant_id]['stream_db'], collection=project_id, docId=site_result['_id']['$oid'], request_body=site_result, _tapis_debug=True)
-        logger.debug(post_bug.response.status_code)
-        if post_bug.response.status_code == 200:
-            result = inst_body
-            message = "Instrument Created"
-            index_result = create_instrument_index(project_id, site_id, inst_body['inst_id'], inst_body['chords_id'])
-            logger.debug(index_result)
+        logger.debug(len(site_result))
+        if len(site_result) > 0:
+            inst_body = post_body
+            inst_body['created_at'] = str(datetime.datetime.now())
+            if 'instruments' in site_result:
+                site_result['instruments'].append(inst_body)
+            else:
+                site_result['instruments'] = [inst_body]
+            logger.debug("ADD INSTRUMENT")
+            logger.debug(site_result)
+            result, post_bug =t.meta.replaceDocument(db=conf.tenant[g.tenant_id]['stream_db'], collection=project_id, docId=site_result['_id']['$oid'], request_body=site_result, _tapis_debug=True)
+            logger.debug(post_bug.response.status_code)
+            if post_bug.response.status_code == 200:
+                result = inst_body
+                message = "Instrument Created"
+                index_result = create_instrument_index(project_id, site_id, inst_body['inst_id'], inst_body['chords_id'])
+                logger.debug(index_result)
+            else:
+                message = "Instrument Failed to Create"
         else:
-            message = "Instrument Failed to Create"
+            message ="Site Not Found - Cannote Create Instrument"
     else:
-        message ="Site Not Found - Cannote Create Instrument"
+        raise errors.ResourceError(msg=f'"Instrument ID already exists! A unique instrument ID across the Streams API must be used. Could not create Instrument"')
     return result, message
 
 #This can update an instrument or remove it
@@ -567,7 +572,11 @@ def create_instrument_index(project_id, site_id, instrument_id, chords_inst_id):
 
 def fetch_instrument_index(instrument_id):
     result= t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_instrument_index',filter='{"instrument_id":"'+instrument_id+'"}')
-    return json.loads(result.decode('utf-8'))
+    json_res = json.loads(result.decode('utf-8'))
+    if len(json_res) > 0:
+        return json.loads(result.decode('utf-8'))[0]
+    else:
+        return json.loads(result.decode('utf-8'))
 
 # create alert metadata
 def create_alert(alert):
@@ -588,13 +597,9 @@ def create_alert(alert):
 def get_alert(channel_id,alert_id):
     logger.debug('In GET alert')
     result = t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_alerts_metadata',filter='{"alert_id":"'+ alert_id +'"}')
-    #logger.debug("meta_alert_bug" + str(alert_bug.response))
-    #if str(alert_bug.response.status_code) == '200':
-
     if len(result.decode('utf-8')) > 0:
         message = "Alert found."
         #result should be an object not an array
-        #TODO strip out _id and _etag
         alert_result = json.loads(result.decode('utf-8'))[0]
         result = alert_result
         logger.debug("ALERT FOUND")
@@ -602,15 +607,11 @@ def get_alert(channel_id,alert_id):
     else:
         logger.debug("NO ALERT FOUND")
         raise errors.ResourceError(msg=f'No Alert found: {alert_id}')
-    #else:
-    #    raise errors.ResourceError(msg=f'Unable to connect to Tapis Meta Server while requesting alert: {alert_id}')
 
 
-#strip out id and _etag fields
 def list_alerts(channel_id):
     logger.debug("Before")
     result = t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_alerts_metadata',filter='{"channel_id":"'+ channel_id+'"}')
-    #if str(alerts_bug.response.status_code) == '200':
     logger.debug("After")
     if len(result) > 0 :
         message = "Alerts found"
@@ -618,14 +619,10 @@ def list_alerts(channel_id):
         return json.loads(result.decode('utf-8')), message
     else:
         raise errors.ResourceError(msg=f'No Alert found')
-    #else:
-    #    logger.debug("NO ALERTS FOUND for Channel: " + channel_id)
-    #    raise errors.ResourceError(msg=f'No Alerts found for Channel: {channel_id}')
 
 def list_templates():
     logger.debug("Before")
     result = t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_templates_metadata',filter='{"permissions.users":"'+ g.username+'"}')
-    #if str(alerts_bug.response.status_code) == '200':
     logger.debug("After")
     if len(result) > 0 :
         message = "Templates found"
