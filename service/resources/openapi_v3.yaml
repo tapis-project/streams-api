@@ -964,7 +964,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-                
+
   /creeks:
     get:
       tags:
@@ -1386,7 +1386,7 @@ components:
           type: string
           description: Whether the request was a success or failure.
           enum: [success]
-          
+
     ErrorResponse:
       type: object
       properties:
@@ -1581,8 +1581,7 @@ components:
         elevation:
           type: number
           description: Elevation of site.
-      required: [resource_type, site_
-      name, lat, lon, elevation]
+      required: [resource_type, site_name, lat, lon, elevation]
 
     UpdateSite:
       type: object
@@ -1750,15 +1749,16 @@ components:
     NewMeasurement:
       type: object
       properties:
-        instrument_id:
-          type: integer
+        inst_id:
+          type: string
           description: Associate instrument id.
         datetime:
           type: string
           description: The Datatime of the measurement
-        additionalProperties:
-          type: string
-          required: [datetime, instument_id]
+        vars:
+          type: object
+          description: The Variable IDs and measurements corresponding to the datetime {varid1:measurement_value1,varid2:measurement_value2}
+      required: [datetime, inst_id, vars]
 
     NewCreek:
       type: object
@@ -1782,7 +1782,6 @@ components:
           type: string
           description: Type of action
           enum: [actor, callback, application, notifications]
-
 
 
     Actor:
