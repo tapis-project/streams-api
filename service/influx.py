@@ -40,15 +40,17 @@ def create_measurement(site_id,inst_id,var_id,value, timestamp):
 
 def compact_write_measurements(site_id, instrument, body):
     json_body=[]
+    return_body={}
     inst_vars = {}
     logger.debug(instrument)
     for v in instrument['variables']:
         inst_vars[v['var_id']]= v['chords_id']
     logger.debug(inst_vars)
     for itm in body['vars']:
+        logger.debug(itm)
+        #make sure the user defined variable ids ex
         for k in itm:
             logger.debug(k)
-            #make sure the user defined variable ids ex
             if k in inst_vars:
                 json_body.append(
                     {
@@ -64,12 +66,14 @@ def compact_write_measurements(site_id, instrument, body):
                         }
                     }
                 )
+                return_body[k] = {body['datetime'] : float(itm[k])}
+
             else:
                 logger.debug('Variable ID: '+k+' is invalid!')
                 return {'resp':False,'msg':'Variable ID: '+k+' is invalid!'}
     logger.debug(json_body)
     result = influx_client.write_points(json_body)
-    return {'resp':result,'msg':''}
+    return {'resp':result,'msg':'','body':return_body}
 
 def write_measurements(site_id, instrument, body):
     json_body=[]

@@ -1749,7 +1749,7 @@ components:
     NewMeasurement:
       type: object
       properties:
-        instrument_id:
+        inst_id:
           type: string
           description: Associate instrument id.
         datetime:
@@ -1758,7 +1758,7 @@ components:
         vars:
           type: object
           description: The Variable IDs and measurements corresponding to the datetime {varid1:measurement_value1,varid2:measurement_value2}
-      required: [datetime, instument_id, vars]
+      required: [datetime, inst_id, vars]
 
     NewCreek:
       type: object
