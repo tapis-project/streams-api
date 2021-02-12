@@ -3162,11 +3162,6 @@ components:
                     type: string
                   message:
                     type: string
-                  abaco_base_url:
-                    type: string
-                  nonces:
-                    type: string
-
     Unit:
       type: object
       properties:
