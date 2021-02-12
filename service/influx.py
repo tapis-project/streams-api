@@ -35,7 +35,45 @@ def create_measurement(site_id,inst_id,var_id,value, timestamp):
         }
     ]
     result = influx_client.write_points(json_body)
+    logger.debug(result)
     return result
+
+def compact_write_measurements(site_id, instrument, body):
+    json_body=[]
+    return_body={}
+    inst_vars = {}
+    logger.debug(instrument)
+    for v in instrument['variables']:
+        inst_vars[v['var_id']]= v['chords_id']
+    logger.debug(inst_vars)
+    for itm in body['vars']:
+        logger.debug(itm)
+        #make sure the user defined variable ids ex
+        for k in itm:
+            logger.debug(k)
+            if k in inst_vars:
+                json_body.append(
+                    {
+                        "measurement": "tsdata",
+                        "tags": {
+                            "site": site_id,
+                            "inst": instrument['chords_id'],
+                            "var": inst_vars[k]
+                        },
+                        "time": body['datetime'],
+                        "fields": {
+                            "value": float(itm[k])
+                        }
+                    }
+                )
+                return_body[k] = {body['datetime'] : float(itm[k])}
+
+            else:
+                logger.debug('Variable ID: '+k+' is invalid!')
+                return {'resp':False,'msg':'Variable ID: '+k+' is invalid!'}
+    logger.debug(json_body)
+    result = influx_client.write_points(json_body)
+    return {'resp':result,'msg':'','body':return_body}
 
 def write_measurements(site_id, instrument, body):
     json_body=[]
@@ -45,23 +83,27 @@ def write_measurements(site_id, instrument, body):
         inst_vars[v['var_id']]= v['chords_id']
     logger.debug(inst_vars)
     for itm in body['vars']:
-        json_body.append(
-            {
-                "measurement": "tsdata",
-                "tags": {
-                    "site": site_id,
-                    "inst": instrument['chords_id'],
-                    "var": inst_vars[itm['var_id']]
-                },
-                "time": body['datetime'],
-                "fields": {
-                    "value": float(itm['value'])
+        #make sure the user defined variable ids ex
+        if itm['var_id'] in inst_vars:
+            json_body.append(
+                {
+                    "measurement": "tsdata",
+                    "tags": {
+                        "site": site_id,
+                        "inst": instrument['chords_id'],
+                        "var": inst_vars[itm['var_id']]
+                    },
+                    "time": body['datetime'],
+                    "fields": {
+                        "value": float(itm['value'])
+                    }
                 }
-            }
-        )
+            )
+        else:
+            return {'resp':False,'msg':'Variable ID: '+itm['var_id']+' is invalid!'}
     logger.debug(json_body)
     result = influx_client.write_points(json_body)
-    return result
+    return {'resp':result,'msg':''}
 
 #expects a list of fields {key:value} to build and AND query to influxdb to fetch CHORDS measurments
 def query_measurments(query_field_list):
