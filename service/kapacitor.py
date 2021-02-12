@@ -107,8 +107,22 @@ def update_kapacitor_task(task_id,body):
 def create_channel(req_body):
     logger.debug("IN CREATE CHANNEL")
 
+    # validating actor_id
+    actor_id = req_body['triggers_with_actions'][0]['action']["actor_id"]
+    if actor_id == '':
+        logger.debug(f'actor_id cannot be blank')
+        raise errors.ResourceError(msg=f'actor_id cannot be blank : {body}.')
+    try:
+        res, debug_msg = t.actors.getActor(actor_id = actor_id)
+    except Exception as e:
+        er = e
+        logger.debug(er.response.json())
+        raise errors.ResourceError(msg=f'Invalid actor_id : {er.response.json()}.')
+
+    logger.debug("actor_id " + actor_id + " is valid. Status is " + res.status)
     channel_id = req_body['channel_id']
     template_id = req_body['template_id']
+
     # create a kapacitor task
     # channel_id is same as task_id
     # if task_id already exists in kapacitor, task creation will fail. This will in turn lead to channel creation failure
