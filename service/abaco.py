@@ -33,7 +33,8 @@ def create_alert(channel, req_data):
     actor_id = channel['triggers_with_actions'][0]['action']['actor_id']
     logger.debug('actor_id:' + actor_id)
 
-     # prepare request for abaco
+
+    # prepare request for abaco
     message_data = {}
     message_data['message'] = req_data
     message_data['message']['channel_id'] = channel['channel_id']
@@ -78,6 +79,7 @@ def create_alert(channel, req_data):
         logger.debug(er.response.json())
         msg = f"Got exception trying to post message to Abaco actor: {actor_id}; exception: {e}"
         raise errors.BaseTapyException(msg=msg, request=res.request)
+
     logger.debug('abaco response status code:' + str(debug_msg.response.status_code))
     logger.debug(debug_msg.request.body)
     logger.debug(debug_msg.request.headers)
