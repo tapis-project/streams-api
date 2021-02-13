@@ -630,10 +630,10 @@ class MeasurementsWriteResource(Resource):
                         resp = influx.compact_write_measurements(site_result['chords_id'],instrument,body)
                         logger.debug(resp)
                         if resp['resp']:
-                            return utils.ok(result=resp['body'], msg="Measurements Saved")
                             metric = {'created_at':datetime.now().isoformat(),'type':'upload','project_id':result['project_id'],'username':g.username,'size':request.headers['content_length'],'var_count':len(body['vars'])}
                             metric_result, metric_bug =auth.t.meta.createDocument(db=conf.tenant[g.tenant_id]['stream_db'], collection='streams_metrics', request_body=metric, _tapis_debug=True)
                             logger.debug(metric_result)
+                            return utils.ok(result=resp['body'], msg="Measurements Saved")
                         else:
                             raise common_errors.PermissionsError(msg=resp['msg']+ ' Measurement Failed to Save!')
                     else:
@@ -833,7 +833,7 @@ class ChannelsResource(Resource):
                 msg = f"Could not create channel"
                 return utils.error(result='null', msg=msg)
         except Exception as e:
-            msg = f"Could not create channel"
+            msg = f"Could not create channel: " + e.msg
             return utils.error(result='null', msg=msg)
         return utils.error(result='null', msg=msg)
 
