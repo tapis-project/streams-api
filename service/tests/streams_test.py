@@ -29,6 +29,8 @@ from service import errors
 from service import models
 from service.api import app
 from common.config import conf
+import json
+from datetime import datetime
 
 @pytest.fixture
 def client():
@@ -45,6 +47,59 @@ def get_token_header():
                              tenant_id= conf.test_tenant_id)
     test_tapis_client.get_tokens()
     return {'X-Tapis-Token': test_tapis_client.access_token.access_token}
+
+def test_listing_projects(client):
+        with client:
+            response = client.get(
+                "http://localhost:5000/v3/streams/projects",
+                content_type='application/json',
+                headers=get_token_header()
+            )
+            print(f"response.data: {response.data}")
+            assert response.status_code == 200
+
+
+def test_create_projects(client):
+    with client:
+        payload = {
+            "project_name": "test_project" + str(datetime.now()),
+            "project_id":"tapis_demo_project_testuser2",
+            "owner": "testuser2",
+            "pi": "testuser2",
+            "description": "test project",
+            "funding_resource": "tapis",
+            "project_url": "test.tacc.utexas.edu",
+            "active": True
+        }
+        response = client.post(
+            "http://localhost:5000/v3/streams/projects",
+            data=json.dumps(payload),
+            content_type='application/json',
+            headers=get_token_header()
+        )
+        print(f"response.data: {response.data}")
+        assert response.status_code == 200
+
+def test_create_site(client):
+    with client:
+        payload = {
+            "project_name": "test_project" + str(datetime.now()),
+            "project_id":"tapis_demo_project_testuser2",
+            "owner": "testuser2",
+            "pi": "testuser2",
+            "description": "test project",
+            "funding_resource": "tapis",
+            "project_url": "test.tacc.utexas.edu",
+            "active": True
+        }
+        response = client.post(
+            "http://localhost:5000/v3/streams/projects",
+            data=json.dumps(payload),
+            content_type='application/json',
+            headers=get_token_header()
+        )
+        print(f"response.data: {response.data}")
+        assert response.status_code == 200
 
 def test_listing_projects(client):
         with client:
