@@ -30,7 +30,23 @@ from service import models
 from service.api import app
 from common.config import conf
 import json
-from datetime import datetime
+import datetime
+
+time_now= datetime.datetime.today().isoformat()
+project_name = 'test_project'+''.join(time_now)
+base_url = 'http://localhost:5000/v3/streams/'
+projects_url=base_url+'projects/'+project_name
+site_name='tapis_demo_site'
+site_url = projects_url + '/' + 'sites'
+site_details_url= site_url + '/'+ site_name
+inst_name='test_instrument'+''.join(time_now)
+inst_url = site_url + '/' + site_name+ '/instruments'
+inst_details_url = inst_url + '/'+  inst_name
+var_name='battery'
+var_url = inst_url +'/' + inst_name + '/variables'
+var_details_url = var_url +'/'+ var_name
+measurements_url = base_url + 'measurements'
+measurements_url_list = measurements_url+ '/' + inst_name
 
 @pytest.fixture
 def client():
@@ -62,8 +78,8 @@ def test_listing_projects(client):
 def test_create_projects(client):
     with client:
         payload = {
-            "project_name": "test_project" + str(datetime.now()),
-            "project_id":"tapis_demo_project_testuser2",
+            "project_name": project_name,
+            "project_id":project_name,
             "owner": "testuser2",
             "pi": "testuser2",
             "description": "test project",
@@ -80,20 +96,20 @@ def test_create_projects(client):
         print(f"response.data: {response.data}")
         assert response.status_code == 200
 
-def test_create_site(client):
+def test_update_projects(client):
     with client:
         payload = {
-            "project_name": "test_project" + str(datetime.now()),
-            "project_id":"tapis_demo_project_testuser2",
+            "project_name": project_name,
+            "project_id":project_name,
             "owner": "testuser2",
             "pi": "testuser2",
-            "description": "test project",
+            "description": "changed description",
             "funding_resource": "tapis",
             "project_url": "test.tacc.utexas.edu",
             "active": True
         }
-        response = client.post(
-            "http://localhost:5000/v3/streams/projects",
+        response = client.put(
+            projects_url,
             data=json.dumps(payload),
             content_type='application/json',
             headers=get_token_header()
@@ -101,12 +117,191 @@ def test_create_site(client):
         print(f"response.data: {response.data}")
         assert response.status_code == 200
 
-def test_listing_projects(client):
+def test_listing_get_project_details(client):
         with client:
             response = client.get(
-                "http://localhost:5000/v3/streams/projects",
+                projects_url,
                 content_type='application/json',
                 headers=get_token_header()
             )
             print(f"response.data: {response.data}")
             assert response.status_code == 200
+
+
+def test_create_site(client):
+    with client:
+        payload = {
+            "project_uuid": project_name,
+            "site_name":site_name,
+            "latitude":50,
+            "longitude":10,
+            "elevation":2,
+            "site_id":"tapis_demo_site",
+            "description":"test_site"
+        }
+        response = client.post(
+            site_url,
+            data=json.dumps(payload),
+            content_type='application/json',
+            headers=get_token_header()
+        )
+        print(f"response.data: {response.data}")
+        assert response.status_code == 200
+
+def test_update_site(client):
+    with client:
+        payload = {
+            "project_uuid": project_name,
+            "site_name":site_name,
+            "latitude":50,
+            "longitude":10,
+            "elevation":2,
+            "site_id":"tapis_demo_site",
+            "description":"description changed"
+        }
+        response = client.put(
+            site_details_url,
+            data=json.dumps(payload),
+            content_type='application/json',
+            headers=get_token_header()
+        )
+        print(f"response.data: {response.data}")
+        assert response.status_code == 200
+
+
+def test_listing_site(client):
+        with client:
+            response = client.get(
+                site_url,
+                content_type='application/json',
+                headers=get_token_header()
+            )
+            print(f"response.data: {response.data}")
+            assert response.status_code == 200
+
+def test_create_instrument(client):
+    with client:
+        payload = {
+            "project_uuid": project_name,
+            "topic_category_id": "2",
+            "site_id": site_name,
+            "inst_name": inst_name,
+            "inst_description": "demo instrument",
+            "inst_id": inst_name
+        }
+        response = client.post(
+            inst_url,
+            data=json.dumps(payload),
+            content_type='application/json',
+            headers=get_token_header()
+        )
+        print(f"response.data: {response.data}")
+        assert response.status_code == 200
+
+def test_update_instrument(client):
+    with client:
+        payload = {
+            "project_uuid": project_name,
+            "topic_category_id": "2",
+            "site_id": site_name,
+            "inst_name": inst_name,
+            "inst_description": "description changed",
+            "inst_id": inst_name
+        }
+        response = client.put(
+            inst_details_url,
+            data=json.dumps(payload),
+            content_type='application/json',
+            headers=get_token_header()
+        )
+        print(f"response.data: {response.data}")
+        assert response.status_code == 200
+
+def test_listing_instrument(client):
+    with client:
+        response = client.get(
+            inst_url,
+            content_type='application/json',
+            headers=get_token_header()
+        )
+        print(f"response.data: {response.data}")
+        assert response.status_code == 200
+
+
+def test_create_variable(client):
+    with client:
+        payload = {
+            "project_uuid":project_name,
+            "topic_category_id":"2",
+            "site_id":site_name,
+            "inst_id":inst_name,
+            "var_name":var_name,
+            "shortname":var_name,
+            "var_id":var_name
+        }
+        response = client.post(
+            var_url,
+            data=json.dumps(payload),
+            content_type='application/json',
+            headers=get_token_header()
+        )
+        print(f"response.data: {response.data}")
+        assert response.status_code == 200
+
+def test_list_variables(client):
+    with client:
+        response = client.get(
+            var_url,
+            content_type='application/json',
+            headers=get_token_header()
+        )
+        print(f"response.data: {response.data}")
+        assert response.status_code == 200
+
+
+def test_update_variable(client):
+    with client:
+        payload = {
+            "project_uuid":project_name,
+            "topic_category_id":"2",
+            "site_id":site_name,
+            "inst_id":inst_name,
+            "var_name":var_name,
+            "shortname":var_name,
+            "var_id":var_name
+        }
+        response = client.put(
+            var_details_url,
+            data=json.dumps(payload),
+            content_type='application/json',
+            headers=get_token_header()
+        )
+        print(f"response.data: {response.data}")
+        assert response.status_code == 200
+
+
+def test_create_measurements(client):
+    with client:
+        payload = {
+            "inst_id":inst_name,
+            "vars":[{var_name: 10}],
+            "datetime":time_now
+        }
+        response = client.post(
+            measurements_url,
+            data=json.dumps(payload),
+            content_type='application/json',
+            headers=get_token_header()
+        )
+        print(f"response.data: {response.data}")
+        assert response.status_code == 200
+
+def test_list_measurements(client):
+    with client:
+        response = client.get(
+            measurements_url_list,
+            content_type='application/json',
+            headers=get_token_header()
+        )
+        print(f"response.data: {response.data}")
+        assert response.status_code == 200
