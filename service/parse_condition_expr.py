@@ -37,13 +37,13 @@ def get_chords_id_for_variable(key):
     result = meta.fetch_instrument_index(cond_key[0])
     logger.debug(result)
     if len(result) > 0:
-        logger.debug(" chords instrument_ id: " + str(result[0]['chords_inst_id']))
+        logger.debug(" chords instrument_ id: " + str(['chords_inst_id']))
         # fetch chords id for the variable
-        result_var, message = meta.get_variable(result[0]['project_id'], result[0]['site_id'],
-                                                result[0]['instrument_id'], cond_key[1])
+        result_var, message = meta.get_variable(result['project_id'], result['site_id'],
+                                                result['instrument_id'], cond_key[1])
         logger.debug("variable chords id : " + str(result_var['chords_id']))
         inst_var_chords_ids[key] = result_var['chords_id']
-        return result[0]['chords_inst_id'], result_var['chords_id']
+        return result['chords_inst_id'], result_var['chords_id']
 
 #Convert condition list template variable list
 def convert_condition_list_to_vars( lambda_expr, lambda_expr_list, channel_id):
