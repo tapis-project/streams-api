@@ -66,12 +66,14 @@ def create_alert(channel, req_data):
         cond_expr_key = expr_list_keys[0][1].split(".")
 
         message_data['message']['var_id'] = cond_expr_key[1]
-
+    ### Testing abaco
+    logger.debug('####Testing Abaco ---')
+    #message_data = {'message': {'id': 'demo_wq_channel2021-02-12T22_34_31.780856 tsdata/var=113/demo_wq_channel2021-02-12T22_34_31.780856/113', 'message': 'demo_wq_channel2021-02-12T22_34_31.780856 tsdata/var=113/demo_wq_channel2021-02-12T22_34_31.780856/113 is CRITICAL at time: 2021-02-25 22:18:39.362644 +0000 UTC as value: 168 exceeded the threshold', 'details': '', 'time': '2021-02-25T22:18:39.362644Z', 'duration': 1120793048278000, 'level': 'CRITICAL', 'data': {'series': [{'name': 'tsdata', 'tags': {'inst': '85', 'site': '82', 'var': '113'}, 'columns': ['time', 'value'], 'values': [['2021-02-25T22:18:39.362644Z', 168]]}]}, 'previousLevel': 'CRITICAL', 'recoverable': False, 'channel_id': 'demo_wq_channel2021-02-12T22_34_31.780856', 'project_id': 'wq_demo_tapis_proj12021-02-12T22:34:31.780702', 'site_id': 'wq_demo_site', 'inst_id': 'Ohio_River_Robert_C_Byrd_Locks_11', 'var_id': 'temp'}}
     logger.debug('message_data: '+ str(message_data))
 
     # send request to Abaco with the nonce
     try:
-        res, debug_msg = t.actors.sendMessage(actor_id=actor_id, request_body= json.dumps(message_data), headers={'X-Tapis-Tenant': g.tenant_id, "Content-Type":"application/json"},_tapis_debug=True)
+        res, debug_msg = t.actors.sendMessage(actor_id=actor_id, message= json.dumps(message_data), headers={'X-Tapis-Tenant': g.tenant_id, "Content-Type":"application/json"},_tapis_debug=True)
     except Exception as e:
         er = e
         logger.debug(er.request.url)
