@@ -37,7 +37,7 @@ def get_chords_id_for_variable(key):
     result = meta.fetch_instrument_index(cond_key[0])
     logger.debug(result)
     if len(result) > 0:
-        logger.debug(" chords instrument_ id: " + str(['chords_inst_id']))
+        logger.debug(" chords instrument_ id: " + str(result['chords_inst_id']))
         # fetch chords id for the variable
         result_var, message = meta.get_variable(result['project_id'], result['site_id'],
                                                 result['instrument_id'], cond_key[1])
