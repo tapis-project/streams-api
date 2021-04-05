@@ -158,3 +158,50 @@ def check_if_authorized_delete_channel(channel_id):
     logger.debug(authorized)
     return authorized.isAuthorized
 
+def check_user_has_role(username, resource_type, resource_id):
+    # Before the jwt user can check anyone's role on the project it is necessary that the user has some role on the project
+    logger.debug(f'Checking if the jwt user has any role on the project')
+    roles = []
+    if (resource_type == 'project'):
+        project_result, msg = meta.get_project(resource_id)
+        project_oid = project_result['_id']['$oid']
+        logger.debug(project_oid)
+        admin = 'streams_' + project_oid + "_admin"
+        manager = 'streams_' + project_oid + "_manager"
+        user = 'streams_' + project_oid + "_user"
+
+    elif (resource_type == 'channel'):
+        channel_result, msg = kapacitor.get_channel(resource_id)
+        channel_oid = channel_result['_id']['$oid']
+        logger.debug(channel_oid)
+        admin = 'channel_' + channel_oid + "_admin"
+        manager = 'channel_' + channel_oid + "_manager"
+        user = 'channel_' + channel_oid + "_user"
+
+    # Check if the jwt user has any role on the project
+    # if true, check for the user in the request args for roles
+    jwt_user_role = t.sk.hasRoleAny(tenant=g.tenant_id, user=g.username, roleNames=[admin, manager, user],
+                                 orAdmin=False)
+
+    
+    logger.debug(jwt_user_role.isAuthorized)
+    if(jwt_user_role.isAuthorized):
+        #req_user_role = t.sk.hasRole(tenant=g.tenant_id, user=username, roleNames=[admin],
+                              #    orAdmin=False)
+        #return req_user_role.isAuthorized
+        req_user_role = t.sk.getUserRoles(tenant=g.tenant_id, user=username)
+       # roles = req_user_role.names[]
+        if admin in req_user_role.names:
+            roles.append(admin)
+        if manager in req_user_role.names:
+            roles.append(manager)
+        if user in req_user_role.names:
+            roles.append(user)
+        logger.debug(roles)
+        if roles:
+            msg = f'Roles found'
+        else:
+            msg = f'No roles found'
+    else:
+        msg = f'User not authorized to access roles'
+    return roles, msg

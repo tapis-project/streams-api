@@ -1039,3 +1039,20 @@ class MetricsResource(Resource):
       result = auth.t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_metrics')
       logger.debug(json.loads(result.decode('utf-8')))
       return json.loads(result.decode('utf-8'))
+
+# Role management for different resource
+class PemsResource(Resource):
+    def get(self):
+        # Expect user=testuser&resource_type={project/channels}&resource_id={project_id/channel_id}
+        logger.debug(f'Inside GET /roles')
+        logger.debug(request.args)
+        user = request.args.get('user')
+        resource_type = request.args.get('resource_type')
+        resource_id = request.args.get('resource_id')
+        roles,msg = sk.check_user_has_role(user, resource_type,resource_id)
+        logger.debug(roles)
+        if roles:
+            return utils.ok(result=roles, msg=msg)
+        else:
+            return utils.error(result='', msg=msg)
+
