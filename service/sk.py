@@ -39,10 +39,10 @@ def create_role(role_name, description):
         raise errors.ResourceError(msg='Role creation failed: ' + role_name +' in tenant: '+ g.tenant_id)
 
 # Grant role in SK
-def grant_role(role_name):
+def grant_role(role_name, username):
     logger.debug('granting role'+role_name+ 'in tenant'+g.tenant_id )
     try:
-        grant_role_result = t.sk.grantRole(roleName= role_name, tenant= g.tenant_id, user = g.username)
+        grant_role_result = t.sk.grantRole(roleName= role_name, tenant= g.tenant_id, user = username)
         # If the result has changes in the result grant role is successful
         # we can even call the sk.hasRole method to check this
         if ("changes" in str(grant_role_result)):
@@ -158,11 +158,16 @@ def check_if_authorized_delete_channel(channel_id):
     logger.debug(authorized)
     return authorized.isAuthorized
 
-def check_user_has_role(username, resource_type, resource_id):
-    # Before the jwt user can check anyone's role on the project it is necessary that the user has some role on the project
-    logger.debug(f'Checking if the jwt user has any role on the project')
-    roles = []
+# This function is used to get the roles of users associated with the resource id
+# resource_type can only be project or channel
+# jwt_user_flag is set to True to get the jwt user roles and set to false for user specified in the request body or query paramters
+def check_user_has_role(username, resource_type, resource_id,jwt_user_flag):
+    # Before the jwt user can check anyone's role on the project it is necessary that the jwt_user has some role on the project/channel
+    logger.debug(f'Checking if the jwt user has any role on the project/channel')
+    user_roles = []
+    jwt_user_roles = []
     if (resource_type == 'project'):
+        # call the metadata method to get the project_oid which is the mongo collection id
         project_result, msg = meta.get_project(resource_id)
         project_oid = project_result['_id']['$oid']
         logger.debug(project_oid)
@@ -171,6 +176,7 @@ def check_user_has_role(username, resource_type, resource_id):
         user = 'streams_' + project_oid + "_user"
 
     elif (resource_type == 'channel'):
+        # call the metadata method to get the channel_oid which is the mongo collection id
         channel_result, msg = kapacitor.get_channel(resource_id)
         channel_oid = channel_result['_id']['$oid']
         logger.debug(channel_oid)
@@ -178,30 +184,102 @@ def check_user_has_role(username, resource_type, resource_id):
         manager = 'channel_' + channel_oid + "_manager"
         user = 'channel_' + channel_oid + "_user"
 
-    # Check if the jwt user has any role on the project
-    # if true, check for the user in the request args for roles
-    jwt_user_role = t.sk.hasRoleAny(tenant=g.tenant_id, user=g.username, roleNames=[admin, manager, user],
+    # If jwt_user_flag is false, we are getting roles for user specified in query paramters or request body
+    # Before the jwt_user can access roles, we need to check if the jwt_user has any of the three roles on the resource_id
+    if not jwt_user_flag:
+        jwt_user_role = t.sk.hasRoleAny(tenant=g.tenant_id, user=g.username, roleNames=[admin, manager, user], orAdmin=False)
+        logger.debug(jwt_user_role.isAuthorized)
+        # jwt user has role on the resource id
+        if(jwt_user_role.isAuthorized):
+            # Check if the user in request body/query parameter has either of the three roles, if so append the rolenames to a list
+            is_admin = t.sk.hasRole(tenant=g.tenant_id, user=username, roleName=admin,
                                  orAdmin=False)
+            if(is_admin.isAuthorized):
+                user_roles.append('admin')
 
-    
-    logger.debug(jwt_user_role.isAuthorized)
-    if(jwt_user_role.isAuthorized):
-        #req_user_role = t.sk.hasRole(tenant=g.tenant_id, user=username, roleNames=[admin],
-                              #    orAdmin=False)
-        #return req_user_role.isAuthorized
-        req_user_role = t.sk.getUserRoles(tenant=g.tenant_id, user=username)
-       # roles = req_user_role.names[]
-        if admin in req_user_role.names:
-            roles.append(admin)
-        if manager in req_user_role.names:
-            roles.append(manager)
-        if user in req_user_role.names:
-            roles.append(user)
-        logger.debug(roles)
-        if roles:
+            is_manager = t.sk.hasRole(tenant=g.tenant_id, user=username, roleName=manager,
+                                 orAdmin=False)
+            if(is_manager.isAuthorized):
+               user_roles.append('manager')
+
+            is_user = t.sk.hasRole(tenant=g.tenant_id, user=username, roleName=user,
+                                  orAdmin=False)
+            if (is_user.isAuthorized):
+                user_roles.append('user')
+
+            logger.debug(user_roles)
+            # if the user_roles is not empty, that means roles are found for the user
+            if user_roles:
+                msg = f'Roles found'
+            else:
+                # no roles found for the user
+                msg = f'Roles not found'
+        else:
+            # jwt user does not have any role on the resource, so they cannot access anyone's roles
+            msg = f'User not authorized to access roles'
+        return user_roles, msg
+    # get the jwt user roles
+    else:
+        is_admin = t.sk.hasRole(tenant=g.tenant_id, user=g.username, roleName=admin,
+                                orAdmin=False)
+        if (is_admin.isAuthorized):
+           jwt_user_roles.append('admin')
+
+        is_manager = t.sk.hasRole(tenant=g.tenant_id, user=g.username, roleName=manager,
+                                  orAdmin=False)
+        if (is_manager.isAuthorized):
+            jwt_user_roles.append('manager')
+
+        is_user = t.sk.hasRole(tenant=g.tenant_id, user=g.username, roleName=user,
+                               orAdmin=False)
+        if (is_user.isAuthorized):
+            jwt_user_roles.append('user')
+        if jwt_user_roles:
             msg = f'Roles found'
         else:
-            msg = f'No roles found'
+            msg = f'Roles not found'
+        return jwt_user_roles, msg
+
+
+
+# this function is used to construct the role name that will be stored in sk depending on the resource type
+def construct_role_name(resource_id,role_name, resource_type):
+    logger.debug(f'Inside construct_role_name')
+    if (resource_type == 'project'):
+        project_result, msg = meta.get_project(resource_id)
+        project_oid = project_result['_id']['$oid']
+        logger.debug(project_oid)
+        role_name = 'streams_' + project_oid + "_"+role_name
+    elif (resource_type == 'channel'):
+        channel_result, msg = kapacitor.get_channel(resource_id)
+        channel_oid = channel_result['_id']['$oid']
+        logger.debug(channel_oid)
+        role_name = 'channel_' + channel_oid + "_"+ role_name
     else:
-        msg = f'User not authorized to access roles'
-    return roles, msg
+        msg = 'Invalid resource type'
+        logger.debug(msg)
+        raise errors.ResourceError(msg=f'Invalid resource type')
+    logger.debug(role_name)
+    return role_name
+
+# This function is used to create and grant role to the user in the post request body
+def grant_role_user_asking(resource_id,role_name, resource_type, username):
+    description = f'Streams  ' + role_name + ' role'
+    rolename_with_oid = construct_role_name(resource_id, role_name, resource_type)
+    logger.debug(rolename_with_oid)
+    role_created =create_role(rolename_with_oid, description)
+    if (role_created == 'success'):
+        role_granted = grant_role(rolename_with_oid, username)
+        logger.debug(role_granted)
+        if (role_granted == 'success'):
+            msg = f'Role ' + role_name + f' successfully granted'
+            logger.debug(msg)
+            return role_name, msg
+        else:
+            msg = f'Role ' + role_name + f' not granted'
+            return utils.error(result='', msg=msg)
+
+    else:
+        msg = f'Role not created'
+        return utils.error(result='', msg=msg)
+
