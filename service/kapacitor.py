@@ -392,7 +392,8 @@ def create_template(body):
 def get_template(template_id):
     logger.debug('In get_template')
     result = {}
-    result = t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'], collection='streams_templates_metadata',filter='{"template_id":"' + template_id + '"}')
+    #Insure user permissions in the Meta records
+    result = t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'], collection='streams_templates_metadata',filter='{"template_id":"' + template_id + ', "permissions.users":"'+ g.username+'"}')
     if len(result.decode('utf-8')) > 0:
         message = "Template found."
         template_result = json.loads(result.decode('utf-8'))[0]
