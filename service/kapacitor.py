@@ -423,8 +423,10 @@ def update_template(template_id, body):
     template_body['script'] = body['script']
 
     try:
+        logger.debug('Try to update k-template')
         result,status_code = update_kapacitor_template(template_id,template_body)
     except Exception as e:
+        logger.debug('Updating k-template failed: {e}')
         msg = f" Not able to connect to Kapacitor for the template {body['template_id']} update; exception: {e}"
         raise errors.ResourceError(msg=msg)
 
