@@ -1035,7 +1035,7 @@ class TemplateResource(Resource):
                 return utils.ok(result=meta.strip_meta(result), msg=msg)
             except Exception as e:
                 msg = f"Could not update the template status: {template_id}; exception: {e}"
-                raise common_errors.ResourceError(msg=f'User not authorized to access the resource')
+                raise common_errors.ResourceError(msg=msg)
         else:
             logger.debug(f'User does not have Admin or Manager role on the template: '+ str(template_id))
             raise common_errors.PermissionsError(msg=f'User not authorized to access the resource')
