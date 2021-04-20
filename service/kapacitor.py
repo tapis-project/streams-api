@@ -382,8 +382,10 @@ def create_template(body):
             #TODO Rollback- delete template in Kapacitor
             raise errors.ResourceError(msg=message)
     else:
+        logger.debug("Template create Failed!")
         kapacitor_res_msg = res.content
-        message = kapacitor_res_msg + f'Kapacitor Template Creation Failed'
+        logger.debug(kapacitor_res_msg)
+        message = kapacitor_res_msg.decode('utf-8') + f' - Kapacitor Template Creation Failed'
         raise errors.ResourceError(msg=message)
 
     return result, message
