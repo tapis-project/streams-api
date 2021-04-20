@@ -395,15 +395,16 @@ def get_template(template_id):
     logger.debug('In get_template')
     result = {}
     #Insure user permissions in the Meta records
-    result = t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'], collection='streams_templates_metadata',filter='{"template_id":"' + template_id + ', "permissions.users":"'+ g.username+'"}')
-    if len(result.decode('utf-8')) > 0:
+    result = t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'], collection='streams_templates_metadata',filter='{"template_id":"' + template_id + '", "permissions.users":"'+ g.username+'"}')
+    logger.debug(len(result.decode('utf-8')))
+    if len(result.decode('utf-8')) > 2:
         message = "Template found."
         template_result = json.loads(result.decode('utf-8'))[0]
         result = template_result
         logger.debug("TEMPLATE FOUND")
     else:
         logger.debug("NO TEMPLATE FOUND")
-        raise errors.ResourceError(msg=f'No TEMPLATE found')
+        raise errors.ResourceError(msg=f'No TEMPLATE found matching id: '+template_id)
     return result, message
 
 def update_template(template_id, body):
