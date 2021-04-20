@@ -382,8 +382,10 @@ def create_template(body):
             #TODO Rollback- delete template in Kapacitor
             raise errors.ResourceError(msg=message)
     else:
+        logger.debug("Template create Failed!")
         kapacitor_res_msg = res.content
-        message = kapacitor_res_msg + f'Kapacitor Template Creation Failed'
+        logger.debug(kapacitor_res_msg)
+        message = kapacitor_res_msg.decode('utf-8') + f' - Kapacitor Template Creation Failed'
         raise errors.ResourceError(msg=message)
 
     return result, message
@@ -392,15 +394,17 @@ def create_template(body):
 def get_template(template_id):
     logger.debug('In get_template')
     result = {}
-    result = t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'], collection='streams_templates_metadata',filter='{"template_id":"' + template_id + '"}')
-    if len(result.decode('utf-8')) > 0:
+    #Insure user permissions in the Meta records
+    result = t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'], collection='streams_templates_metadata',filter='{"template_id":"' + template_id + '", "permissions.users":"'+ g.username+'"}')
+    logger.debug(len(result.decode('utf-8')))
+    if len(result.decode('utf-8')) > 2:
         message = "Template found."
         template_result = json.loads(result.decode('utf-8'))[0]
         result = template_result
         logger.debug("TEMPLATE FOUND")
     else:
         logger.debug("NO TEMPLATE FOUND")
-        raise errors.ResourceError(msg=f'No TEMPLATE found')
+        raise errors.ResourceError(msg=f'No TEMPLATE found matching id: '+template_id)
     return result, message
 
 def update_template(template_id, body):

@@ -158,3 +158,15 @@ def check_if_authorized_delete_channel(channel_id):
     logger.debug(authorized)
     return authorized.isAuthorized
 
+
+# User in any of the roles: Admin or Manager can perform PUT for Template
+def check_if_authorized_put_template(template_id):
+    logger.debug(f'Checking if the user is authorized to update the resource')
+    template_result, msg = kapacitor.get_template(template_id)
+    template_result = template_result['_id']['$oid']
+    admin = 'streams_template_' + template_result + "_admin"
+    manager = 'streams_template_' + template_result + "_manager"
+    authorized = t.sk.hasRoleAny(tenant=g.tenant_id, user=g.username, roleNames=[admin, manager],
+                                 orAdmin=False)
+    logger.debug(authorized)
+    return authorized.isAuthorized

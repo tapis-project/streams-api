@@ -957,7 +957,8 @@ class TemplatesResource(Resource):
     """
     Work with Streams-Channels-Templates objects
     """
-
+    # GET templates
+    # permission check in template object permission field
     def get(self):
         logger.debug("top of GET /templates")
         template_result, msg = meta.list_templates()
@@ -966,19 +967,48 @@ class TemplatesResource(Resource):
         logger.debug(result)
         return utils.ok(result=result, msg=msg)
 
+    # POST template
     def post(self):
-        logger.debug("top of POST /tempates")
+        logger.debug("top of POST /templates")
         body = request.json
-        #TODO need to check our permissions
         result, msg = kapacitor.create_template(body)
         logger.debug(result)
-        return utils.ok(result=meta.strip_meta(result), msg=msg)
+        #if template was created
+        if (result['_id']['$oid']):
+            #Create Admin Role for owner of template
+            temp_admin_role="streams_template_"+result['_id']['$oid']+"_admin"
+            create_role_status = sk.create_role(temp_admin_role, 'Project Admin Role')
+            if (create_role_status == 'success'):
+               grant_role_status = sk.grant_role(temp_admin_role)
+               # Check if the role was granted successfully to the user
+               if (grant_role_status == 'success'):
+                   # Only if the role is granted to user
+                   if (str(result) != 'null'):
+                    return utils.ok(result=meta.strip_meta(result), msg=msg)
+               # If role granting was not success, we should cleanup the role from sk
+               else:
+                   try:
+                     delete_role_sk = sk.deleteRoleByName(roleName=temp_admin_role,tenant=g.tenant_id)
+                     logger.debug(f'Template admin role deleted from SK: '+str(temp_admin_role))
+                     msg = f"Could not create Template"
+                     return utils.error(result='null', msg=msg)
+                   except Exception as e:
+                       msg = f"Cound not delete role: {temp_admin_role};"
+                       return utils.error(result='null', msg=msg)
+            else:
+                msg = f"Could not create Template"
+                return utils.error(result='null', msg=msg)
+        else:
+            msg = f"Could not create Template"
+            return utils.error(result='null', msg=msg)
+
 
 class TemplateResource(Resource):
     """
     Work with Streams objects
     """
-
+    # GET template
+    # permission check in template object permission field
     def get(self, template_id):
         logger.debug("top of GET /templates/{template_id}")
         template_result, msg = kapacitor.get_template(template_id)
@@ -990,21 +1020,29 @@ class TemplateResource(Resource):
     def post(self, template_id):
         logger.debug("top of POST /templates/{template_id}")
 
-
+    # PUT template
+    # permission checked in sk role
     def put(self,template_id):
         logger.debug("top of PUT /templates/{template_id}")
         body = request.json
-        # TODO need to check the user permission to update template
         result = {}
-        try:
-            result, msg = kapacitor.update_template(template_id,body)
-        except Exception as e:
-            msg = f"Could not update the channel status: {template_id}; exception: {e}"
+        authorized = sk.check_if_authorized_put_template(template_id)
+        if (authorized):
+            logger.debug(f'User is authorized to update template : '+str(template_id))
+            try:
+                result, msg = kapacitor.update_template(template_id,body)
+                logger.debug(str(result))
+                return utils.ok(result=meta.strip_meta(result), msg=msg)
+            except Exception as e:
+                msg = f"Could not update the template status: {template_id}; exception: {e}"
+                raise common_errors.ResourceError(msg=f'User not authorized to access the resource')
+        else:
+            logger.debug(f'User does not have Admin or Manager role on the template: '+ str(template_id))
+            raise common_errors.PermissionsError(msg=f'User not authorized to access the resource')
 
-        logger.debug(str(result))
-        return utils.ok(result=meta.strip_meta(result), msg=msg)
 
-    # Delete Channel ToDo
+    # Delete Template ToDo
+    # permission check sk role
     def delete(self, template_id):
         logger.debug("top of DELETE /channels/{channel_id}")
 
