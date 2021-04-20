@@ -1026,7 +1026,7 @@ class TemplateResource(Resource):
         logger.debug("top of PUT /templates/{template_id}")
         body = request.json
         result = {}
-        authorized = check_if_authorized_put_template(template_id)
+        authorized = sk.check_if_authorized_put_template(template_id)
         if (authorized):
             logger.debug(f'User is authorized to update template : '+str(template_id))
             try:
