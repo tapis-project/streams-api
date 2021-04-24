@@ -63,9 +63,9 @@ def check_if_authorized_get(project_id):
     #project_result = t.meta.getCollectionMetadata(db=conf.tenant[g.tenant_id]['stream_db'],collection=project_id)
     project_oid = project_result['_id']['$oid']
     logger.debug(project_oid)
-    admin = 'streams_'+ project_oid+"_admin"
-    manager = 'streams_'+ project_oid+"_manager"
-    user = 'streams_'+ project_oid+"_user"
+    admin = 'streams_projects_'+ project_oid+"_admin"
+    manager = 'streams_projects_'+ project_oid+"_manager"
+    user = 'streams_projects_'+ project_oid+"_user"
     authorized = t.sk.hasRoleAny(tenant=g.tenant_id, user=g.username, roleNames=[admin, manager, user],
                                  orAdmin=False)
     logger.debug(authorized)
@@ -78,8 +78,8 @@ def check_if_authorized_post(project_id):
     project_result,msg=meta.get_project(project_id)
     logger.debug(msg)
     project_oid = project_result['_id']['$oid']
-    admin = 'streams_'+ project_oid+"_admin"
-    manager = 'streams_'+ project_oid+"_manager"
+    admin = 'streams_projects_'+ project_oid+"_admin"
+    manager = 'streams_projects_'+ project_oid+"_manager"
     authorized = t.sk.hasRoleAny(tenant=g.tenant_id, user=g.username, roleNames=[admin, manager],
                                  orAdmin=False)
     logger.debug(authorized.isAuthorized)
@@ -90,8 +90,8 @@ def check_if_authorized_put(project_id):
     logger.debug(f'Checking if the user is authorized to update the resource')
     project_result, msg = meta.get_project(project_id)
     project_oid = project_result['_id']['$oid']
-    admin = 'streams_' + project_oid + "_admin"
-    manager = 'streams_' + project_oid + "_manager"
+    admin = 'streams_projects_' + project_oid + "_admin"
+    manager = 'streams_projects_' + project_oid + "_manager"
     authorized = t.sk.hasRoleAny(tenant=g.tenant_id, user=g.username, roleNames=[admin, manager],
                                  orAdmin=False)
     logger.debug(authorized)
@@ -102,7 +102,7 @@ def check_if_authorized_delete(project_id):
     logger.debug(f'Checking if the user is authorized to delete the resource')
     project_result, msg = meta.get_project(project_id)
     project_oid = project_result['_id']['$oid']
-    admin = 'streams_' + project_oid + "_admin"
+    admin = 'streams_projects_' + project_oid + "_admin"
     authorized = t.sk.hasRoleAny(tenant=g.tenant_id, user=g.username, roleNames=[admin],
                                  orAdmin=False)
     logger.debug(authorized)
@@ -114,9 +114,9 @@ def check_if_authorized_get_channel(channel_id):
     channel_result,msg=kapacitor.get_channel(channel_id)
     channel_oid = channel_result['_id']['$oid']
     logger.debug(channel_oid)
-    admin = 'channel_'+ channel_oid+"_admin"
-    manager = 'channel_'+ channel_oid+"_manager"
-    user = 'channel_'+ channel_oid+"_user"
+    admin = 'streams_channel_'+ channel_oid+"_admin"
+    manager = 'streams_channel_'+ channel_oid+"_manager"
+    user = 'streams_channel_'+ channel_oid+"_user"
     authorized = t.sk.hasRoleAny(tenant=g.tenant_id, user=g.username, roleNames=[admin, manager, user],
                                  orAdmin=False)
     logger.debug(authorized)
@@ -128,8 +128,8 @@ def check_if_authorized_post_channel(channel_id):
     channel_result,msg=kapacitor.get_channel(channel_id)
     channel_oid = channel_result['_id']['$oid']
     logger.debug(channel_oid)
-    admin = 'channel_'+ channel_oid+"_admin"
-    manager = 'channel_'+ channel_oid+"_manager"
+    admin = 'streams_channel_'+ channel_oid+"_admin"
+    manager = 'streams_channel_'+ channel_oid+"_manager"
     authorized = t.sk.hasRoleAny(tenant=g.tenant_id, user=g.username, roleNames=[admin, manager],
                                  orAdmin=False)
     logger.debug(authorized)
@@ -140,8 +140,8 @@ def check_if_authorized_put_channel(channel_id):
     channel_result,msg=kapacitor.get_channel(channel_id)
     channel_oid = channel_result['_id']['$oid']
     logger.debug(channel_oid)
-    admin = 'channel_'+ channel_oid+"_admin"
-    manager = 'channel_'+ channel_oid+"_manager"
+    admin = 'streams_channel_'+ channel_oid+"_admin"
+    manager = 'streams_channel_'+ channel_oid+"_manager"
     authorized = t.sk.hasRoleAny(tenant=g.tenant_id, user=g.username, roleNames=[admin, manager],
                                  orAdmin=False)
     logger.debug(authorized)
@@ -152,7 +152,7 @@ def check_if_authorized_delete_channel(channel_id):
     channel_result,msg=kapacitor.get_channel(channel_id)
     channel_oid = channel_result['_id']['$oid']
     logger.debug(channel_oid)
-    admin = 'channel_'+ channel_oid+"_admin"
+    admin = 'streams_channel_'+ channel_oid+"_admin"
     authorized = t.sk.hasRoleAny(tenant=g.tenant_id, user=g.username, roleNames=[admin],
                                  orAdmin=False)
     logger.debug(authorized)
@@ -171,18 +171,18 @@ def check_user_has_role(username, resource_type, resource_id,jwt_user_flag):
         project_result, msg = meta.get_project(resource_id)
         project_oid = project_result['_id']['$oid']
         logger.debug(project_oid)
-        admin = 'streams_' + project_oid + "_admin"
-        manager = 'streams_' + project_oid + "_manager"
-        user = 'streams_' + project_oid + "_user"
+        admin = 'streams_projects_' + project_oid + "_admin"
+        manager = 'streams_projects_' + project_oid + "_manager"
+        user = 'streams_projects_' + project_oid + "_user"
 
     elif (resource_type == 'channel'):
         # call the metadata method to get the channel_oid which is the mongo collection id
         channel_result, msg = kapacitor.get_channel(resource_id)
         channel_oid = channel_result['_id']['$oid']
         logger.debug(channel_oid)
-        admin = 'channel_' + channel_oid + "_admin"
-        manager = 'channel_' + channel_oid + "_manager"
-        user = 'channel_' + channel_oid + "_user"
+        admin = 'streams_channel_' + channel_oid + "_admin"
+        manager = 'streams_channel_' + channel_oid + "_manager"
+        user = 'streams_channel_' + channel_oid + "_user"
 
     # If jwt_user_flag is false, we are getting roles for user specified in query paramters or request body
     # Before the jwt_user can access roles, we need to check if the jwt_user has any of the three roles on the resource_id
@@ -249,12 +249,12 @@ def construct_role_name(resource_id,role_name, resource_type):
         project_result, msg = meta.get_project(resource_id)
         project_oid = project_result['_id']['$oid']
         logger.debug(project_oid)
-        role_name = 'streams_' + project_oid + "_"+role_name
+        role_name = 'streams_projects_' + project_oid + "_"+role_name
     elif (resource_type == 'channel'):
         channel_result, msg = kapacitor.get_channel(resource_id)
         channel_oid = channel_result['_id']['$oid']
         logger.debug(channel_oid)
-        role_name = 'channel_' + channel_oid + "_"+ role_name
+        role_name = 'streams_channel_' + channel_oid + "_"+ role_name
     else:
         msg = 'Invalid resource type'
         logger.debug(msg)
@@ -283,3 +283,16 @@ def grant_role_user_asking(resource_id,role_name, resource_type, username):
         msg = f'Role not created'
         return utils.error(result='', msg=msg)
 
+def delete_role_user_asking(resource_id,role_name, resource_type, username):
+    rolename_with_oid = construct_role_name(resource_id, role_name, resource_type)
+    logger.debug(rolename_with_oid)
+    delete_role_sk = t.sk.deleteRoleByName(roleName=rolename_with_oid, tenant=g.tenant_id)
+    logger.debug(delete_role_sk)
+
+    if (delete_role_sk == 'success'):
+        msg = f'Role ' + role_name + f' successfully deleted'
+        logger.debug(msg)
+        return role_name, msg
+    else:
+        msg = f'Role ' + role_name + f' not deleted'
+        return utils.error(result='', msg=msg)

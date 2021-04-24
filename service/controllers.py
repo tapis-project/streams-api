@@ -119,7 +119,7 @@ class ProjectsResource(Resource):
             proj_result, msg = meta.create_project(body)
             logger.debug(f'Project Creation result from Meta'+str(proj_result))
             # Every project admin role has a fixed format stream_ + proj_result['_id']['$oid'] + _admin
-            proj_admin_role = 'streams_' + proj_result['_id']['$oid'] + '_admin'
+            proj_admin_role = 'streams_projects_' + proj_result['_id']['$oid'] + '_admin'
             logger.debug(f'Project Admin role to be created in SK: '+ str(proj_admin_role))
             # Create role in SK. Only when the role creation is successful then grant it to the user.
             create_role_status = sk.create_role(proj_admin_role, 'Project Admin Role')
@@ -809,7 +809,7 @@ class ChannelsResource(Resource):
             result, msg = kapacitor.create_channel(body)
             logger.debug(f'Kapacitor create channel result: ' +str(result))
             # Channel creator will get assigned a channel admin role in SK. Any access request to the channel will check for assocaited role in SK
-            channels_admin_role = 'channel_' + result['_id']['$oid'] + '_admin'
+            channels_admin_role = 'streams_channel_' + result['_id']['$oid'] + '_admin'
             logger.debug(f' Channel admin role: '+ str(channels_admin_role))
             # Create role in SK. If role creation is successful then grant it.
             create_role_status = sk.create_role(channels_admin_role, 'Channel Admin Role')
@@ -1124,4 +1124,54 @@ class PemsResource(Resource):
                     logger.debug(msg)
                     return utils.error(result='', msg=msg)
 
+
+class PemsRevokeResource(Resource):
+    def post(self):
+        logger.debug(f'Inside  /roles/revokeRoles')
+        logger.debug(f'Request body: ' + str(request.json))
+        body = request.json
+        req_body = body
+        legal_roles = ['admin', 'manager', 'user']
+        username = req_body['user']
+        resource_type = req_body['resource_type']
+        resource_id = req_body['resource_id']
+        role_name = req_body['role_name']
+        # the role_name is not admin, manager or user return error message
+        if (role_name not in legal_roles):
+            msg = f'Invalid role name'
+            logger.debug(msg)
+            return utils.error(result='', msg=msg)
+        # if the jwt user and user in request body is same, self permission assigning is not allowed
+        if (username == g.username):
+            msg = f'Cannot delete role for self'
+            logger.debug(msg)
+            return utils.error(result='', msg=msg)
+        # If the jwt user and user in req body are different
+        else:
+            # get the user roles for user in the request body
+            user_roles, msg = sk.check_user_has_role(username, resource_type, resource_id, False)
+            # Check if the role already exists
+            if role_name not in user_roles:
+                msg = f'Role does not exists'
+                logger.debug(msg)
+                return utils.error(result=user_roles, msg=msg)
+            else:
+                # If jwt_user is admin, then only the role can be deleted
+                # getting the jwt user role
+                jwt_user_roles, msg = sk.check_user_has_role(g.username, resource_type, resource_id, True)
+                logger.debug(jwt_user_roles)
+                if 'admin' in (jwt_user_roles):
+                     delete_role, msg = sk.delete_role_user_asking(resource_id,role_name, resource_type,username)
+                     return utils.ok(result=user_roles, msg=msg)
+                # If the jwt user is manager, no roles can be deleted
+                elif 'manager' in (jwt_user_roles):
+                    msg = f'Role ' + role_name + f' can only be deleted by admin'
+                    logger.debug(msg)
+                    return utils.error(result='', msg=msg)
+
+                # if the jwt user is only has a user role, no roles can be deleted
+                elif 'user' in (jwt_user_roles):
+                    msg = f'Role ' + role_name + f' can only be deleted by admin'
+                    logger.debug(msg)
+                    return utils.error(result='', msg=msg)
 
