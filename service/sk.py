@@ -296,3 +296,18 @@ def delete_role_user_asking(resource_id,role_name, resource_type, username):
     else:
         msg = f'Role ' + role_name + f' not deleted'
         return utils.error(result='', msg=msg)
+
+# User in any of the roles: Admin or Manager can perform PUT for Template
+def check_if_authorized_put_template(template_id):
+    logger.debug(f'Checking if the user is authorized to update the resource')
+    template_result, msg = kapacitor.get_template(template_id)
+    template_result = template_result['_id']['$oid']
+    admin = 'streams_template_' + template_result + "_admin"
+    manager = 'streams_template_' + template_result + "_manager"
+    logger.debug(admin)
+    logger.debug(manager)
+    authorized = t.sk.hasRoleAny(tenant=g.tenant_id, user=g.username, roleNames=[admin, manager],
+                                 orAdmin=False)
+    logger.debug(authorized)
+    return authorized.isAuthorized
+
