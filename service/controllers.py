@@ -1161,11 +1161,14 @@ class PemsResource(Resource):
                     msg = f'Role ' + role_name + f' cannot be granted'
                     logger.debug(msg)
                     return utils.error(result='', msg=msg)
-
+                else:
+                    msg = f'User not authorized to grant role'
+                    logger.debug(msg)
+                    return utils.error(result='', msg=msg)
 
 class PemsRevokeResource(Resource):
     def post(self):
-        logger.debug(f'Inside  /roles/revokeRoles')
+        logger.debug(f'Inside  /roles/revokeRole')
         logger.debug(f'Request body: ' + str(request.json))
         body = request.json
         req_body = body
@@ -1186,30 +1189,32 @@ class PemsRevokeResource(Resource):
             return utils.error(result='', msg=msg)
         # If the jwt user and user in req body are different
         else:
-            # get the user roles for user in the request body
-            user_roles, msg = sk.check_user_has_role(username, resource_type, resource_id, False)
-            # Check if the role already exists
-            if role_name not in user_roles:
-                msg = f'Role does not exists'
-                logger.debug(msg)
-                return utils.error(result=user_roles, msg=msg)
-            else:
-                # If jwt_user is admin, then only the role can be deleted
-                # getting the jwt user role
-                jwt_user_roles, msg = sk.check_user_has_role(g.username, resource_type, resource_id, True)
-                logger.debug(jwt_user_roles)
-                if 'admin' in (jwt_user_roles):
-                     delete_role, msg = sk.delete_role_user_asking(resource_id,role_name, resource_type,username)
-                     return utils.ok(result=user_roles, msg=msg)
+            # If jwt_user is admin, then only delete role
+            # getting the jwt user role
+            jwt_user_roles, msg = sk.check_user_has_role(g.username, resource_type, resource_id, True)
+            logger.debug(jwt_user_roles)
+            if 'admin' in (jwt_user_roles):
+                # get the user roles for user in the request body
+                user_roles, msg = sk.check_user_has_role(username, resource_type, resource_id, False)
+                logger.debug(user_roles)
+                if role_name not in user_roles:
+                    msg = f'Role does not exists'
+                    logger.debug(msg)
+                    return utils.error(result='', msg=msg)
+                delete_role, msg = sk.delete_role_user_asking(resource_id,role_name, resource_type,username)
+                return utils.ok(result='', msg=msg)
                 # If the jwt user is manager, no roles can be deleted
-                elif 'manager' in (jwt_user_roles):
-                    msg = f'Role ' + role_name + f' can only be deleted by admin'
-                    logger.debug(msg)
-                    return utils.error(result='', msg=msg)
+            elif 'manager' in (jwt_user_roles):
+                msg = f'User not authorized to revoke role'
+                logger.debug(msg)
+                return utils.error(result='', msg=msg)
 
-                # if the jwt user is only has a user role, no roles can be deleted
-                elif 'user' in (jwt_user_roles):
-                    msg = f'Role ' + role_name + f' can only be deleted by admin'
-                    logger.debug(msg)
-                    return utils.error(result='', msg=msg)
-
+            # if the jwt user is only has a user role, no roles can be deleted
+            elif 'user' in (jwt_user_roles):
+                msg = f'User not authorized to revoke role'
+                logger.debug(msg)
+                return utils.error(result='', msg=msg)
+            else:
+                msg = f'User not authorized to revoke role'
+                logger.debug(msg)
+                return utils.error(result='', msg=msg)

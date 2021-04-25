@@ -187,6 +187,7 @@ def check_user_has_role(username, resource_type, resource_id,jwt_user_flag):
     # If jwt_user_flag is false, we are getting roles for user specified in query paramters or request body
     # Before the jwt_user can access roles, we need to check if the jwt_user has any of the three roles on the resource_id
     if not jwt_user_flag:
+        logger.debug(f'user requesting for is different than jwt user')
         jwt_user_role = t.sk.hasRoleAny(tenant=g.tenant_id, user=g.username, roleNames=[admin, manager, user], orAdmin=False)
         logger.debug(jwt_user_role.isAuthorized)
         # jwt user has role on the resource id
@@ -289,12 +290,13 @@ def delete_role_user_asking(resource_id,role_name, resource_type, username):
     delete_role_sk = t.sk.deleteRoleByName(roleName=rolename_with_oid, tenant=g.tenant_id)
     logger.debug(delete_role_sk)
 
-    if (delete_role_sk == 'success'):
+    if ('1' in str(delete_role_sk)):
         msg = f'Role ' + role_name + f' successfully deleted'
         logger.debug(msg)
         return role_name, msg
     else:
         msg = f'Role ' + role_name + f' not deleted'
+        logger.debug(msg)
         return utils.error(result='', msg=msg)
 
 # User in any of the roles: Admin or Manager can perform PUT for Template
