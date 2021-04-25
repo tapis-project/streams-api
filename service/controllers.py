@@ -119,12 +119,12 @@ class ProjectsResource(Resource):
             proj_result, msg = meta.create_project(body)
             logger.debug(f'Project Creation result from Meta'+str(proj_result))
             # Every project admin role has a fixed format stream_ + proj_result['_id']['$oid'] + _admin
-            proj_admin_role = 'streams_' + proj_result['_id']['$oid'] + '_admin'
+            proj_admin_role = 'streams_projects_' + proj_result['_id']['$oid'] + '_admin'
             logger.debug(f'Project Admin role to be created in SK: '+ str(proj_admin_role))
             # Create role in SK. Only when the role creation is successful then grant it to the user.
             create_role_status = sk.create_role(proj_admin_role, 'Project Admin Role')
             if (create_role_status == 'success'):
-               grant_role_status = sk.grant_role(proj_admin_role)
+               grant_role_status = sk.grant_role(proj_admin_role,g.username)
                # Check if the role was granted successfully to the user
                if (grant_role_status == 'success'):
                    # Only if the role is granted to user, call metadata service to create project collection
@@ -809,12 +809,12 @@ class ChannelsResource(Resource):
             result, msg = kapacitor.create_channel(body)
             logger.debug(f'Kapacitor create channel result: ' +str(result))
             # Channel creator will get assigned a channel admin role in SK. Any access request to the channel will check for assocaited role in SK
-            channels_admin_role = 'channel_' + result['_id']['$oid'] + '_admin'
+            channels_admin_role = 'streams_channel_' + result['_id']['$oid'] + '_admin'
             logger.debug(f' Channel admin role: '+ str(channels_admin_role))
             # Create role in SK. If role creation is successful then grant it.
             create_role_status = sk.create_role(channels_admin_role, 'Channel Admin Role')
             if (create_role_status == 'success'):
-                grant_role_status = sk.grant_role(channels_admin_role)
+                grant_role_status = sk.grant_role(channels_admin_role, g.username)
                 if (grant_role_status == 'success'):
             # Only if the role is granted, call metadata to create project collection
                     result = meta.strip_meta(result)
@@ -1077,3 +1077,144 @@ class MetricsResource(Resource):
       result = auth.t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_metrics')
       logger.debug(json.loads(result.decode('utf-8')))
       return json.loads(result.decode('utf-8'))
+
+# Role management for different resource
+class PemsResource(Resource):
+    def get(self):
+        # Expect user=testuser&resource_type={project/channels}&resource_id={project_id/channel_id}
+        logger.debug(f'Inside GET /roles')
+        logger.debug(request.args)
+        user = request.args.get('user')
+        resource_type = request.args.get('resource_type')
+        resource_id = request.args.get('resource_id')
+        # This method will return roles for user specified in the query parameters
+        # jwt_user_flag is set to False as we need roles for user in the query parameters and not the initiating the request
+        roles,msg = sk.check_user_has_role(user, resource_type,resource_id, False)
+        logger.debug(roles)
+        # if roles is not empty, that means the user has some or all role on the resource id, which are returned in result
+        if roles:
+            return utils.ok(result=roles, msg=msg)
+        # if roles is empty that means no roles are found for user specified in the query parameters
+        else:
+            return utils.ok(result='', msg=msg)
+
+    def post(self):
+        logger.debug(f'Inside POST /roles')
+        logger.debug(f'Request body: ' + str(request.json))
+        body = request.json
+        req_body = body
+        legal_roles = ['admin', 'manager', 'user']
+        username = req_body['user']
+        resource_type = req_body['resource_type']
+        resource_id = req_body['resource_id']
+        role_name = req_body['role_name']
+        # the role_name is not admin, manager or user return error message
+        if (role_name not in legal_roles):
+            msg = f'Invalid role name'
+            logger.debug(msg)
+            return utils.error(result='', msg=msg)
+        # if the jwt user and user in request body is same, self permission assigning is not allowed
+        if (username == g.username):
+            roles, msg = sk.check_user_has_role(username, resource_type, resource_id,True)
+            # check if the role the user is requesting already exists
+            if role_name in roles:
+                msg = f'Role already exists'
+                logger.debug(msg)
+                return utils.ok(result=roles, msg=msg)
+            else:
+                msg = f'Cannot grant role for self'
+                logger.debug(msg)
+                return utils.error(result='', msg=msg)
+        # If the jwt user and user in req body are different
+        else:
+            # get the user roles for user in the request body
+            user_roles, msg = sk.check_user_has_role(username, resource_type, resource_id, False)
+            # Check if the role already exists
+            if role_name in user_roles:
+                msg = f'Role already exists'
+                logger.debug(msg)
+                return utils.ok(result=user_roles, msg=msg)
+            else:
+                # jwt user can only grant similar or lower roles to requesting users
+                # For example if jwt user is admin: admin, manager or user roles can be granted to requesting user
+                jwt_user_roles, msg = sk.check_user_has_role(g.username, resource_type, resource_id, True)
+                logger.debug(jwt_user_roles)
+                if 'admin' in (jwt_user_roles):
+                     new_role, msg = sk.grant_role_user_asking(resource_id,role_name, resource_type,username)
+                     user_roles.append(new_role)
+                     return utils.ok(result=user_roles, msg=msg)
+                # If the jwt user is manager, they cannot grant admin roles to other users
+                # 'Manager' and 'User' roles can be granted to other users
+                elif 'manager' in (jwt_user_roles):
+                    if role_name == 'admin':
+                        msg = f'Role ' + role_name + f' cannot be granted'
+                        logger.debug(msg)
+                        return utils.error(result='', msg=msg)
+                    else:
+                        # Grant role the user in request body is asking for
+                        new_role, msg = sk.grant_role_user_asking(resource_id, role_name, resource_type, username)
+                        user_roles.append(new_role)
+                        # return the updated roles list to user
+                        return utils.ok(result=user_roles, msg=msg)
+                # if the jwt user is only has a user role, no roles can be granted by them
+                elif 'user' in (jwt_user_roles):
+                    msg = f'Role ' + role_name + f' cannot be granted'
+                    logger.debug(msg)
+                    return utils.error(result='', msg=msg)
+                else:
+                    msg = f'User not authorized to grant role'
+                    logger.debug(msg)
+                    return utils.error(result='', msg=msg)
+
+class PemsRevokeResource(Resource):
+    def post(self):
+        logger.debug(f'Inside  /roles/revokeRole')
+        logger.debug(f'Request body: ' + str(request.json))
+        body = request.json
+        req_body = body
+        legal_roles = ['admin', 'manager', 'user']
+        username = req_body['user']
+        resource_type = req_body['resource_type']
+        resource_id = req_body['resource_id']
+        role_name = req_body['role_name']
+        # the role_name is not admin, manager or user return error message
+        if (role_name not in legal_roles):
+            msg = f'Invalid role name'
+            logger.debug(msg)
+            return utils.error(result='', msg=msg)
+        # if the jwt user and user in request body is same, self permission assigning is not allowed
+        if (username == g.username):
+            msg = f'Cannot delete role for self'
+            logger.debug(msg)
+            return utils.error(result='', msg=msg)
+        # If the jwt user and user in req body are different
+        else:
+            # If jwt_user is admin, then only delete role
+            # getting the jwt user role
+            jwt_user_roles, msg = sk.check_user_has_role(g.username, resource_type, resource_id, True)
+            logger.debug(jwt_user_roles)
+            if 'admin' in (jwt_user_roles):
+                # get the user roles for user in the request body
+                user_roles, msg = sk.check_user_has_role(username, resource_type, resource_id, False)
+                logger.debug(user_roles)
+                if role_name not in user_roles:
+                    msg = f'Role does not exists'
+                    logger.debug(msg)
+                    return utils.error(result='', msg=msg)
+                delete_role, msg = sk.delete_role_user_asking(resource_id,role_name, resource_type,username)
+                return utils.ok(result='', msg=msg)
+                # If the jwt user is manager, no roles can be deleted
+            elif 'manager' in (jwt_user_roles):
+                msg = f'User not authorized to revoke role'
+                logger.debug(msg)
+                return utils.error(result='', msg=msg)
+
+            # if the jwt user is only has a user role, no roles can be deleted
+            elif 'user' in (jwt_user_roles):
+                msg = f'User not authorized to revoke role'
+                logger.debug(msg)
+                return utils.error(result='', msg=msg)
+            else:
+                msg = f'User not authorized to revoke role'
+                logger.debug(msg)
+                return utils.error(result='', msg=msg)
