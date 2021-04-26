@@ -187,7 +187,6 @@ def check_user_has_role(username, resource_type, resource_id,jwt_user_flag):
     # If jwt_user_flag is false, we are getting roles for user specified in query paramters or request body
     # Before the jwt_user can access roles, we need to check if the jwt_user has any of the three roles on the resource_id
     if not jwt_user_flag:
-        logger.debug(f'user requesting for is different than jwt user')
         jwt_user_role = t.sk.hasRoleAny(tenant=g.tenant_id, user=g.username, roleNames=[admin, manager, user], orAdmin=False)
         logger.debug(jwt_user_role.isAuthorized)
         # jwt user has role on the resource id
@@ -223,22 +222,27 @@ def check_user_has_role(username, resource_type, resource_id,jwt_user_flag):
     else:
         is_admin = t.sk.hasRole(tenant=g.tenant_id, user=g.username, roleName=admin,
                                 orAdmin=False)
+        logger.debug(is_admin)
         if (is_admin.isAuthorized):
            jwt_user_roles.append('admin')
-
+           logger.debug(jwt_user_roles)
         is_manager = t.sk.hasRole(tenant=g.tenant_id, user=g.username, roleName=manager,
                                   orAdmin=False)
+        logger.debug(is_admin)
         if (is_manager.isAuthorized):
             jwt_user_roles.append('manager')
-
+            logger.debug(jwt_user_roles)
         is_user = t.sk.hasRole(tenant=g.tenant_id, user=g.username, roleName=user,
                                orAdmin=False)
+        logger.debug(is_user)
         if (is_user.isAuthorized):
             jwt_user_roles.append('user')
+            logger.debug(jwt_user_roles)
         if jwt_user_roles:
             msg = f'Roles found'
         else:
             msg = f'Roles not found'
+        logger.debug(msg)
         return jwt_user_roles, msg
 
 
@@ -287,15 +291,15 @@ def grant_role_user_asking(resource_id,role_name, resource_type, username):
 def delete_role_user_asking(resource_id,role_name, resource_type, username):
     rolename_with_oid = construct_role_name(resource_id, role_name, resource_type)
     logger.debug(rolename_with_oid)
-    delete_role_sk = t.sk.deleteRoleByName(roleName=rolename_with_oid, tenant=g.tenant_id)
+    delete_role_sk = t.sk.revokeUserRole(roleName=rolename_with_oid, tenant=g.tenant_id, user=username)
     logger.debug(delete_role_sk)
 
     if ('1' in str(delete_role_sk)):
-        msg = f'Role ' + role_name + f' successfully deleted'
+        msg = f'Role ' + role_name + f' successfully deleted for user ' + username
         logger.debug(msg)
         return role_name, msg
     else:
-        msg = f'Role ' + role_name + f' not deleted'
+        msg = f'Role ' + role_name + f' not deleted for user ' + username
         logger.debug(msg)
         return utils.error(result='', msg=msg)
 
