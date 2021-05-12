@@ -1,0 +1,21 @@
+#Streams bootstrap docker
+#docker run -it tapis/streamsbootstap:latest -env 'TAPIS_BASEURL=https://dev.develop.tapis.io' \
+#> -env STREAMS_USER='streams' \
+#>-env STREAMS_SERVICE_PASSWORD='streamsfsdfsdfsdfsdfsdfsdfsdf' \
+#> -env META_SERVICE_PASSWORD='metasdfdfsdfsdfsdfsdfsdfsdf' \
+#> -env STREAMS_DB='TENANT_DB'
+
+# inherit from the streams
+FROM tapis/streams-api
+
+USER root
+
+# copy bootstrap source code
+COPY bootstrap/bootstrap_streams.py /home/tapis/bootstrap_streams.py
+
+# run service as non-root tapis user
+RUN chown -R tapis:tapis /home/tapis
+USER tapis
+
+# bootstrap
+ENTRYPOINT ["python boostrap_streams.py"]
