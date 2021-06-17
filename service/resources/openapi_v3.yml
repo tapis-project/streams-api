@@ -2925,7 +2925,7 @@ components:
         metadata:
           type: object
           description: User defined metadata for the site
-      required: [project_name, owner, pi]
+      required: [project_name, owner, pi, description]
 
     Site:
       type: object
@@ -3045,6 +3045,7 @@ components:
         metadata:
           type: object
           description: User enetered metadata on instruments
+      required: [inst_id, site_id, inst_name]
 
     UpdateInstRequest:
       type: array
@@ -3109,6 +3110,7 @@ components:
         shortname:
           type: string
           description: User entered short name
+      required: [var_name, shortname]
 
     Variable:
       type: object
