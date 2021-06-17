@@ -2875,6 +2875,9 @@ components:
         project_uuid:
           type: string
           description: The unique identifier for project
+        description:
+          type: string
+          description: Project description.
         owner:
           type: string
           description: The owner of project
