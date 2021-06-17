@@ -3156,7 +3156,7 @@ components:
       type: object
       properties:
         inst_id:
-          type: integer
+          type: string
           description: Associate instrument id.
         datetime:
           type: string
@@ -3173,13 +3173,7 @@ components:
               value:
                 type: number
                 description: The value of the observed measuremnet.
-
-    NewMeasurementVars:
-      type: object
-      properties:
-        var_id:
-          type: string
-          description: Field Name needs to be the variable id and value is the observed measuremnet. Example {"temp1":75.0}
+      required: [inst_id, vars]
 
     NewOntology:
       type: object
