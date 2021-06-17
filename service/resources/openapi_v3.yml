@@ -2967,6 +2967,9 @@ components:
         description:
           type: string
           description: Description of the site
+        owner:
+          type: string
+          description: The owner for site
         latitude:
           type: number
           description: Latitude of site.
