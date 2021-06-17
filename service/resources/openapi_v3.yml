@@ -3094,7 +3094,7 @@ components:
           type: string
           description: Storage system name for file format
         metadata:
-          type: string
+          type: object
           description: User entered metadata for the variable
         shortname:
           type: string
