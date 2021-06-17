@@ -3033,7 +3033,7 @@ components:
           items:
             type: string
         metadata:
-          type: string
+          type: object
           description: User enetered metadata on instruments
 
     UpdateInstRequest:
@@ -3062,7 +3062,7 @@ components:
           items:
             type: string
         metadata:
-          type: string
+          type: object
           description: user metadata on instruments
       required: [inst_id, site_id, inst_name]
 
@@ -3128,7 +3128,7 @@ components:
           type: string
           description: The property measured by variable.
         metadata:
-          type: string
+          type: object
           description: User entered metadata for the variable
         chords_id:
           type: integer
