@@ -979,7 +979,7 @@ class TemplatesResource(Resource):
             temp_admin_role="streams_template_"+result['_id']['$oid']+"_admin"
             create_role_status = sk.create_role(temp_admin_role, 'Project Admin Role')
             if (create_role_status == 'success'):
-               grant_role_status = sk.grant_role(temp_admin_role)
+               grant_role_status = sk.grant_role(temp_admin_role,g.username)
                # Check if the role was granted successfully to the user
                if (grant_role_status == 'success'):
                    # Only if the role is granted to user
