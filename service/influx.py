@@ -51,29 +51,33 @@ def compact_write_measurements(site_id, instrument, body):
         #make sure the user defined variable ids ex
         for k in itm:
             logger.debug(k)
-            if k in inst_vars and 'datetime' in itm:
-                json_body.append(
-                    {
-                        "measurement": "tsdata",
-                        "tags": {
-                            "site": site_id,
-                            "inst": instrument['chords_id'],
-                            "var": inst_vars[k]
-                        },
-                        "time": itm['datetime'],
-                        "fields": {
-                            "value": float(itm[k])
+            if k != 'datetime':
+                if k in inst_vars and 'datetime' in itm:
+                    json_body.append(
+                        {
+                            "measurement": "tsdata",
+                            "tags": {
+                                "site": site_id,
+                                "inst": instrument['chords_id'],
+                                "var": inst_vars[k]
+                            },
+                            "time": itm['datetime'],
+                            "fields": {
+                                "value": float(itm[k])
+                            }
                         }
-                    }
-                )
-                return_body[k] = {itm['datetime'] : float(itm[k])}
+                    )
+                    if k in return_body:
+                        return_body[k].append({itm['datetime']: float(itm[k])})
+                    else:
+                        return_body[k] = [{itm['datetime']: float(itm[k])}]
 
-            else:
-                msg = 'Datetime field required and it is missing!'
-                if 'datetime' in itm:
-                     msg = 'Variable ID: '+k+' is invalid!'
-                logger.debug(msg)
-                return {'resp':False,'msg':msg}
+                else:
+                    msg = 'Datetime field required and it is missing!'
+                    if 'datetime' in itm:
+                         msg = 'Variable ID: '+k+' is invalid!'
+                    logger.debug(msg)
+                    return {'resp':False,'msg':msg}
     logger.debug(json_body)
     result = influx_client.write_points(json_body)
     return {'resp':result,'msg':'','body':return_body}
