@@ -159,18 +159,27 @@ def create_channel(req_body):
         req_body['status'] = 'ACTIVE'
         req_body['create_time'] = str(datetime.datetime.utcnow())
         req_body['last_updated'] = str(datetime.datetime.utcnow())
-
-        #create a metadata record with kapacitor task id to the channel metadata collection
-        mchannel_result, mchannel_bug = t.meta.createDocument(db=conf.tenant[g.tenant_id]['stream_db'], collection='streams_channel_metadata', request_body=req_body, _tapis_debug=True)
-        logger.debug("Status_Code: " + str(mchannel_bug.response.status_code))
-        logger.debug(mchannel_result)
-        if str(mchannel_bug.response.status_code) == '201':
-            message = "Channel Created"
-            # get the newly created channel object to return
-            result, bug = get_channel(req_body['channel_id'])
-            logger.debug('Channel Returned From Meta: ' + str(result))
-        else:
-            #TODO need to remove task from kapacitor if this failed
+        try:
+            #create a metadata record with kapacitor task id to the channel metadata collection
+            mchannel_result, mchannel_bug = t.meta.createDocument(db=conf.tenant[g.tenant_id]['stream_db'], collection='streams_channel_metadata', request_body=req_body, _tapis_debug=True)
+            logger.debug("Status_Code: " + str(mchannel_bug.response.status_code))
+            logger.debug(mchannel_result)
+            if (str(mchannel_bug.response.status_code) == '201' or str(mchannel_bug.response.status_code) == '200'):
+              message = "Channel Created"
+              # get the newly created channel object to return
+              result, bug = get_channel(req_body['channel_id'])
+              logger.debug('Channel Returned From Meta: ' + str(result))
+        except:
+            # Delete Kapacitor task
+            res_delete_task = requests.delete(conf.kapacitor_url + '/kapacitor/v1/tasks/' + task_id,
+                                              auth=HTTPBasicAuth(conf.kapacitor_username, conf.kapacitor_password),
+                                              verify=False)
+            logger.debug(res_delete_task.content)
+            logger.debug(res_delete_task.status_code)
+            if (res_delete_task.status_code == 204):
+                logger.debug(f'Kapacitor task deleted')
+            else:
+                logger.debug(f'kapacitor task not deleted')
             raise errors.ResourceError(msg=f'Meta Channel Creation Failed')
 
     else:
@@ -364,22 +373,30 @@ def create_template(body):
     res = requests.post(conf.kapacitor_url + '/kapacitor/v1/templates', json=json_req, headers=headers, auth=HTTPBasicAuth(conf.kapacitor_username, conf.kapacitor_password), verify=False)
     logger.debug(res.content)
     logger.debug(res.status_code)
-
     if res.status_code == 200:
         body['create_time'] = str(datetime.datetime.utcnow())
         body['last_updated'] = str(datetime.datetime.utcnow())
         body['permissions'] = {'users': [g.username]}
-        mtemplate_result, mtemplate_bug =t.meta.createDocument(db=conf.tenant[g.tenant_id]['stream_db'], collection='streams_templates_metadata', request_body=body, _tapis_debug=True)
-        logger.debug("Status_Code: " + str(mtemplate_bug.response.status_code))
-        logger.debug(mtemplate_result)
-        if str(mtemplate_bug.response.status_code) == '201':
-            message = "Template Created in Meta"
-            #get the newly created template object to return
-            result, bug = get_template(body['template_id'])
-            logger.debug(result)
-        else:
+        try:
+            mtemplate_result, mtemplate_bug =t.meta.createDocument(db=conf.tenant[g.tenant_id]['stream_db'], collection='streams_templates_metadata', request_body=body, _tapis_debug=True)
+            logger.debug("Status_Code: " + str(mtemplate_bug.response.status_code))
+            logger.debug(mtemplate_result)
+            if str(mtemplate_bug.response.status_code) == '201' :
+                message = "Template Created in Meta"
+                #get the newly created template object to return
+                result, bug = get_template(body['template_id'])
+                logger.debug(result)
+        except:
             message = f'Template Creation in Meta Failed'
-            #TODO Rollback- delete template in Kapacitor
+            # Delete Kapacitor template
+            res_delete_template = requests.delete(conf.kapacitor_url + '/kapacitor/v1/templates/'+ body['template_id'],
+                                auth=HTTPBasicAuth(conf.kapacitor_username, conf.kapacitor_password), verify=False)
+            logger.debug(res_delete_template.content)
+            logger.debug(res_delete_template.status_code)
+            if (res_delete_template.status_code == 204):
+                logger.debug(f'Kapacitor template deleted')
+            else:
+                logger.debug(f'kapacitoe template not deleted')
             raise errors.ResourceError(msg=message)
     else:
         logger.debug("Template create Failed!")
