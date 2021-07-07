@@ -599,7 +599,7 @@ class VariableResource(Resource):
 # Measurements resources
 class MeasurementsWriteResource(Resource):
     #at the moment expects some like
-    #http://localhost:5000/v3/streams/measurements?instrument_id=1&vars[]={"somename":1.0}&vars[]={"other":2.0}
+    #http://localhost:5000/v3/streams/measurements
     #will need to adjust when openAPI def is final for measurement
     def post(self):
         logger.debug('Inside post measurements')
@@ -610,6 +610,7 @@ class MeasurementsWriteResource(Resource):
         #logger.debug("Bytes:" + str(sys.getsizeof(body)))
         message = "Measurement Write Failed"
         if 'inst_id' in body:
+            logger.debug('inst_id in body')
             result = meta.fetch_instrument_index(body['inst_id'])
             logger.debug(result)
             if len(result) > 0:
@@ -644,6 +645,7 @@ class MeasurementsWriteResource(Resource):
             else:
                 raise errors.ResourceError(msg=f'No Instrument found matching inst_id.')
         else:
+            logger.debug('The inst_id field is missing and is required to write a Measurement.')
             raise errors.ResourceError(msg=f'The inst_id field is missing and is required to write a Measurement.')
         return utils.ok(result=[], msg=message)
 
