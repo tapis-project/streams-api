@@ -1222,12 +1222,16 @@ class PemsRevokeResource(Resource):
                 return utils.error(result='', msg=msg)
 
 class ArchiveResource(Resource):
+    #expects systemid, path, project_id, archive_type, data_format
     def post(self):
         logger.debug("IN ARCHIVE")
         #archive a project id
         body = request.json
         logger.debug(body)
-        result = archive.archive_to_system(body['system_id'], body['path'], body['project_id'], body['archive_type'], body['data_format'])
+        created_at = datetime.now()
+        updated_at = datetime.now()
+        #create an archive object in meta
+        result = archive.archive_to_system(body['settings']['system_id'], body['settings']['path'], body['settings']['project_id'], body['settings']['archive_format'], body['settings']['data_format'])
         logger.debug('after archive call')
         if result:
             msg = "Archive created successfully: "+result
@@ -1235,62 +1239,3 @@ class ArchiveResource(Resource):
         else:
             msg= f'ERROR Archive Failed to Create'
             return utils.error(result='', msg=msg)
-        # file_list = []
-        # project = meta.get_project(body['project_id'])
-        # sites = meta.list_sites(body['project_id)'])
-        # #print(sites)
-        #
-        # for site in sites:
-        #     logger.debug(f"In Archive")
-        #     replace_cols = {}
-        #     for instrument in site['instruments']:
-        #         for v in instrument['variables']:
-        #             replace_cols[str(v['chords_id'])]=v['var_id']
-        #         js= influx.query_measurments([{"inst":str(instrument['chords_id'])},{"start_date": request.args.get('start_date')},{"end_date": request.args.get('end_date')}])
-        #         if len(js) > 1 and len(js['series']) > 0:
-        #             df = pd.DataFrame(js['series'][0]['values'],columns=js['series'][0]['columns'])
-        #             pv = df.pivot(index='time', columns='var', values=['value'])
-        #             df1 = pv
-        #             df1.columns = df1.columns.droplevel(0)
-        #             df1 = df1.reset_index().rename_axis(None, axis=1)
-        #             df1.rename(columns=replace_cols,inplace=True)
-        #             df1.set_index('time',inplace=True)
-        #             if body['format'] == "csv":
-        #                 logger.debug("CSV")
-        #                 logger.debug(f"CSV in Bytess: "+ str(sys.getsizeof(df1.to_csv)))
-        #                 output = make_response(df1.to_csv())
-        #                 filename = instrument['inst_name']+'.csv'
-        #                 with open(filename, 'wb') as f:
-        #                     f.write(output)
-        #                 f.close()
-        #                 file_list.append(filename)
-        #                 metric = {'created_at':datetime.now().isoformat(),'type':'archive','project_id':project_id,'username':g.username,'size': sys.getsizeof(df1.to_csv)}
-        #                 metric_result, metric_bug =auth.t.meta.createDocument(db=conf.tenant[g.tenant_id]['stream_db'], collection='streams_metrics', request_body=metric, _tapis_debug=True)
-        #                 logger.debug(f' Metric result: ' +str(metric_result))
-        #             else:
-        #                 result = json.loads(df1.to_json())
-        #                 result['measurements_in_file'] = len(df1.index)
-        #                 result['instrument'] = instrument
-        #                 site.pop('instruments',None)
-        #                 result['site'] = meta.strip_meta(site)
-        #                 filename = instrument['inst_name']+'.json'
-        #                 with open(filename, 'wb') as f:
-        #                     f.write(result)
-        #                 f.close()
-        #                 file_list.append(filename)
-        #                 logger.debug("JSON in Bytes: "+ str(sys.getsizeof(result)))
-        #                 metric = {'created_at':datetime.now().isoformat(),'type':'archive','project_id':project_id,'username':g.username,'size': str(sys.getsizeof(result))}
-        #                 metric_result, metric_bug =auth.t.meta.createDocument(db=conf.tenant[g.tenant_id]['stream_db'], collection='streams_metrics', request_body=metric, _tapis_debug=True)
-        #                 logger.debug(metric_result)
-        #         else:
-        #             #do nothing
-        # zipfilename = 'tmp/'+body['project_id']+'.zip'
-        # zipObj = ZipFile(zipfilename, 'w')
-        # # Add multiple files to the zip
-        # for f in file_list:
-        #     zipObj.write(f)
-        # # close the Zip File
-        # zipObj.close()
-        # #upload file to system at the path
-        # tapis_client.upload(source_file_path=zipfilename, system_id=body['system_id'], dest_file_path=body['path'])
-        # return "nothing"

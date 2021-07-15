@@ -16,11 +16,12 @@ from common.logs import get_logger
 logger = get_logger(__name__)
 from common.config import conf
 import sys
+import os
 from tapipy.tapis import Tapis
 
 t = auth.t
 
-def archive_to_system(system_id, path, project_id, archive_type, data_format):
+def archive_to_system(system_id, path, project_id, archive_format, data_format):
     logger.debug("in archive_to_system")
     start_date= (datetime.now() - timedelta(days=10000)).isoformat()#'1980-01-01T00:00:00.0'
     end_date = datetime.now().isoformat()
@@ -50,7 +51,6 @@ def archive_to_system(system_id, path, project_id, archive_type, data_format):
                     for v in instrument['variables']:
                         logger.debug(v)
                         replace_cols[str(v['chords_id'])]=v['var_id']
-                    #logger.debug(replace_cols)
                     df1.rename(columns=replace_cols,inplace=True)
                     df1.set_index('time',inplace=True)
                     if data_format == "csv":
@@ -68,12 +68,6 @@ def archive_to_system(system_id, path, project_id, archive_type, data_format):
                         metric = {'created_at':datetime.now().isoformat(),'type':'archive','project_id':project_id,'username':g.username,'size': str(sys.getsizeof(result))}
                         metric_result, metric_bug =auth.t.meta.createDocument(db=conf.tenant[g.tenant_id]['stream_db'], collection='streams_metrics', request_body=metric, _tapis_debug=True)
                         logger.debug(metric_result)
-                # result = meta.list_measurements(inst_id=instrument_id,
-                #                                             project_uuid=project_id,
-                #                                             site_id=site_id,
-                #                                             start_date='1900-01-01T00:00:00Z',
-                #                                             end_date='2025-12-30T22:19:25Z',
-                #                                             format='csv')
                 filename = instrument['inst_name']+'_'+archive_date.isoformat()+'.csv'
                 logger.debug(filename)
                 with open(filename, 'w') as f:
@@ -87,7 +81,7 @@ def archive_to_system(system_id, path, project_id, archive_type, data_format):
         f.write(json.dumps(project))
     f.close()
     file_list.append(meta_filename)
-    if (archive_type == "zip"):
+    if (archive_format == "zip"):
         #create zip archive
         print("zip")
         zipfilename = project_id+"_"+archive_date.isoformat()+'.zip'
@@ -95,6 +89,7 @@ def archive_to_system(system_id, path, project_id, archive_type, data_format):
         for f in file_list:
             # Add multiple files to the zip
             zipObj.write(f)
+            os.remove(f) #cleanup file
         # close the Zip File
         zipObj.close()
     else:
@@ -108,7 +103,5 @@ def archive_to_system(system_id, path, project_id, archive_type, data_format):
     msg = ""
     msg = t.upload(source_file_path=zipfilename, system_id=system_id, dest_file_path=path+'/'+zipfilename)
     logger.debug(msg)
+    os.remove(zipfilename) #cleanup zipfile
     return msg
-# context = get_context()
-# message = context['raw_message']
-#archive_to_system(message['system_id'], message['path'], message['project_id'], message['archive_type'])
