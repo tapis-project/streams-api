@@ -1,10 +1,10 @@
 import datetime
 import enum
 from flask import g, Flask
-from flask_cors import CORS
+#from flask_cors import CORS
 app = Flask(__name__)
 
-CORS(app,resources={r"/v3/streams/*": {"origins": "*"}},CORS_AUTOMATIC_OPTIONS=True)
+#CORS(app,resources={r"/v3/streams/*": {"origins": "*"}},CORS_AUTOMATIC_OPTIONS=True)
 
 class ChordsSite:
     def __init__(self,id, name, lat, long, elevation, description):
@@ -60,3 +60,29 @@ class ChannelAlert:
         self.action_taken = action_taken
         self.actor_id = actor_id
         self.execution_id = execution_id
+
+class ArchiveSystem:
+    def __init__(self, updated_at, created_at, owner, system_id, path, frequency, range):
+        self.type='archive'
+        self.archive_type= 'system'
+        self.updated_at = updated_at
+        self.created_at = created_at
+        self.owner = owner
+        self.system_id = system_id
+        self.path = dest_file_path
+        self.frequency = frequency
+        self.range = range
+
+class ArchiveChords:
+    def __init__(self, archive_type, updated_at, created_at, owner, chords_url, chords_email, chords_api_key, sites, instruments, variables):
+        self.type='archive'
+        self.archive_type= 'chords'
+        self.updated_at = updated_at
+        self.created_at = created_at
+        self.owner = owner
+        self.chords_url = chords_url
+        self.chords_email = chords_email
+        self.chords_api_key = chords_api_key
+        self.sites = sites
+        self.instruments= instruments
+        self.variables = variables
