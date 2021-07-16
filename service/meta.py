@@ -273,15 +273,15 @@ def list_instruments(project_id, site_id):
                 result = instruments
                 message = "Instruments Found"
             else:
-                result = []
+                result = {}
                 message = "No Instruments Found"
                 raise errors.ResourceError(msg=f'No Instruments Found for Site ID:' + str(site_id))
         else:
-            result = []
+            result = {}
             message = "No Instruments Found"
             raise errors.ResourceError(msg=f'No Instruments Found for Site ID:'+str(site_id))
     else:
-        result = []
+        result = {}
         message ="Site Not Found - No Instruments Exist"
         raise errors.ResourceError(msg=f'Site Not Found With Site ID:'+str(site_id))
     return result, message
@@ -404,8 +404,8 @@ def list_variables(project_id, site_id, instrument_id):
                         logger.debug(variable)
                         if 'tapis_deleted' not in variable:
                             variables.append(variable)
+                        result = variable
                         logger.debug(result)
-                    result=variables
                 if len(result) > 0 :
                     message = "Variables Found"
                 else:
