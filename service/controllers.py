@@ -505,28 +505,28 @@ class VariablesResource(Resource):
             logger.debug(f'User is authorized to create variables for : ' + str(instrument_id))
             logger.debug(f' Request body' +str(request.json))
             #TODO loop through list objects to support buld operations
-            if type(request.json) is dict:
-                body = request.json
-            else:
-                body = request.json[0]
-            inst_result, bug = meta.get_instrument(project_id, site_id, instrument_id)
-            # id, name, instrument_id, shortname, commit
-            postInst = ChordsVariable("test",inst_result['chords_id'],
-                                        body['var_name'],
-                                        body['var_id'],
-                                        "")
-            logger.debug(postInst)
-            # Create variable in chords
-            chord_result, chord_msg = chords.create_variable(postInst)
-            if chord_msg == "Variable created":
-                body['chords_id'] = chord_result['id']
-                # Create a variable in mongo
-                result, msg = meta.create_variable(project_id, site_id, instrument_id, body)
-            else:
-                message = chord_msg
-                logger.debug(f' Chords variable not created due to '+ str(message))
-            logger.debug(f' Variable creation meta result: ' + str(result))
-            return utils.ok(result=result, msg=msg)
+            full_body = request.json
+            results = []
+            for body in full_body:
+                inst_result, bug = meta.get_instrument(project_id, site_id, instrument_id)
+                # id, name, instrument_id, shortname, commit
+                postInst = ChordsVariable("test",inst_result['chords_id'],
+                                            body['var_name'],
+                                            body['var_id'],
+                                            "")
+                logger.debug(postInst)
+                # Create variable in chords
+                chord_result, chord_msg = chords.create_variable(postInst)
+                if chord_msg == "Variable created":
+                    body['chords_id'] = chord_result['id']
+                    # Create a variable in mongo
+                    result, msg = meta.create_variable(project_id, site_id, instrument_id, body)
+                    results.append(result)
+                else:
+                    message = chord_msg
+                    logger.debug(f' Chords variable not created due to '+ str(message))
+                logger.debug(f' Variable creation meta result: ' + str(result))
+            return utils.ok(result=results, msg=msg)
         else:
             logger.debug(f'User does not have admin or manager role on project')
             raise common_errors.PermissionsError(msg=f'User not authorized to access the resource')
@@ -599,7 +599,7 @@ class VariableResource(Resource):
 # Measurements resources
 class MeasurementsWriteResource(Resource):
     #at the moment expects some like
-    #http://localhost:5000/v3/streams/measurements?instrument_id=1&vars[]={"somename":1.0}&vars[]={"other":2.0}
+    #http://localhost:5000/v3/streams/measurements
     #will need to adjust when openAPI def is final for measurement
     def post(self):
         logger.debug('Inside post measurements')
@@ -610,6 +610,7 @@ class MeasurementsWriteResource(Resource):
         #logger.debug("Bytes:" + str(sys.getsizeof(body)))
         message = "Measurement Write Failed"
         if 'inst_id' in body:
+            logger.debug('inst_id in body')
             result = meta.fetch_instrument_index(body['inst_id'])
             logger.debug(result)
             if len(result) > 0:
@@ -644,6 +645,7 @@ class MeasurementsWriteResource(Resource):
             else:
                 raise errors.ResourceError(msg=f'No Instrument found matching inst_id.')
         else:
+            logger.debug('The inst_id field is missing and is required to write a Measurement.')
             raise errors.ResourceError(msg=f'The inst_id field is missing and is required to write a Measurement.')
         return utils.ok(result=[], msg=message)
 
@@ -981,7 +983,7 @@ class TemplatesResource(Resource):
             temp_admin_role="streams_template_"+result['_id']['$oid']+"_admin"
             create_role_status = sk.create_role(temp_admin_role, 'Project Admin Role')
             if (create_role_status == 'success'):
-               grant_role_status = sk.grant_role(temp_admin_role)
+               grant_role_status = sk.grant_role(temp_admin_role,g.username)
                # Check if the role was granted successfully to the user
                if (grant_role_status == 'success'):
                    # Only if the role is granted to user
