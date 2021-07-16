@@ -28,7 +28,7 @@ def transfer_to_system(name,system_id, path, instrument_id, data_format, start_d
         instrument = meta.get_instrument(index_result['project_id']index_result['site_id'],index_result['instrument_id'])
         if instrument:
             logger.debug(instrument)
-            js= influx.query_measurments([{"inst":str(instrument['chords_id'])}])
+            js= influx.query_measurments([{"inst":str(instrument['chords_id'])},{"start_date": start_date},{"end_date": end_date}])
             logger.debug(js)
             if len(js) > 1 and len(js['series']) > 0:
                 df = pd.DataFrame(js['series'][0]['values'],columns=js['series'][0]['columns'])
@@ -74,4 +74,8 @@ def transfer_to_system(name,system_id, path, instrument_id, data_format, start_d
                 os.remove(filename) #cleanup zipfile
                 return msg
             else:
+                msg="No Measurements Founds"
+                return msg
         else:
+            msg = "Transfer Failed! Instrument not found with ID: "+ instrument_id
+            return msg
