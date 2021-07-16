@@ -3,7 +3,8 @@ from common.utils import TapisApi, handle_error, flask_errors_dict
 from service.auth import authn_and_authz
 from service.controllers import ProjectsResource, ProjectResource, SitesResource, SiteResource, InstrumentsResource, InstrumentResource, VariablesResource, \
     VariableResource, MeasurementsWriteResource, MeasurementsReadResource, MeasurementsResource, MeasurementResource, ChannelsResource, ChannelResource, AlertsResource, \
-    AlertsPostResource, TemplatesResource, TemplateResource, InfluxResource, HelloResource, ReadyResource, HealthcheckResource, MetricsResource, PemsResource, PemsRevokeResource, ArchiveResource
+    AlertsPostResource, TemplatesResource, TemplateResource, InfluxResource, HelloResource, ReadyResource, HealthcheckResource, MetricsResource, PemsResource, PemsRevokeResource,\
+    ArchiveResource, TranfserResource
 from service.models import app
 
 # get the logger instance -
@@ -75,6 +76,7 @@ api.add_resource(PemsRevokeResource, '/v3/streams/roles/revokeRole')
 
 # Archive
 api.add_resource(ArchiveResource, '/v3/streams/archive')
-
+# Transfer
+api.add_resource(TransferResource, '/v3/streams/transfer')
 if __name__ == '__main__':
     app.run(host='0.0.0.0', debug=True)

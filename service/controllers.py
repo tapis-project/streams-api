@@ -12,6 +12,7 @@ from openapi_core.wrappers.flask import FlaskOpenAPIRequest
 # import psycopg2
 #import sqlalchemy
 from service import archive
+from service import transfer
 from service import chords
 from service import influx
 from service import meta
@@ -1238,4 +1239,20 @@ class ArchiveResource(Resource):
             return utils.ok(result, msg=msg)
         else:
             msg= f'ERROR Archive Failed to Create'
+            return utils.error(result='', msg=msg)
+class TransferResource(Resource):
+    def post(self):
+        logger.debug("IN TRANSFER")
+        body = request.json
+        logger.debug(body)
+        created_at = datetime.now()
+        updated_at = datetime.now()
+        #create an transfer object in metrics
+        result = transfer.transfer_to_system(body['system_id'], body['settings']['path'], body['settings']['project_id'], body['settings']['archive_format'], body['settings']['data_format'])
+        logger.debug('after transfer call')
+        if result:
+            msg = "Transfer successful: "+result
+            return utils.ok(result, msg=msg)
+        else:
+            msg= f'ERROR Transfer Failed'
             return utils.error(result='', msg=msg)
