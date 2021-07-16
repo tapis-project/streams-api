@@ -11,6 +11,8 @@ from openapi_core.wrappers.flask import FlaskOpenAPIRequest
 
 # import psycopg2
 #import sqlalchemy
+from service import archive
+from service import transfer
 from service import chords
 from service import influx
 from service import meta
@@ -25,6 +27,7 @@ from common import errors as common_errors
 from service import auth
 from datetime import datetime
 
+from zipfile import ZipFile
 # get the logger instance -
 from common.logs import get_logger
 logger = get_logger(__name__)
@@ -505,28 +508,28 @@ class VariablesResource(Resource):
             logger.debug(f'User is authorized to create variables for : ' + str(instrument_id))
             logger.debug(f' Request body' +str(request.json))
             #TODO loop through list objects to support buld operations
-            full_body = request.json
-            results = []
-            for body in full_body:
-                inst_result, bug = meta.get_instrument(project_id, site_id, instrument_id)
-                # id, name, instrument_id, shortname, commit
-                postInst = ChordsVariable("test",inst_result['chords_id'],
-                                            body['var_name'],
-                                            body['var_id'],
-                                            "")
-                logger.debug(postInst)
-                # Create variable in chords
-                chord_result, chord_msg = chords.create_variable(postInst)
-                if chord_msg == "Variable created":
-                    body['chords_id'] = chord_result['id']
-                    # Create a variable in mongo
-                    result, msg = meta.create_variable(project_id, site_id, instrument_id, body)
-                    results.append(result)
-                else:
-                    message = chord_msg
-                    logger.debug(f' Chords variable not created due to '+ str(message))
-                logger.debug(f' Variable creation meta result: ' + str(result))
-            return utils.ok(result=results, msg=msg)
+            if type(request.json) is dict:
+                body = request.json
+            else:
+                body = request.json[0]
+            inst_result, bug = meta.get_instrument(project_id, site_id, instrument_id)
+            # id, name, instrument_id, shortname, commit
+            postInst = ChordsVariable("test",inst_result['chords_id'],
+                                        body['var_name'],
+                                        body['var_id'],
+                                        "")
+            logger.debug(postInst)
+            # Create variable in chords
+            chord_result, chord_msg = chords.create_variable(postInst)
+            if chord_msg == "Variable created":
+                body['chords_id'] = chord_result['id']
+                # Create a variable in mongo
+                result, msg = meta.create_variable(project_id, site_id, instrument_id, body)
+            else:
+                message = chord_msg
+                logger.debug(f' Chords variable not created due to '+ str(message))
+            logger.debug(f' Variable creation meta result: ' + str(result))
+            return utils.ok(result=result, msg=msg)
         else:
             logger.debug(f'User does not have admin or manager role on project')
             raise common_errors.PermissionsError(msg=f'User not authorized to access the resource')
@@ -599,7 +602,7 @@ class VariableResource(Resource):
 # Measurements resources
 class MeasurementsWriteResource(Resource):
     #at the moment expects some like
-    #http://localhost:5000/v3/streams/measurements
+    #http://localhost:5000/v3/streams/measurements?instrument_id=1&vars[]={"somename":1.0}&vars[]={"other":2.0}
     #will need to adjust when openAPI def is final for measurement
     def post(self):
         logger.debug('Inside post measurements')
@@ -610,7 +613,6 @@ class MeasurementsWriteResource(Resource):
         #logger.debug("Bytes:" + str(sys.getsizeof(body)))
         message = "Measurement Write Failed"
         if 'inst_id' in body:
-            logger.debug('inst_id in body')
             result = meta.fetch_instrument_index(body['inst_id'])
             logger.debug(result)
             if len(result) > 0:
@@ -645,7 +647,6 @@ class MeasurementsWriteResource(Resource):
             else:
                 raise errors.ResourceError(msg=f'No Instrument found matching inst_id.')
         else:
-            logger.debug('The inst_id field is missing and is required to write a Measurement.')
             raise errors.ResourceError(msg=f'The inst_id field is missing and is required to write a Measurement.')
         return utils.ok(result=[], msg=message)
 
@@ -983,7 +984,7 @@ class TemplatesResource(Resource):
             temp_admin_role="streams_template_"+result['_id']['$oid']+"_admin"
             create_role_status = sk.create_role(temp_admin_role, 'Project Admin Role')
             if (create_role_status == 'success'):
-               grant_role_status = sk.grant_role(temp_admin_role,g.username)
+               grant_role_status = sk.grant_role(temp_admin_role)
                # Check if the role was granted successfully to the user
                if (grant_role_status == 'success'):
                    # Only if the role is granted to user
@@ -1222,3 +1223,98 @@ class PemsRevokeResource(Resource):
                 msg = f'User not authorized to revoke role'
                 logger.debug(msg)
                 return utils.error(result='', msg=msg)
+
+class ArchiveResource(Resource):
+    #expects systemid, path, project_id, archive_type, data_format
+    def post(self):
+        logger.debug("IN ARCHIVE")
+        #archive a project id
+        body = request.json
+        logger.debug(body)
+        created_at = datetime.now()
+        updated_at = datetime.now()
+        #create an archive object in meta
+        result = archive.archive_to_system(body['settings']['system_id'], body['settings']['path'], body['settings']['project_id'], body['settings']['archive_format'], body['settings']['data_format'])
+        logger.debug('after archive call')
+        if result:
+            msg = "Archive created successfully: "+result
+            return utils.ok(result, msg=msg)
+        else:
+            msg= f'ERROR Archive Failed to Create'
+            return utils.error(result='', msg=msg)
+class TransferResource(Resource):
+    def post(self):
+        logger.debug("IN TRANSFER")
+        body = request.json
+        logger.debug(body)
+        created_at = datetime.now()
+        updated_at = datetime.now()
+        #create an transfer object in metrics
+        result = transfer.transfer_to_system(body['filename'],body['system_id'], body['path'], body['instrument_id'], body['data_format'], body['start_date'],body['end_date'])
+        logger.debug('after transfer call')
+        if result:
+            msg = "Transfer successful: "+result
+            return utils.ok(result, msg=msg)
+        else:
+            msg= f'ERROR Transfer Failed'
+            return utils.error(result='', msg=msg)
+
+
+# Post Its resource : LIST, CREATE
+class PostItsResource(Resource):
+    """
+    Work with Project objects
+    """
+    # Get post-its listings: GET v3/streams/projects/post-its
+    def get(self):
+        logger.debug(f'In list projects')
+        try:
+
+        except Exception as e:
+              msg = f"ERROR! Could not list Post-Its"
+              return utils.error(result='null', msg=msg)
+        return utils.error(result='null', msg=msg)
+
+    # Create post-it: POST v3/streams/post-its
+    def post(self):
+        logger.debug(f'IN CREATE POST-IT')
+        logger.debug(f'Request body: '+str(request.json))
+        body = request.json
+        try:
+
+        except Exception as e:
+              msg = f"ERROR! Could not create Post-It"
+              return utils.error(result='null', msg=msg)
+        return utils.error(result='null', msg=msg)
+
+# Post It Resource: GET, UPDATE, DELETE
+class PostItResource(Resource):
+    #create post-it url
+    def get(self):
+        logger.debug("IN POST-IT GET")
+        try:
+
+        except Exception as e:
+              msg = f"ERROR! Could not get Post-It"
+              return utils.error(result='null', msg=msg)
+        return utils.error(result='null', msg=msg)
+
+    #update post-it url
+    def put(self):
+        logger.debug("IN POST-IT UPDATE")
+        try:
+
+        except Exception as e:
+              msg = f"ERROR! Could not update Post-It"
+              return utils.error(result='null', msg=msg)
+        return utils.error(result='null', msg=msg)
+
+    #delete post-it url
+    def delete(self):
+        logger.debug("IN POST-IT DELETE")
+        try:
+
+        except Exception as e:
+              msg = f"ERROR! Could not delete Post-It"
+              return utils.error(result='null', msg=msg)
+        return utils.error(result='null', msg=msg)
