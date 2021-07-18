@@ -11,8 +11,8 @@ from openapi_core.wrappers.flask import FlaskOpenAPIRequest
 
 # import psycopg2
 #import sqlalchemy
-from service import archive
-from service import transfer
+#from service import archive
+#from service import transfer
 from service import chords
 from service import influx
 from service import meta
@@ -502,7 +502,7 @@ class VariablesResource(Resource):
     def post(self, project_id, site_id, instrument_id):
         logger.debug(f'In create variables')
         # Check if the user is authorized to create variables by checking if the user has project specific role
-
+        result=[]
         authorized = sk.check_if_authorized_post(project_id)
         if (authorized):
             logger.debug(f'User is authorized to create variables for : ' + str(instrument_id))
@@ -524,10 +524,10 @@ class VariablesResource(Resource):
             if chord_msg == "Variable created":
                 body['chords_id'] = chord_result['id']
                 # Create a variable in mongo
-                result, msg = meta.create_variable(project_id, site_id, instrument_id, body)
+                var_result, msg = meta.create_variable(project_id, site_id, instrument_id, body)
+                result.append(var_result)
             else:
-                message = chord_msg
-                logger.debug(f' Chords variable not created due to '+ str(message))
+                raise errors.ResourceError(msg=f'Chords variable not created due to '+ str(chord_msg))
             logger.debug(f' Variable creation meta result: ' + str(result))
             return utils.ok(result=result, msg=msg)
         else:
@@ -1267,52 +1267,52 @@ class PostItsResource(Resource):
     def get(self):
         logger.debug(f'In list projects')
         try:
-
+            logger.debug(f'In list projects')
         except Exception as e:
               msg = f"ERROR! Could not list Post-Its"
               return utils.error(result='null', msg=msg)
         return utils.error(result='null', msg=msg)
-
-    # Create post-it: POST v3/streams/post-its
-    def post(self):
-        logger.debug(f'IN CREATE POST-IT')
-        logger.debug(f'Request body: '+str(request.json))
-        body = request.json
-        try:
-
-        except Exception as e:
-              msg = f"ERROR! Could not create Post-It"
-              return utils.error(result='null', msg=msg)
-        return utils.error(result='null', msg=msg)
-
-# Post It Resource: GET, UPDATE, DELETE
+#
+#     # Create post-it: POST v3/streams/post-its
+#     def post(self):
+#         logger.debug(f'IN CREATE POST-IT')
+#         logger.debug(f'Request body: '+str(request.json))
+#         body = request.json
+#         try:
+#
+#         except Exception as e:
+#               msg = f"ERROR! Could not create Post-It"
+#               return utils.error(result='null', msg=msg)
+#         return utils.error(result='null', msg=msg)
+#
+# # Post It Resource: GET, UPDATE, DELETE
 class PostItResource(Resource):
-    #create post-it url
+#     #create post-it url
     def get(self):
         logger.debug("IN POST-IT GET")
         try:
-
+            logger.debug(f'In list projects')
         except Exception as e:
               msg = f"ERROR! Could not get Post-It"
               return utils.error(result='null', msg=msg)
         return utils.error(result='null', msg=msg)
-
-    #update post-it url
-    def put(self):
-        logger.debug("IN POST-IT UPDATE")
-        try:
-
-        except Exception as e:
-              msg = f"ERROR! Could not update Post-It"
-              return utils.error(result='null', msg=msg)
-        return utils.error(result='null', msg=msg)
-
-    #delete post-it url
-    def delete(self):
-        logger.debug("IN POST-IT DELETE")
-        try:
-
-        except Exception as e:
-              msg = f"ERROR! Could not delete Post-It"
-              return utils.error(result='null', msg=msg)
-        return utils.error(result='null', msg=msg)
+#
+#     #update post-it url
+#     def put(self):
+#         logger.debug("IN POST-IT UPDATE")
+#         try:
+#
+#         except Exception as e:
+#               msg = f"ERROR! Could not update Post-It"
+#               return utils.error(result='null', msg=msg)
+#         return utils.error(result='null', msg=msg)
+#
+#     #delete post-it url
+#     def delete(self):
+#         logger.debug("IN POST-IT DELETE")
+#         try:
+#
+#         except Exception as e:
+#               msg = f"ERROR! Could not delete Post-It"
+#               return utils.error(result='null', msg=msg)
+#         return utils.error(result='null', msg=msg)

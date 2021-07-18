@@ -9,6 +9,7 @@ app = Flask(__name__)
 
 from common import utils, errors
 from service import auth
+from service import chords
 # get the logger instance -
 from common.logs import get_logger
 logger = get_logger(__name__)
@@ -481,11 +482,13 @@ def create_variable(project_id, site_id, instrument_id, post_body):
                 result = var_body
                 message = "Variable Created"
             else:
-                message = "Variable Failed to be Created"
+                res,mgs = chords.delete_variable(post_body['chords_id'])
+                raise errors.ResourceError(msg=f'Variable Failed to be Created')
         else:
-            message = "Instrument Not Found For This Site. Variable Create Failed"
+            raise errors.ResourceError(msg=f'Instrument Not Found For This Site. Variable Create Failed')
     else:
-        message ="Site Not Found - Cannote Create Variable"
+        raise errors.ResourceError(msg=f'Site Not Found - Cannote Create Variable')
+
     return result, message
 
 #update and remove variable
