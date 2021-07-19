@@ -4,7 +4,7 @@ from service.auth import authn_and_authz
 from service.controllers import ProjectsResource, ProjectResource, SitesResource, SiteResource, InstrumentsResource, InstrumentResource, VariablesResource, \
     VariableResource, MeasurementsWriteResource, MeasurementsReadResource, MeasurementsResource, MeasurementResource, ChannelsResource, ChannelResource, AlertsResource, \
     AlertsPostResource, TemplatesResource, TemplateResource, InfluxResource, HelloResource, ReadyResource, HealthcheckResource, MetricsResource, PemsResource, PemsRevokeResource, \
-    PostItsResource, PostItResource
+    ArchiveResource, PostItsResource, PostItResource
 
 from service.models import app
 
