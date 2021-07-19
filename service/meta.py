@@ -9,6 +9,7 @@ app = Flask(__name__)
 
 from common import utils, errors
 from service import auth
+from service import chords
 # get the logger instance -
 from common.logs import get_logger
 logger = get_logger(__name__)
@@ -273,15 +274,15 @@ def list_instruments(project_id, site_id):
                 result = instruments
                 message = "Instruments Found"
             else:
-                result = {}
+                result = []
                 message = "No Instruments Found"
                 raise errors.ResourceError(msg=f'No Instruments Found for Site ID:' + str(site_id))
         else:
-            result = {}
+            result = []
             message = "No Instruments Found"
             raise errors.ResourceError(msg=f'No Instruments Found for Site ID:'+str(site_id))
     else:
-        result = {}
+        result = []
         message ="Site Not Found - No Instruments Exist"
         raise errors.ResourceError(msg=f'Site Not Found With Site ID:'+str(site_id))
     return result, message
@@ -404,8 +405,8 @@ def list_variables(project_id, site_id, instrument_id):
                         logger.debug(variable)
                         if 'tapis_deleted' not in variable:
                             variables.append(variable)
-                        result = variable
                         logger.debug(result)
+                    result=variables
                 if len(result) > 0 :
                     message = "Variables Found"
                 else:
@@ -481,11 +482,13 @@ def create_variable(project_id, site_id, instrument_id, post_body):
                 result = var_body
                 message = "Variable Created"
             else:
-                message = "Variable Failed to be Created"
+                res,mgs = chords.delete_variable(post_body['chords_id'])
+                raise errors.ResourceError(msg=f'Variable Failed to be Created')
         else:
-            message = "Instrument Not Found For This Site. Variable Create Failed"
+            raise errors.ResourceError(msg=f'Instrument Not Found For This Site. Variable Create Failed')
     else:
-        message ="Site Not Found - Cannote Create Variable"
+        raise errors.ResourceError(msg=f'Site Not Found - Cannote Create Variable')
+
     return result, message
 
 #update and remove variable
