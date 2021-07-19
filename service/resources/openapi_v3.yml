@@ -2818,7 +2818,54 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+### Begin of archive
+  /v3/streams/archive/:
+    post:
+      tags:
+        - Archive Project
+      summary: Archive a projects data and metadata
+      description: Archive a projects data and metadata
+      operationId: archive_project
+      x-swagger-router-controller: connexContr
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Archives'
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/BasicResponse'
+                properties:
+                  result:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Archives'
 
+        '400':
+          description: Input error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+        '401':
+          description: Not authorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
 components:
   schemas:
@@ -3465,6 +3512,57 @@ components:
           type: string
           description: role name
           enum: [admin, manager, user]
+
+
+    Archives:
+      type: object
+      properties:
+        archive_type:
+          type: string
+          description: The type of archive object - system or chords
+          enum: [system, chords]
+        created_at:
+          type: string
+          description: ISO8601 datetime string for object creation date
+        updated_at:
+          type: string
+          description: ISO8601 datetime string for object updated date
+        owner:
+          type: string
+          description: Owner of this archive
+        settings:
+          type: object
+          properties:
+            project_id:
+              type: string
+              description: ID of Project to archive
+            system_id:
+              type: string
+              description: ID os System ID to send archive too.
+            path:
+              type: string
+              description: The file path to write archive to on selected System.
+            archive_format:
+              type: string
+              description: The archive file format - zip is currently supported
+              enum: [zip] #will be [zip,tar]
+            data_format:
+              type: string
+              description: The data measurement format - csv or JSON is currently supported
+              enum: [csv,json]
+              type: string
+              description: How often should this archive occur - currently supports one-time_now
+              enum: [one-time]
+            range:
+              type: string
+              description: The range of data to archive_type - all or custom supported
+              enum: [custom, all] #day, week, month, year coming soon
+            start_date:
+              type: string
+              description: A ISO8601 formatted datetime string for the starting time for archival data- only for custom range
+            end_date:
+              type: string
+              description: A ISO8601 formatted datetime string for the end time for archival data - only for custom range
 
     Application:
      type: object

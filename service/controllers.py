@@ -11,7 +11,7 @@ from openapi_core.wrappers.flask import FlaskOpenAPIRequest
 
 # import psycopg2
 #import sqlalchemy
-#from service import archive
+from service import archive
 #from service import transfer
 from service import chords
 from service import influx
