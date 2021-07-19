@@ -3644,6 +3644,12 @@ components:
         path:
           type: string
           description: The directory path to write archive to on selected System.
+        project_id:
+          type: string
+          description: The Project the data is within.
+        instrument_id:
+          type: string
+          description: The Instrument to pull measurement data from for the start and end dates.
         data_format:
           type: string
           description: The data measurement format - csv or JSON is currently supported

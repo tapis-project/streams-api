@@ -1248,11 +1248,16 @@ class TransferResource(Resource):
         created_at = datetime.now()
         updated_at = datetime.now()
         #create an transfer object in metrics
-        result = transfer.transfer_to_system(body['system_id'], body['settings']['path'], body['settings']['project_id'], body['settings']['archive_format'], body['settings']['data_format'])
-        logger.debug('after transfer call')
-        if result:
-            msg = "Transfer successful: "+result
-            return utils.ok(result, msg=msg)
-        else:
-            msg= f'ERROR Transfer Failed'
-            return utils.error(result='', msg=msg)
+        try:
+            result = transfer.transfer_to_system(body["filename"],body['system_id'], body['path'], body['project_id'],body['instrument_id'], body['data_format'],body['start_date'],body['end_date'])
+            logger.debug('after transfer call')
+            if result:
+                msg = "Transfer successful: "+result
+                return utils.ok(result, msg=msg)
+            else:
+                msg= f'ERROR Transfer Failed'
+                return utils.error(result='', msg=msg)
+
+        except Exception as e:
+            msg = f"Could not create transfer; exception: {e}"
+            return utils.error(result='',msg=msg)

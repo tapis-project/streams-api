@@ -126,7 +126,7 @@ def query_measurments(query_field_list):
     query_where = ' AND '.join(query_list)
     logger.debug(base_query+query_where)
     result = influx_client.query(base_query+query_where)
-    logger.debug(result)
+    #logger.debug(result)
     return result.raw
 
 def list_measurements(instrument_id):

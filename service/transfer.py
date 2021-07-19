@@ -21,15 +21,18 @@ from tapipy.tapis import Tapis
 
 t = auth.t
 
-def transfer_to_system(name,system_id, path, instrument_id, data_format, start_date, end_date):
+def transfer_to_system(filename, system_id, path, project_id, instrument_id, data_format, start_date, end_date):
     logger.debug("in transfer_to_system")
     index_result = meta.fetch_instrument_index(instrument_id)
-    if index_result > 0:
-        instrument = meta.get_instrument(index_result['project_id']index_result['site_id'],index_result['instrument_id'])
+    if "project_id" in index_result:
+        site = meta.get_site(index_result['project_id'],index_result['site_id'])[0]
+        instrument = meta.get_instrument(index_result['project_id'],index_result['site_id'],index_result['instrument_id'])[0]
         if instrument:
-            logger.debug(instrument)
-            js= influx.query_measurments([{"inst":str(instrument['chords_id'])},{"start_date": start_date},{"end_date": end_date}])
-            logger.debug(js)
+            logger.debug("CHORDS_ID: "+str(instrument['chords_id']))
+            logger.debug(start_date)
+            logger.debug(end_date)
+            js= influx.query_measurments([{'inst':str(instrument['chords_id'])},{'start_date': str(start_date)},{'end_date': str(end_date)}])
+            #logger.debug(js)
             if len(js) > 1 and len(js['series']) > 0:
                 df = pd.DataFrame(js['series'][0]['values'],columns=js['series'][0]['columns'])
                 pv = df.pivot(index='time', columns='var', values=['value'])
@@ -37,7 +40,6 @@ def transfer_to_system(name,system_id, path, instrument_id, data_format, start_d
                 df1.columns = df1.columns.droplevel(0)
                 df1 = df1.reset_index().rename_axis(None, axis=1)
                 replace_cols = {}
-                logger.debug(site)
                 for v in instrument['variables']:
                     logger.debug(v)
                     replace_cols[str(v['chords_id'])]=v['var_id']
@@ -49,7 +51,6 @@ def transfer_to_system(name,system_id, path, instrument_id, data_format, start_d
                     metric = {'created_at':datetime.now().isoformat(),'type':'transfer','project_id':project_id,'username':g.username,'size': sys.getsizeof(result)}
                     metric_result, metric_bug =auth.t.meta.createDocument(db=conf.tenant[g.tenant_id]['stream_db'], collection='streams_metrics', request_body=metric, _tapis_debug=True)
                     logger.debug(metric_result)
-                    filename = name+'.csv'
                 else:
                     result = json.loads(df1.to_json())
                     result['measurements_in_file'] = len(df1.index)
@@ -59,10 +60,9 @@ def transfer_to_system(name,system_id, path, instrument_id, data_format, start_d
                     metric = {'created_at':datetime.now().isoformat(),'type':'transfer','project_id':project_id,'username':g.username,'size': str(sys.getsizeof(result))}
                     metric_result, metric_bug =auth.t.meta.createDocument(db=conf.tenant[g.tenant_id]['stream_db'], collection='streams_metrics', request_body=metric, _tapis_debug=True)
                     logger.debug(metric_result)
-                    filename = name+'.json'
                 logger.debug(filename)
                 with open(filename, 'w') as f:
-                    f.write(result)
+                    f.write(json.dumps(result))
                 f.close()
                 #upload file to system at the path
                 t.access_token = t.service_tokens['admin']['access_token']
