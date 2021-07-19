@@ -3632,7 +3632,6 @@ components:
         filename:
           type: string
           description: The filename to create on the destination
-          enum: [system, chords]
         created_at:
           type: string
           description: ISO8601 datetime string for object creation date
