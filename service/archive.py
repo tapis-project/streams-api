@@ -68,12 +68,12 @@ def archive_to_system(system_id, path, project_id, archive_format, data_format):
                         metric = {'created_at':datetime.now().isoformat(),'type':'archive','project_id':project_id,'username':g.username,'size': str(sys.getsizeof(result))}
                         metric_result, metric_bug =auth.t.meta.createDocument(db=conf.tenant[g.tenant_id]['stream_db'], collection='streams_metrics', request_body=metric, _tapis_debug=True)
                         logger.debug(metric_result)
-                filename = instrument['inst_name']+'_'+archive_date.isoformat()+'.csv'
-                logger.debug(filename)
-                with open(filename, 'w') as f:
-                    f.write(result)
-                f.close()
-                file_list.append(filename)
+                    filename = instrument['inst_name']+'_'+archive_date.isoformat()+'.csv'
+                    logger.debug(filename)
+                    with open(filename, 'w') as f:
+                        f.write(result)
+                    f.close()
+                    file_list.append(filename)
     logger.debug("WRITE METADATA FILE")
     meta_filename = project_id+"_"+'medata_'+archive_date.isoformat()+'.json'
     with open(meta_filename, 'w') as f:

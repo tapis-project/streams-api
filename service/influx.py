@@ -51,26 +51,33 @@ def compact_write_measurements(site_id, instrument, body):
         #make sure the user defined variable ids ex
         for k in itm:
             logger.debug(k)
-            if k in inst_vars:
-                json_body.append(
-                    {
-                        "measurement": "tsdata",
-                        "tags": {
-                            "site": site_id,
-                            "inst": instrument['chords_id'],
-                            "var": inst_vars[k]
-                        },
-                        "time": body['datetime'],
-                        "fields": {
-                            "value": float(itm[k])
+            if k != 'datetime':
+                if k in inst_vars and 'datetime' in itm:
+                    json_body.append(
+                        {
+                            "measurement": "tsdata",
+                            "tags": {
+                                "site": site_id,
+                                "inst": instrument['chords_id'],
+                                "var": inst_vars[k]
+                            },
+                            "time": itm['datetime'],
+                            "fields": {
+                                "value": float(itm[k])
+                            }
                         }
-                    }
-                )
-                return_body[k] = {body['datetime'] : float(itm[k])}
+                    )
+                    if k in return_body:
+                        return_body[k].append({itm['datetime']: float(itm[k])})
+                    else:
+                        return_body[k] = [{itm['datetime']: float(itm[k])}]
 
-            else:
-                logger.debug('Variable ID: '+k+' is invalid!')
-                return {'resp':False,'msg':'Variable ID: '+k+' is invalid!'}
+                else:
+                    msg = 'Datetime field required and it is missing!'
+                    if 'datetime' in itm:
+                         msg = 'Variable ID: '+k+' is invalid!'
+                    logger.debug(msg)
+                    return {'resp':False,'msg':msg}
     logger.debug(json_body)
     result = influx_client.write_points(json_body)
     return {'resp':result,'msg':'','body':return_body}
@@ -127,6 +134,22 @@ def query_measurments(query_field_list):
     logger.debug(base_query+query_where)
     result = influx_client.query(base_query+query_where)
     #logger.debug(result)
+    return result.raw
+
+def fetch_archive_measurements(query_field_list):
+    logger.debug("IN INFLUX QUERY")
+    base_query = "SELECT * FROM \"tsdata\" WHERE "
+    query_list=[];
+    for fields in query_field_list:
+        #fields = json.loads(itm)
+        print(fields)
+        for k in fields:
+            query_list.append("\""+k+"\"='"+str(fields[k])+"' ")
+
+    query_where = ' AND '.join(query_list)
+    logger.debug(base_query+query_where)
+    result = influx_client.query(base_query+query_where)
+    logger.debug(result)
     return result.raw
 
 def list_measurements(instrument_id):

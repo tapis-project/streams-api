@@ -58,6 +58,6 @@ def authentication():
 
 # this is the Tapis client that tenants will use for interacting with other services, such as the security kernel.
 
-t = auth.get_service_tapis_client(tenant_id='admin', tenants=tenants)
-
+t = auth.get_service_tapis_client(tenant_id=conf.service_admin_tenant_id, tenants=tenants)
+logger.debug(t.service_tokens)
 t.x_username = conf.streams_user
