@@ -507,28 +507,26 @@ class VariablesResource(Resource):
         if (authorized):
             logger.debug(f'User is authorized to create variables for : ' + str(instrument_id))
             logger.debug(f' Request body' +str(request.json))
-            #TODO loop through list objects to support buld operations
-            if type(request.json) is dict:
-                body = request.json
-            else:
-                body = request.json[0]
+            req_body = request.json
+
             inst_result, bug = meta.get_instrument(project_id, site_id, instrument_id)
             # id, name, instrument_id, shortname, commit
-            postInst = ChordsVariable("test",inst_result['chords_id'],
-                                        body['var_name'],
-                                        body['var_id'],
-                                        "")
-            logger.debug(postInst)
-            # Create variable in chords
-            chord_result, chord_msg = chords.create_variable(postInst)
-            if chord_msg == "Variable created":
-                body['chords_id'] = chord_result['id']
-                # Create a variable in mongo
-                var_result, msg = meta.create_variable(project_id, site_id, instrument_id, body)
-                result.append(var_result)
-            else:
-                raise errors.ResourceError(msg=f'Chords variable not created due to '+ str(chord_msg))
-            logger.debug(f' Variable creation meta result: ' + str(result))
+            for body in req_body:
+                postInst = ChordsVariable("test",inst_result['chords_id'],
+                                            body['var_name'],
+                                            body['var_id'],
+                                            "")
+                logger.debug(postInst)
+                # Create variable in chords
+                chord_result, chord_msg = chords.create_variable(postInst)
+                if chord_msg == "Variable created":
+                    body['chords_id'] = chord_result['id']
+                    # Create a variable in mongo
+                    var_result, msg = meta.create_variable(project_id, site_id, instrument_id, body)
+                    result.append(var_result)
+                else:
+                    raise errors.ResourceError(msg=f'Chords variable not created due to '+ str(chord_msg))
+                logger.debug(f' Variable creation meta result: ' + str(result))
             return utils.ok(result=result, msg=msg)
         else:
             logger.debug(f'User does not have admin or manager role on project')
