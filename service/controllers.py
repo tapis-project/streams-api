@@ -370,44 +370,53 @@ class InstrumentsResource(Resource):
             logger.debug(f'User is authorized to create instruments for site : ' + str(site_id))
             #logger.debug(type(request.json))
             logger.debug(f'Request body' +str(request.json))
-            result={}
+            result=[]
             #TODO loop through list objects to support build operations
-            if type(request.json) is dict:
-                body = request.json
-            else:
-                body = request.json[0]
+            # if type(request.json) is dict:
+            #     body = request.json
+            # else:
+            req_body = request.json
+            #check for . in inst_id - can't have it due to kapacitor
+            for body in req_body:
+                if 'instrument_id' in meta.fetch_instrument_index(body['inst_id']):
+                    logger.debug(f'Invalid Instrument ID!')
+                    raise common_errors.PermissionsError(msg=f'Instrument ID: '+body['inst_id']+' already exists in the streams service - please choose another identifier.')
+                if body['inst_id'].__contains__('.'):
+                    logger.debug(f'Invalid Instrument ID!')
+                    raise common_errors.PermissionsError(msg=f'Invalid Instrument ID format - period "." is not allowed- please use another identifier')
             logger.debug(f'before ChordsInstrument assignment')
             #id, site_id, name, sensor_id, topic_category_id, description, display_points, plot_offset_value, plot_offset_units, sample_rate_seconds):
             site_result, site_bug = meta.get_site(project_id, site_id)
             if site_bug == "Site found.":
-                postInst = ChordsIntrument("",site_result['chords_id'],
-                                            body['inst_name'],
-                                            "",
-                                            "",
-                                            body['inst_description'],
-                                            "120",
-                                            "1",
-                                            "weeks",
-                                            "60")
-                logger.debug(f'after ChordsInstrument assignment')
-                # Create instrument in chords
-                chord_result, chord_msg = chords.create_instrument(postInst)
-                logger.debug(chord_msg)
-                if chord_msg == "Instrument created":
-                    body['chords_id'] = chord_result['id']
-                    # create instrument document in MongoDB
-                    inst_result, inst_msg = meta.create_instrument(project_id, site_id, body)
-                    logger.debug(f'Instrument result'+str(inst_msg))
-                    if len(inst_result) >0:
-                        result = inst_result
-                        message = inst_msg
-                else:
-                    logger.debug(f'Instrument not created in chords due to ' +str(chord_msg))
-                    message = chord_msg
+                for body in req_body:
+                    postInst = ChordsIntrument("",site_result['chords_id'],
+                                                body['inst_name'],
+                                                "",
+                                                "",
+                                                body['inst_description'],
+                                                "120",
+                                                "1",
+                                                "weeks",
+                                                "60")
+                    logger.debug(f'after ChordsInstrument assignment')
+                    # Create instrument in chords
+                    chord_result, chord_msg = chords.create_instrument(postInst)
+                    logger.debug(chord_msg)
+                    if chord_msg == "Instrument created":
+                        body['chords_id'] = chord_result['id']
+                        # create instrument document in MongoDB
+                        inst_result, inst_msg = meta.create_instrument(project_id, site_id, body)
+                        logger.debug(f'Instrument result'+str(inst_msg))
+                        if len(inst_result) >0:
+                            result.append (inst_result)
+                            message = inst_msg
+                    else:
+                        logger.debug(f'Instrument not created in chords due to ' +str(chord_msg))
+                        message = chord_msg
+                return utils.ok(result=result, msg=message)
             else:
                 logger.debug(f"INSTRUMENT FAILED TO CREATE")
-                message = "Instrument Failed To Create"
-            return utils.ok(result=result, msg=message)
+                raise common_errors.PermissionsError(msg=f'Instrument Failed To Create - Site not found.')
         else:
             logger.debug(f'User does not have Admin or Manager role on project')
             raise common_errors.PermissionsError(msg=f'User not authorized to access the resource')
