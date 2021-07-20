@@ -30,6 +30,7 @@ def strip_meta_list(meta_list):
         new_list.append(strip_meta(item))
     return new_list
 
+
 #List projects a user has permission to read
 #strip out id and _etag fields
 def list_projects():
@@ -137,7 +138,7 @@ def delete_project(project_id):
 
 #strip out id and _etag fields
 def list_sites(project_id):
-    result = t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection=project_id,filter='{"tapis_deleted":{ "$exists" : false }}')
+    result = t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection=project_id,filter='{"tapis_deleted":{ "$exists" : false },"site_id":{ "$exists" : true }}')
     if len(json.loads(result)) > 0:
         message = "Sites found"
     else:
