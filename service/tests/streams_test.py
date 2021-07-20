@@ -132,7 +132,7 @@ def test_listing_get_project_details(client):
 def test_create_site(client):
     with client:
         payload = {
-            "project_uuid": project_name,
+            "project_id": project_name,
             "site_name":site_name,
             "latitude":50,
             "longitude":10,
@@ -152,7 +152,7 @@ def test_create_site(client):
 def test_update_site(client):
     with client:
         payload = {
-            "project_uuid": project_name,
+            "project_id": project_name,
             "site_name":site_name,
             "latitude":50,
             "longitude":10,
@@ -183,7 +183,7 @@ def test_listing_site(client):
 def test_create_instrument(client):
     with client:
         payload = {
-            "project_uuid": project_name,
+            "project_id": project_name,
             "topic_category_id": "2",
             "site_id": site_name,
             "inst_name": inst_name,
@@ -202,7 +202,7 @@ def test_create_instrument(client):
 def test_update_instrument(client):
     with client:
         payload = {
-            "project_uuid": project_name,
+            "project_id": project_name,
             "topic_category_id": "2",
             "site_id": site_name,
             "inst_name": inst_name,
@@ -232,7 +232,7 @@ def test_listing_instrument(client):
 def test_create_variable(client):
     with client:
         payload = {
-            "project_uuid":project_name,
+            "project_id":project_name,
             "topic_category_id":"2",
             "site_id":site_name,
             "inst_id":inst_name,
@@ -263,7 +263,7 @@ def test_list_variables(client):
 def test_update_variable(client):
     with client:
         payload = {
-            "project_uuid":project_name,
+            "project_id":project_name,
             "topic_category_id":"2",
             "site_id":site_name,
             "inst_id":inst_name,
