@@ -3687,7 +3687,7 @@ components:
         project_id:
           type: string
           description: The Project the data is within.
-        instrument_id:
+        inst_id:
           type: string
           description: The Instrument to pull measurement data from for the start and end dates.
         data_format:

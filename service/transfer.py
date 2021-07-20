@@ -57,7 +57,7 @@ def transfer_to_system(filename, system_id, path, project_id, instrument_id, dat
                     result['site'] = meta.strip_meta(site)
                     metric = {'created_at':datetime.now().isoformat(),'type':'transfer','project_id':project_id,'username':g.username,'size': str(sys.getsizeof(result))}
                 metric['request'] = {"filename":filename, "sytem_id":system_id, "path":path, "project_id":project_id,
-                                     "instrument_id":instrument_id, "data_format":data_format, "start_date":start_date, "end_date":end_date}
+                                     "inst_id":instrument_id, "data_format":data_format, "start_date":start_date, "end_date":end_date}
                 metric_result, metric_bug =t.meta.createDocument(db=conf.tenant[g.tenant_id]['stream_db'], collection='streams_metrics', request_body=metric, _tapis_debug=True)
                 logger.debug(filename)
                 with open(filename, 'w') as f:

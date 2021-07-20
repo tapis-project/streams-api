@@ -1287,7 +1287,7 @@ class TransferResource(Resource):
         logger.debug("IN TRANSFER")
         body = request.json
         logger.debug(body)
-        index_result = meta.fetch_instrument_index(body['instrument_id'])
+        index_result = meta.fetch_instrument_index(body['inst_id'])
         logger.debug(index_result)
         if "project_id" in index_result:
             authorized = sk.check_if_authorized_get(index_result['project_id'])
@@ -1295,7 +1295,7 @@ class TransferResource(Resource):
             if (authorized):
                 logger.debug(f'User is authorized to list archives for project : ' + str(index_result['project_id']))
                 try:
-                    result = transfer.transfer_to_system(body["filename"],body['system_id'], body['path'], index_result['project_id'],body['instrument_id'], body['data_format'],body['start_date'],body['end_date'])
+                    result = transfer.transfer_to_system(body["filename"],body['system_id'], body['path'], index_result['project_id'],body['inst_id'], body['data_format'],body['start_date'],body['end_date'])
                     logger.debug(result)
                     logger.debug('after transfer call')
                     if 'transfer_status' in result:
