@@ -49,8 +49,6 @@ def transfer_to_system(filename, system_id, path, project_id, instrument_id, dat
                     logger.debug("CSV")
                     result = df1.to_csv()
                     metric = {'created_at':datetime.now().isoformat(),'type':'transfer','project_id':project_id,'username':g.username,'size': sys.getsizeof(result)}
-                    metric_result, metric_bug =auth.t.meta.createDocument(db=conf.tenant[g.tenant_id]['stream_db'], collection='streams_metrics', request_body=metric, _tapis_debug=True)
-                    logger.debug(metric_result)
                 else:
                     result = json.loads(df1.to_json())
                     result['measurements_in_file'] = len(df1.index)
@@ -58,8 +56,9 @@ def transfer_to_system(filename, system_id, path, project_id, instrument_id, dat
                     site.pop('instruments',None)
                     result['site'] = meta.strip_meta(site)
                     metric = {'created_at':datetime.now().isoformat(),'type':'transfer','project_id':project_id,'username':g.username,'size': str(sys.getsizeof(result))}
-                    metric_result, metric_bug =auth.t.meta.createDocument(db=conf.tenant[g.tenant_id]['stream_db'], collection='streams_metrics', request_body=metric, _tapis_debug=True)
-                    logger.debug(metric_result)
+                metric['request'] = {"filename":filename, "sytem_id":system_id, "path":path, "project_id":project_id,
+                                     "instrument_id":instrument_id, "data_format":data_format, "start_date":start_date, "end_date":end_date}
+                metric_result, metric_bug =t.meta.createDocument(db=conf.tenant[g.tenant_id]['stream_db'], collection='streams_metrics', request_body=metric, _tapis_debug=True)
                 logger.debug(filename)
                 with open(filename, 'w') as f:
                     f.write(json.dumps(result))
@@ -72,7 +71,8 @@ def transfer_to_system(filename, system_id, path, project_id, instrument_id, dat
                 msg = t.upload(source_file_path=filename, system_id=system_id, dest_file_path=path+'/'+filename)
                 logger.debug(msg)
                 os.remove(filename) #cleanup zipfile
-                return msg
+                metric['transfer_status'] = msg
+                return metric
             else:
                 msg="No Measurements Founds"
                 return msg

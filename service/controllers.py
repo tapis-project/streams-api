@@ -1289,21 +1289,35 @@ class TransferResource(Resource):
         logger.debug("IN TRANSFER")
         body = request.json
         logger.debug(body)
-        try:
-            result = transfer.transfer_to_system(body["filename"],body['system_id'], body['path'], body['project_id'],body['instrument_id'], body['data_format'],body['start_date'],body['end_date'])
+        index_result = meta.fetch_instrument_index(body['instrument_id'])
+        logger.debug(index_result)
+        if "project_id" in index_result:
+            authorized = sk.check_if_authorized_get(index_result['project_id'])
+            logger.debug(f'Authorization status: '+ str(authorized))
+            if (authorized):
+                logger.debug(f'User is authorized to list archives for project : ' + str(index_result['project_id']))
+                try:
+                    result = transfer.transfer_to_system(body["filename"],body['system_id'], body['path'], index_result['project_id'],body['instrument_id'], body['data_format'],body['start_date'],body['end_date'])
+                    logger.debug(result)
+                    logger.debug('after transfer call')
+                    if 'transfer_status' in result:
+                        if result['transfer_status']=='ok':
+                            msg = "Transfer successful: "+result['transfer_status']
+                            logger.debug(result)
+                            return utils.ok(result, msg=msg)
+                        else:
+                            msg= f'ERROR Transfer Failed'
+                            return utils.error(result='', msg=msg)
+                    else:
+                        msg= f'ERROR Transfer Failed'
+                        return utils.error(result='', msg=msg)
 
-            logger.debug('after transfer call')
-            if result:
-                msg = "Transfer successful: "+result
-                return utils.ok(result, msg=msg)
-            else:
-                msg= f'ERROR Transfer Failed'
-                return utils.error(result='', msg=msg)
-
-        except Exception as e:
-            msg = f"Could not create transfer; exception: {e}"
-            return utils.error(result='',msg=msg)
-
+                except Exception as e:
+                    msg = f"Could not create transfer; exception: {e}"
+                    return utils.error(result='',msg=msg)
+        else:
+            logger.debug(f'Authorization failed. User does not have role any role on the project')
+            raise common_errors.PermissionsError(msg=f'User not authorized to access the resource')
 
 # Post Its resource : LIST, CREATE
 class PostItsResource(Resource):
