@@ -4,7 +4,7 @@ from service.auth import authn_and_authz
 from service.controllers import ProjectsResource, ProjectResource, SitesResource, SiteResource, InstrumentsResource, InstrumentResource, VariablesResource, \
     VariableResource, MeasurementsWriteResource, MeasurementsReadResource, MeasurementsResource, MeasurementResource, ChannelsResource, ChannelResource, AlertsResource, \
     AlertsPostResource, TemplatesResource, TemplateResource, InfluxResource, HelloResource, ReadyResource, HealthcheckResource, MetricsResource, PemsResource, PemsRevokeResource, \
-    ArchiveResource, PostItsResource, PostItResource
+    ArchiveResource, TransferResource, PostItsResource, PostItResource
 
 from service.models import app
 
@@ -80,6 +80,8 @@ api.add_resource(PostItResource, '/v3/streams/post-its/<postit_id>')
 
 # Archive
 api.add_resource(ArchiveResource, '/v3/streams/archive')
+# Transfer
+api.add_resource(TransferResource, '/v3/streams/transfer')
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', debug=True)

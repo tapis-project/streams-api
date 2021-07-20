@@ -12,7 +12,7 @@ from openapi_core.wrappers.flask import FlaskOpenAPIRequest
 # import psycopg2
 #import sqlalchemy
 from service import archive
-#from service import transfer
+from service import transfer
 from service import chords
 from service import influx
 from service import meta
@@ -1245,17 +1245,19 @@ class TransferResource(Resource):
         logger.debug("IN TRANSFER")
         body = request.json
         logger.debug(body)
-        created_at = datetime.now()
-        updated_at = datetime.now()
-        #create an transfer object in metrics
-        result = transfer.transfer_to_system(body['filename'],body['system_id'], body['path'], body['instrument_id'], body['data_format'], body['start_date'],body['end_date'])
-        logger.debug('after transfer call')
-        if result:
-            msg = "Transfer successful: "+result
-            return utils.ok(result, msg=msg)
-        else:
-            msg= f'ERROR Transfer Failed'
-            return utils.error(result='', msg=msg)
+        try:
+            result = transfer.transfer_to_system(body["filename"],body['system_id'], body['path'], body['project_id'],body['instrument_id'], body['data_format'],body['start_date'],body['end_date'])
+            logger.debug('after transfer call')
+            if result:
+                msg = "Transfer successful: "+result
+                return utils.ok(result, msg=msg)
+            else:
+                msg= f'ERROR Transfer Failed'
+                return utils.error(result='', msg=msg)
+
+        except Exception as e:
+            msg = f"Could not create transfer; exception: {e}"
+            return utils.error(result='',msg=msg)
 
 
 # Post Its resource : LIST, CREATE
@@ -1316,3 +1318,4 @@ class PostItResource(Resource):
 #               msg = f"ERROR! Could not delete Post-It"
 #               return utils.error(result='null', msg=msg)
 #         return utils.error(result='null', msg=msg)
+
