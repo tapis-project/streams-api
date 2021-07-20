@@ -7,6 +7,7 @@
 # Build the tapis/streams-api docker container:  docker build -t tapis/streams-api:latest .
 # Build the test docker image: docker build -t tapis/streams-tests -f Dockerfile-tests .
 # Run these tests using the built docker image: docker run -it --rm --name=streams-test -p 5000:5000 tapis/streams-tests
+#docker build -t tapis/streams-api:latest .; docker build -t tapis/streams-tests -f Dockerfile-tests .;docker run -it --rm --name=streams-test -p 5000:5000 tapis/streams-tests
 
 # Standard library imports...
 from unittest.mock import Mock, patch
@@ -284,8 +285,8 @@ def test_create_measurements(client):
     with client:
         payload = {
             "inst_id":inst_name,
-            "vars":[{var_name: 10}],
-            "datetime":time_now
+            "vars":[{var_name: 10,
+            "datetime":time_now}]
         }
         response = client.post(
             measurements_url,
