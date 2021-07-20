@@ -2819,7 +2819,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 ### Begin of archive
-  /v3/streams/archive/:
+  /v3/streams/archive:
     post:
       tags:
         - Archive Project
@@ -2868,7 +2868,7 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
 
 ### Begin of transfers
-  /v3/streams/transfer/:
+  /v3/streams/transfer:
     post:
       tags:
         - Transfer Instrument Data
