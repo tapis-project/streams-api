@@ -499,7 +499,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/NewSite'
+              $ref: '#/components/schemas/NewSiteRequest'
       parameters:
       - name: project_id
         in: path
@@ -810,7 +810,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/NewInstrument'
+              $ref: '#/components/schemas/NewInstRequest'
       parameters:
         - name: project_id
           in: path
@@ -3097,6 +3097,11 @@ components:
               type: number
               description: elevation
 
+    NewSiteRequest:
+      type: array
+      items:
+        $ref: '#/components/schemas/NewSite'
+        
     NewSite:
       type: object
       properties:
