@@ -1222,24 +1222,68 @@ class PemsRevokeResource(Resource):
                 logger.debug(msg)
                 return utils.error(result='', msg=msg)
 
-class ArchiveResource(Resource):
+class ArchivesResource(Resource):
     #expects systemid, path, project_id, archive_type, data_format
-    def post(self):
+    def post(self,project_id):
         logger.debug("IN ARCHIVE")
-        #archive a project id
-        body = request.json
-        logger.debug(body)
-        created_at = datetime.now()
-        updated_at = datetime.now()
-        #create an archive object in meta
-        result = archive.archive_to_system(body['settings']['system_id'], body['settings']['path'], body['settings']['project_id'], body['settings']['archive_format'], body['settings']['data_format'])
-        logger.debug('after archive call')
-        if result:
-            msg = "Archive created successfully: "+result
-            return utils.ok(result, msg=msg)
+        authorized = sk.check_if_authorized_get(project_id)
+        logger.debug(f'Authorization status: '+ str(authorized))
+        if (authorized):
+            logger.debug(f'User is authorized to create archives for project : ' + str(project_id))
+            #archive a project id
+            body = request.json
+            logger.debug(body)
+            #create an archive object in meta
+            if body['archive_type'] == "system":
+                if body['settings']['frequency'] == 'one-time':
+                    logger.debug('*******************before acrchive call')
+                    result = archive.archive_to_system(body['settings']['system_id'], body['settings']['path'], project_id, body['settings']['archive_format'], body['settings']['data_format'])
+                    logger.debug('*****************************after archive call')
+                    if 'transfer_status' in result:
+                        if result['transfer_status'] == 'ok':
+                            body['created_at'] = str(datetime.now())
+                            body['updated_at'] = str(datetime.now())
+                            meta_result, bug =auth.t.meta.createDocument(db=conf.tenant[g.tenant_id]['stream_db'], collection=project_id, request_body=body, _tapis_debug=True)
+                            sfilter = '{"tapis_deleted":{ "$exists" : false },"archive_type":"'+body['archive_type']+'","created_at":"'+body['created_at']+'"}'
+                            mresult = auth.t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection=project_id,filter=sfilter)
+                            mres = json.loads(mresult.decode('utf-8'))
+                            logger.debug(mres)
+                            #result['id'] = mresult[0]['_id']['oid']
+                            msg = "Archive created successfully"
+                            res = archive.strip_meta_set_id(mres[0])
+                            return utils.ok(res, msg=msg)
+                        else:
+                            msg= f'ERROR Archive Failed to Create: '+result['transfer_status']
+                            return utils.error(result='', msg=msg)
+                    else:
+                        msg= f'ERROR Archive Failed to Create'
+                        return utils.error(result='', msg=msg)
+                else:
+                    msg= f'ERROR Archive Failed to Create - frequecy only support one-time currently'
+                    return utils.error(result='', msg=msg)
+            else:
+                msg= f'ERROR Archive Failed to Create - archive_type only support system at the moment'
+                return utils.error(result='', msg=msg)
         else:
-            msg= f'ERROR Archive Failed to Create'
-            return utils.error(result='', msg=msg)
+            logger.debug(f'Authorization failed. User does not have role any role on the project')
+            raise common_errors.PermissionsError(msg=f'User not authorized to access the resource')
+
+    def get(self,project_id):
+        authorized = sk.check_if_authorized_get(project_id)
+        logger.debug(f'Authorization status: '+ str(authorized))
+        if (authorized):
+            logger.debug(f'User is authorized to list archives for project : ' + str(project_id))
+            archive_result, msg = archive.list_archives(project_id)
+            result = archive.strip_meta_list_add_id(archive_result)
+            return utils.ok(result=result,msg=msg)
+        else:
+            logger.debug(f'Authorization failed. User does not have role any role on the project')
+            raise common_errors.PermissionsError(msg=f'User not authorized to access the resource')
+
+class ArchiveResource(Resource):
+    def get(self, project_id, archive_id):
+        return true
+
 class TransferResource(Resource):
     def post(self):
         logger.debug("IN TRANSFER")
@@ -1247,6 +1291,7 @@ class TransferResource(Resource):
         logger.debug(body)
         try:
             result = transfer.transfer_to_system(body["filename"],body['system_id'], body['path'], body['project_id'],body['instrument_id'], body['data_format'],body['start_date'],body['end_date'])
+
             logger.debug('after transfer call')
             if result:
                 msg = "Transfer successful: "+result
@@ -1318,4 +1363,3 @@ class PostItResource(Resource):
 #               msg = f"ERROR! Could not delete Post-It"
 #               return utils.error(result='null', msg=msg)
 #         return utils.error(result='null', msg=msg)
-

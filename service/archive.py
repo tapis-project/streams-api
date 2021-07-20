@@ -21,6 +21,21 @@ from tapipy.tapis import Tapis
 
 t = auth.t
 
+#strip off the _id and _etag from metadata objects
+def strip_meta_set_id(meta_object):
+    meta_object['archive_id'] = meta_object['_id']['$oid']
+    meta_object.pop('_id')
+    meta_object.pop('_etag')
+    return meta_object
+
+#strip off the _id and _etag for a list of metadata objects
+def strip_meta_list_add_id(meta_list):
+    new_list = []
+    for item in meta_list:
+        new_list.append(strip_meta_set_id(item))
+    return new_list
+
+
 def archive_to_system(system_id, path, project_id, archive_format, data_format):
     logger.debug("in archive_to_system")
     start_date= (datetime.now() - timedelta(days=10000)).isoformat()#'1980-01-01T00:00:00.0'
@@ -30,7 +45,7 @@ def archive_to_system(system_id, path, project_id, archive_format, data_format):
     project = meta.get_project(project_id = project_id)[0]
     logger.debug(project)
     sites = meta.list_sites(project_id = project_id)[0]
-    #logger.debug(sites)
+    logger.debug(sites)
     #print(sites)
     for site in sites:
         logger.debug(site)
@@ -104,4 +119,14 @@ def archive_to_system(system_id, path, project_id, archive_format, data_format):
     msg = t.upload(source_file_path=zipfilename, system_id=system_id, dest_file_path=path+'/'+zipfilename)
     logger.debug(msg)
     os.remove(zipfilename) #cleanup zipfile
-    return msg
+    metric['transfer_status']=msg
+    return metric
+
+def list_archives(project_id):
+    result = t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection=project_id,filter='{"tapis_deleted":{ "$exists" : false },"archive_type":{ "$exists" : true }}')
+    if len(json.loads(result)) > 0:
+        message = "Archives found"
+    else:
+        raise errors.ResourceError(msg='No Archives found')
+    logger.debug(result)
+    return json.loads(result.decode('utf-8')), message

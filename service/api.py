@@ -4,7 +4,7 @@ from service.auth import authn_and_authz
 from service.controllers import ProjectsResource, ProjectResource, SitesResource, SiteResource, InstrumentsResource, InstrumentResource, VariablesResource, \
     VariableResource, MeasurementsWriteResource, MeasurementsReadResource, MeasurementsResource, MeasurementResource, ChannelsResource, ChannelResource, AlertsResource, \
     AlertsPostResource, TemplatesResource, TemplateResource, InfluxResource, HelloResource, ReadyResource, HealthcheckResource, MetricsResource, PemsResource, PemsRevokeResource, \
-    ArchiveResource, TransferResource, PostItsResource, PostItResource
+    ArchivesResource, ArchiveResource, TransferResource, PostItsResource, PostItResource
 
 from service.models import app
 
@@ -79,7 +79,8 @@ api.add_resource(PostItsResource, '/v3/streams/post-its')
 api.add_resource(PostItResource, '/v3/streams/post-its/<postit_id>')
 
 # Archive
-api.add_resource(ArchiveResource, '/v3/streams/archive')
+api.add_resource(ArchivesResource, '/v3/streams/projects/<project_id>/archives')
+api.add_resource(ArchiveResource, '/v3/streams/projects/<project_id>/archives/<archive_id>')
 # Transfer
 api.add_resource(TransferResource, '/v3/streams/transfer')
 
