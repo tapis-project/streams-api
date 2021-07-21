@@ -11,8 +11,6 @@ from openapi_core.wrappers.flask import FlaskOpenAPIRequest
 
 # import psycopg2
 #import sqlalchemy
-from service import archive
-from service import transfer
 from service import chords
 from service import influx
 from service import meta
@@ -27,7 +25,6 @@ from common import errors as common_errors
 from service import auth
 from datetime import datetime
 
-from zipfile import ZipFile
 # get the logger instance -
 from common.logs import get_logger
 logger = get_logger(__name__)
@@ -526,6 +523,7 @@ class VariablesResource(Resource):
         if (authorized):
             logger.debug(f'User is authorized to create variables for : ' + str(instrument_id))
             logger.debug(f' Request body' +str(request.json))
+
             req_body = request.json
 
             inst_result, bug = meta.get_instrument(project_id, site_id, instrument_id)
@@ -547,6 +545,7 @@ class VariablesResource(Resource):
                     raise errors.ResourceError(msg=f'Chords variable not created due to '+ str(chord_msg))
                 logger.debug(f' Variable creation meta result: ' + str(result))
             return utils.ok(result=result, msg=msg)
+
         else:
             logger.debug(f'User does not have admin or manager role on project')
             raise common_errors.PermissionsError(msg=f'User not authorized to access the resource')
@@ -619,7 +618,7 @@ class VariableResource(Resource):
 # Measurements resources
 class MeasurementsWriteResource(Resource):
     #at the moment expects some like
-    #http://localhost:5000/v3/streams/measurements?instrument_id=1&vars[]={"somename":1.0}&vars[]={"other":2.0}
+    #http://localhost:5000/v3/streams/measurements
     #will need to adjust when openAPI def is final for measurement
     def post(self):
         logger.debug('Inside post measurements')
@@ -630,6 +629,7 @@ class MeasurementsWriteResource(Resource):
         #logger.debug("Bytes:" + str(sys.getsizeof(body)))
         message = "Measurement Write Failed"
         if 'inst_id' in body:
+            logger.debug('inst_id in body')
             result = meta.fetch_instrument_index(body['inst_id'])
             logger.debug(result)
             if len(result) > 0:
@@ -664,6 +664,7 @@ class MeasurementsWriteResource(Resource):
             else:
                 raise errors.ResourceError(msg=f'No Instrument found matching inst_id.')
         else:
+            logger.debug('The inst_id field is missing and is required to write a Measurement.')
             raise errors.ResourceError(msg=f'The inst_id field is missing and is required to write a Measurement.')
         return utils.ok(result=[], msg=message)
 
@@ -1404,3 +1405,4 @@ class PostItResource(Resource):
 #               msg = f"ERROR! Could not delete Post-It"
 #               return utils.error(result='null', msg=msg)
 #         return utils.error(result='null', msg=msg)
+
