@@ -3101,7 +3101,7 @@ components:
       type: array
       items:
         $ref: '#/components/schemas/NewSite'
-        
+
     NewSite:
       type: object
       properties:
@@ -3239,13 +3239,6 @@ components:
         measured_property_id:
           type: number
           description: Id of the Property measured by the variable type
-        format:
-          type: string
-          description: text for single variable creation and file for bulk variable creation
-          enum: [text, file]
-        storage_system:
-          type: string
-          description: Storage system name for file format
         metadata:
           type: string
           description: User entered metadata for the variable
