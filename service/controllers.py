@@ -228,33 +228,38 @@ class SitesResource(Resource):
     def post(self, project_id):
         logger.debug(f'In create sites')
         # Check if the user is authorized to create the site by checking if the user has project specific role
-
+        result=[]
         authorized = sk.check_if_authorized_post(project_id)
         logger.debug(authorized)
         if (authorized):
                 logger.debug(f'User is authorized to create sites for project : ' + str(project_id))
                 logger.debug(f'Request body'+ str(request.json))
-                body = request.json
-                postSite = ChordsSite("",body['site_name'],
-                                        body['latitude'],
-                                        body['longitude'],
-                                        body['elevation'],
-                                        body['description'])
-                # Create chords site
-                resp, msg = chords.create_site(postSite)
-                # If site is successfully created in chords create a document in MongoDB
-                if msg == "Site created":
-                    site_result, message = meta.create_site(project_id, resp['id'],body)
-                    #resp['results']=meta_resp['results']
-                    logger.debug(f'Metadata site creation success')
-                    logger.debug(f'Site object' +str(site_result))
-                    # Remove the _id and _etag for a list of metadata objects
+                req_body = request.json
+                for body in req_body:
+                    site = auth.t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection=project_id,filter='{"$and":[{"site_id":"'+body['site_id']+'"},{"tapis_deleted":{ "$exists" : false }}]}')
+                    if len(json.loads(site)) > 0:
+                        raise common_errors.ResourceError(msg=f'Site ID: '+body['site_id']+' already use in project namepsace')
+                for body in req_body:
+                    postSite = ChordsSite("",body['site_name'],
+                                            body['latitude'],
+                                            body['longitude'],
+                                            body['elevation'],
+                                            body['description'])
+                    # Create chords site
+                    resp, msg = chords.create_site(postSite)
+                    # If site is successfully created in chords create a document in MongoDB
+                    if msg == "Site created":
+                        site_result, message = meta.create_site(project_id, resp['id'],body)
+                        #resp['results']=meta_resp['results']
+                        logger.debug(f'Metadata site creation success')
+                        logger.debug(f'Site object' +str(site_result))
+                        # Remove the _id and _etag for a list of metadata objects
 
-                    result = meta.strip_meta(site_result)
-                else:
-                    logger.debug(f'Metadata site creation failed')
-                    message = msg
-                    result=''
+                        result.append( meta.strip_meta(site_result))
+                    else:
+                        logger.debug(f'Metadata site creation failed')
+                        message = msg
+                        result=''
                 return utils.ok(result=result,msg=message)
         else:
             logger.debug(f'User does not have Admin or Manager role on the project')
@@ -370,44 +375,58 @@ class InstrumentsResource(Resource):
             logger.debug(f'User is authorized to create instruments for site : ' + str(site_id))
             #logger.debug(type(request.json))
             logger.debug(f'Request body' +str(request.json))
-            result={}
+            result=[]
+            message="Instrument Created Successfully."
             #TODO loop through list objects to support build operations
-            if type(request.json) is dict:
-                body = request.json
-            else:
-                body = request.json[0]
+            # if type(request.json) is dict:
+            #     body = request.json
+            # else:
+            req_body = request.json
+            logger.debug(req_body)
+            #check for . in inst_id - can't have it due to kapacitor
+            for body in req_body:
+                if 'instrument_id' in meta.fetch_instrument_index(body['inst_id']):
+                    logger.debug(f'Invalid Instrument ID!')
+                    raise common_errors.PermissionsError(msg=f'Instrument ID: '+body['inst_id']+' already exists in the streams service - please choose another identifier.')
+                if body['inst_id'].__contains__('.'):
+                    logger.debug(f'Invalid Instrument ID!')
+                    raise common_errors.PermissionsError(msg=f'Invalid Instrument ID format - period "." is not allowed- please use another identifier')
+                if body['inst_id'].__contains__(':'):
+                    logger.debug(f'Invalid Instrument ID!')
+                    raise common_errors.PermissionsError(msg=f'Invalid Instrument ID format - colon ":" is not allowed- please use another identifier')
             logger.debug(f'before ChordsInstrument assignment')
             #id, site_id, name, sensor_id, topic_category_id, description, display_points, plot_offset_value, plot_offset_units, sample_rate_seconds):
             site_result, site_bug = meta.get_site(project_id, site_id)
             if site_bug == "Site found.":
-                postInst = ChordsIntrument("",site_result['chords_id'],
-                                            body['inst_name'],
-                                            "",
-                                            "",
-                                            body['inst_description'],
-                                            "120",
-                                            "1",
-                                            "weeks",
-                                            "60")
-                logger.debug(f'after ChordsInstrument assignment')
-                # Create instrument in chords
-                chord_result, chord_msg = chords.create_instrument(postInst)
-                logger.debug(chord_msg)
-                if chord_msg == "Instrument created":
-                    body['chords_id'] = chord_result['id']
-                    # create instrument document in MongoDB
-                    inst_result, inst_msg = meta.create_instrument(project_id, site_id, body)
-                    logger.debug(f'Instrument result'+str(inst_msg))
-                    if len(inst_result) >0:
-                        result = inst_result
-                        message = inst_msg
-                else:
-                    logger.debug(f'Instrument not created in chords due to ' +str(chord_msg))
-                    message = chord_msg
+                for body in req_body:
+                    postInst = ChordsIntrument("",site_result['chords_id'],
+                                                body['inst_name'],
+                                                "",
+                                                "",
+                                                body['inst_description'],
+                                                "120",
+                                                "1",
+                                                "weeks",
+                                                "60")
+                    logger.debug(f'after ChordsInstrument assignment')
+                    # Create instrument in chords
+                    chord_result, chord_msg = chords.create_instrument(postInst)
+                    logger.debug(chord_msg)
+                    if chord_msg == "Instrument created":
+                        body['chords_id'] = chord_result['id']
+                        # create instrument document in MongoDB
+                        inst_result, inst_msg = meta.create_instrument(project_id, site_id, body)
+                        logger.debug(f'Instrument result'+str(inst_msg))
+                        if len(inst_result) >0:
+                            result.append (inst_result)
+                            message = inst_msg
+                    else:
+                        logger.debug(f'Instrument not created in chords due to ' +str(chord_msg))
+                        message = chord_msg
+                return utils.ok(result=result, msg=message)
             else:
                 logger.debug(f"INSTRUMENT FAILED TO CREATE")
-                message = "Instrument Failed To Create"
-            return utils.ok(result=result, msg=message)
+                raise common_errors.PermissionsError(msg=f'Instrument Failed To Create - Site not found.')
         else:
             logger.debug(f'User does not have Admin or Manager role on project')
             raise common_errors.PermissionsError(msg=f'User not authorized to access the resource')
@@ -502,33 +521,31 @@ class VariablesResource(Resource):
     def post(self, project_id, site_id, instrument_id):
         logger.debug(f'In create variables')
         # Check if the user is authorized to create variables by checking if the user has project specific role
-
+        result=[]
         authorized = sk.check_if_authorized_post(project_id)
         if (authorized):
             logger.debug(f'User is authorized to create variables for : ' + str(instrument_id))
             logger.debug(f' Request body' +str(request.json))
-            #TODO loop through list objects to support buld operations
-            if type(request.json) is dict:
-                body = request.json
-            else:
-                body = request.json[0]
+            req_body = request.json
+
             inst_result, bug = meta.get_instrument(project_id, site_id, instrument_id)
             # id, name, instrument_id, shortname, commit
-            postInst = ChordsVariable("test",inst_result['chords_id'],
-                                        body['var_name'],
-                                        body['var_id'],
-                                        "")
-            logger.debug(postInst)
-            # Create variable in chords
-            chord_result, chord_msg = chords.create_variable(postInst)
-            if chord_msg == "Variable created":
-                body['chords_id'] = chord_result['id']
-                # Create a variable in mongo
-                result, msg = meta.create_variable(project_id, site_id, instrument_id, body)
-            else:
-                message = chord_msg
-                logger.debug(f' Chords variable not created due to '+ str(message))
-            logger.debug(f' Variable creation meta result: ' + str(result))
+            for body in req_body:
+                postInst = ChordsVariable("test",inst_result['chords_id'],
+                                            body['var_name'],
+                                            body['var_id'],
+                                            "")
+                logger.debug(postInst)
+                # Create variable in chords
+                chord_result, chord_msg = chords.create_variable(postInst)
+                if chord_msg == "Variable created":
+                    body['chords_id'] = chord_result['id']
+                    # Create a variable in mongo
+                    var_result, msg = meta.create_variable(project_id, site_id, instrument_id, body)
+                    result.append(var_result)
+                else:
+                    raise errors.ResourceError(msg=f'Chords variable not created due to '+ str(chord_msg))
+                logger.debug(f' Variable creation meta result: ' + str(result))
             return utils.ok(result=result, msg=msg)
         else:
             logger.debug(f'User does not have admin or manager role on project')
@@ -664,6 +681,8 @@ class MeasurementsResource(Resource):
             site,msg = meta.get_site(project_id,site_id)
             logger.debug(site)
             replace_cols = {}
+            params = request.args
+            logger.debug(params)
             for inst in site['instruments']:
                 logger.debug(inst)
                 if inst['inst_id'] == instrument_id:
@@ -695,9 +714,11 @@ class MeasurementsResource(Resource):
                 else:
                     result = json.loads(df1.to_json())
                     result['measurements_in_file'] = len(df1.index)
-                    result['instrument'] = instrument
-                    site.pop('instruments',None)
-                    result['site'] = meta.strip_meta(site)
+                    if 'with_metadata' in params:
+                        if params['with_metadata'] == 'True':
+                            result['instrument'] = instrument
+                            site.pop('instruments',None)
+                            result['site'] = meta.strip_meta(site)
                     logger.debug("JSON in Bytes: "+ str(sys.getsizeof(result)))
                     metric = {'created_at':datetime.now().isoformat(),'type':'download','project_id':project_id,'username':g.username,'size': str(sys.getsizeof(result))}
                     metric_result, metric_bug =auth.t.meta.createDocument(db=conf.tenant[g.tenant_id]['stream_db'], collection='streams_metrics', request_body=metric, _tapis_debug=True)
@@ -719,6 +740,8 @@ class MeasurementsReadResource(Resource):
         #inst_result = meta.get_instrument(project_id,site_id,instrument_id)
         inst_index = meta.fetch_instrument_index(instrument_id)
         logger.debug(inst_index)
+        params = request.args
+        logger.debug(params)
         if len(inst_index) > 0:
             logger.debug(f'Instrument index length is gt 0')
             logger.debug(inst_index['project_id'])
@@ -755,16 +778,18 @@ class MeasurementsReadResource(Resource):
                         output = make_response(df1.to_csv())
                         output.headers["Content-Disposition"] = "attachment; filename=export.csv"
                         output.headers["Content-type"] = "text/csv"
-                        metric = {'created_at':datetime.now().isoformat(),'type':'download','project_id':inst_idex['project_id'],'username':g.username,'size': sys.getsizeof(df1.to_csv)}
+                        metric = {'created_at':datetime.now().isoformat(),'type':'download','project_id':inst_index['project_id'],'username':g.username,'size': sys.getsizeof(df1.to_csv)}
                         metric_result, metric_bug =auth.t.meta.createDocument(db=conf.tenant[g.tenant_id]['stream_db'], collection='streams_metrics', request_body=metric, _tapis_debug=True)
                         logger.debug(metric_result)
                         return output
                     else:
                         result = json.loads(df1.to_json())
                         result['measurements_in_file'] = len(df1.index)
-                        result['instrument'] = instrument
-                        site.pop('instruments',None)
-                        result['site'] = meta.strip_meta(site)
+                        if 'with_metadata' in params:
+                            if params['with_metadata'] == 'True':
+                                result['instrument'] = instrument
+                                site.pop('instruments',None)
+                                result['site'] = meta.strip_meta(site)
                         metric = {'created_at':datetime.now().isoformat(),'type':'download','project_id':inst_index['project_id'],'username':g.username,'size': str(sys.getsizeof(result))}
                         metric_result, metric_bug =auth.t.meta.createDocument(db=conf.tenant[g.tenant_id]['stream_db'], collection='streams_metrics', request_body=metric, _tapis_debug=True)
                         logger.debug(metric_result)
@@ -984,7 +1009,7 @@ class TemplatesResource(Resource):
             temp_admin_role="streams_template_"+result['_id']['$oid']+"_admin"
             create_role_status = sk.create_role(temp_admin_role, 'Project Admin Role')
             if (create_role_status == 'success'):
-               grant_role_status = sk.grant_role(temp_admin_role)
+               grant_role_status = sk.grant_role(temp_admin_role,g.username)
                # Check if the role was granted successfully to the user
                if (grant_role_status == 'success'):
                    # Only if the role is granted to user
@@ -1224,41 +1249,102 @@ class PemsRevokeResource(Resource):
                 logger.debug(msg)
                 return utils.error(result='', msg=msg)
 
-class ArchiveResource(Resource):
+class ArchivesResource(Resource):
     #expects systemid, path, project_id, archive_type, data_format
-    def post(self):
+    def post(self,project_id):
         logger.debug("IN ARCHIVE")
-        #archive a project id
-        body = request.json
-        logger.debug(body)
-        created_at = datetime.now()
-        updated_at = datetime.now()
-        #create an archive object in meta
-        result = archive.archive_to_system(body['settings']['system_id'], body['settings']['path'], body['settings']['project_id'], body['settings']['archive_format'], body['settings']['data_format'])
-        logger.debug('after archive call')
-        if result:
-            msg = "Archive created successfully: "+result
-            return utils.ok(result, msg=msg)
+        authorized = sk.check_if_authorized_get(project_id)
+        logger.debug(f'Authorization status: '+ str(authorized))
+        if (authorized):
+            logger.debug(f'User is authorized to create archives for project : ' + str(project_id))
+            #archive a project id
+            body = request.json
+            logger.debug(body)
+            #create an archive object in meta
+            if body['archive_type'] == "system":
+                if body['settings']['frequency'] == 'one-time':
+                    logger.debug('*******************before acrchive call')
+                    result = archive.archive_to_system(body['settings']['system_id'], body['settings']['path'], project_id, body['settings']['archive_format'], body['settings']['data_format'])
+                    logger.debug('*****************************after archive call')
+                    if 'transfer_status' in result:
+                        if result['transfer_status'] == 'ok':
+                            body['created_at'] = str(datetime.now())
+                            body['updated_at'] = str(datetime.now())
+                            meta_result, bug =auth.t.meta.createDocument(db=conf.tenant[g.tenant_id]['stream_db'], collection=project_id, request_body=body, _tapis_debug=True)
+                            sfilter = '{"tapis_deleted":{ "$exists" : false },"archive_type":"'+body['archive_type']+'","created_at":"'+body['created_at']+'"}'
+                            mresult = auth.t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection=project_id,filter=sfilter)
+                            mres = json.loads(mresult.decode('utf-8'))
+                            logger.debug(mres)
+                            #result['id'] = mresult[0]['_id']['oid']
+                            msg = "Archive created successfully"
+                            res = archive.strip_meta_set_id(mres[0])
+                            return utils.ok(res, msg=msg)
+                        else:
+                            msg= f'ERROR Archive Failed to Create: '+result['transfer_status']
+                            return utils.error(result='', msg=msg)
+                    else:
+                        msg= f'ERROR Archive Failed to Create'
+                        return utils.error(result='', msg=msg)
+                else:
+                    msg= f'ERROR Archive Failed to Create - frequecy only support one-time currently'
+                    return utils.error(result='', msg=msg)
+            else:
+                msg= f'ERROR Archive Failed to Create - archive_type only support system at the moment'
+                return utils.error(result='', msg=msg)
         else:
-            msg= f'ERROR Archive Failed to Create'
-            return utils.error(result='', msg=msg)
+            logger.debug(f'Authorization failed. User does not have role any role on the project')
+            raise common_errors.PermissionsError(msg=f'User not authorized to access the resource')
+
+    def get(self,project_id):
+        authorized = sk.check_if_authorized_get(project_id)
+        logger.debug(f'Authorization status: '+ str(authorized))
+        if (authorized):
+            logger.debug(f'User is authorized to list archives for project : ' + str(project_id))
+            archive_result, msg = archive.list_archives(project_id)
+            result = archive.strip_meta_list_add_id(archive_result)
+            return utils.ok(result=result,msg=msg)
+        else:
+            logger.debug(f'Authorization failed. User does not have role any role on the project')
+            raise common_errors.PermissionsError(msg=f'User not authorized to access the resource')
+
+class ArchiveResource(Resource):
+    def get(self, project_id, archive_id):
+        return true
+
 class TransferResource(Resource):
     def post(self):
         logger.debug("IN TRANSFER")
         body = request.json
         logger.debug(body)
-        created_at = datetime.now()
-        updated_at = datetime.now()
-        #create an transfer object in metrics
-        result = transfer.transfer_to_system(body['filename'],body['system_id'], body['path'], body['instrument_id'], body['data_format'], body['start_date'],body['end_date'])
-        logger.debug('after transfer call')
-        if result:
-            msg = "Transfer successful: "+result
-            return utils.ok(result, msg=msg)
-        else:
-            msg= f'ERROR Transfer Failed'
-            return utils.error(result='', msg=msg)
+        index_result = meta.fetch_instrument_index(body['inst_id'])
+        logger.debug(index_result)
+        if "project_id" in index_result:
+            authorized = sk.check_if_authorized_get(index_result['project_id'])
+            logger.debug(f'Authorization status: '+ str(authorized))
+            if (authorized):
+                logger.debug(f'User is authorized to list archives for project : ' + str(index_result['project_id']))
+                try:
+                    result = transfer.transfer_to_system(body["filename"],body['system_id'], body['path'], index_result['project_id'],body['inst_id'], body['data_format'],body['start_date'],body['end_date'])
+                    logger.debug(result)
+                    logger.debug('after transfer call')
+                    if 'transfer_status' in result:
+                        if result['transfer_status']=='ok':
+                            msg = "Transfer successful: "+result['transfer_status']
+                            logger.debug(result)
+                            return utils.ok(result, msg=msg)
+                        else:
+                            msg= f'ERROR Transfer Failed'
+                            return utils.error(result='', msg=msg)
+                    else:
+                        msg= f'ERROR Transfer Failed'
+                        return utils.error(result='', msg=msg)
 
+                except Exception as e:
+                    msg = f"Could not create transfer; exception: {e}"
+                    return utils.error(result='',msg=msg)
+        else:
+            logger.debug(f'Authorization failed. User does not have role any role on the project')
+            raise common_errors.PermissionsError(msg=f'User not authorized to access the resource')
 
 # Post Its resource : LIST, CREATE
 class PostItsResource(Resource):
@@ -1269,52 +1355,52 @@ class PostItsResource(Resource):
     def get(self):
         logger.debug(f'In list projects')
         try:
-
+            logger.debug(f'In list projects')
         except Exception as e:
               msg = f"ERROR! Could not list Post-Its"
               return utils.error(result='null', msg=msg)
         return utils.error(result='null', msg=msg)
-
-    # Create post-it: POST v3/streams/post-its
-    def post(self):
-        logger.debug(f'IN CREATE POST-IT')
-        logger.debug(f'Request body: '+str(request.json))
-        body = request.json
-        try:
-
-        except Exception as e:
-              msg = f"ERROR! Could not create Post-It"
-              return utils.error(result='null', msg=msg)
-        return utils.error(result='null', msg=msg)
-
-# Post It Resource: GET, UPDATE, DELETE
+#
+#     # Create post-it: POST v3/streams/post-its
+#     def post(self):
+#         logger.debug(f'IN CREATE POST-IT')
+#         logger.debug(f'Request body: '+str(request.json))
+#         body = request.json
+#         try:
+#
+#         except Exception as e:
+#               msg = f"ERROR! Could not create Post-It"
+#               return utils.error(result='null', msg=msg)
+#         return utils.error(result='null', msg=msg)
+#
+# # Post It Resource: GET, UPDATE, DELETE
 class PostItResource(Resource):
-    #create post-it url
+#     #create post-it url
     def get(self):
         logger.debug("IN POST-IT GET")
         try:
-
+            logger.debug(f'In list projects')
         except Exception as e:
               msg = f"ERROR! Could not get Post-It"
               return utils.error(result='null', msg=msg)
         return utils.error(result='null', msg=msg)
-
-    #update post-it url
-    def put(self):
-        logger.debug("IN POST-IT UPDATE")
-        try:
-
-        except Exception as e:
-              msg = f"ERROR! Could not update Post-It"
-              return utils.error(result='null', msg=msg)
-        return utils.error(result='null', msg=msg)
-
-    #delete post-it url
-    def delete(self):
-        logger.debug("IN POST-IT DELETE")
-        try:
-
-        except Exception as e:
-              msg = f"ERROR! Could not delete Post-It"
-              return utils.error(result='null', msg=msg)
-        return utils.error(result='null', msg=msg)
+#
+#     #update post-it url
+#     def put(self):
+#         logger.debug("IN POST-IT UPDATE")
+#         try:
+#
+#         except Exception as e:
+#               msg = f"ERROR! Could not update Post-It"
+#               return utils.error(result='null', msg=msg)
+#         return utils.error(result='null', msg=msg)
+#
+#     #delete post-it url
+#     def delete(self):
+#         logger.debug("IN POST-IT DELETE")
+#         try:
+#
+#         except Exception as e:
+#               msg = f"ERROR! Could not delete Post-It"
+#               return utils.error(result='null', msg=msg)
+#         return utils.error(result='null', msg=msg)

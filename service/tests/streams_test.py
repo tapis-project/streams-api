@@ -7,6 +7,7 @@
 # Build the tapis/streams-api docker container:  docker build -t tapis/streams-api:latest .
 # Build the test docker image: docker build -t tapis/streams-tests -f Dockerfile-tests .
 # Run these tests using the built docker image: docker run -it --rm --name=streams-test -p 5000:5000 tapis/streams-tests
+#docker build -t tapis/streams-api:latest .; docker build -t tapis/streams-tests -f Dockerfile-tests .;docker run -it --rm --name=streams-test -p 5000:5000 tapis/streams-tests
 
 # Standard library imports...
 from unittest.mock import Mock, patch
@@ -131,7 +132,7 @@ def test_listing_get_project_details(client):
 def test_create_site(client):
     with client:
         payload = {
-            "project_uuid": project_name,
+            "project_id": project_name,
             "site_name":site_name,
             "latitude":50,
             "longitude":10,
@@ -151,7 +152,7 @@ def test_create_site(client):
 def test_update_site(client):
     with client:
         payload = {
-            "project_uuid": project_name,
+            "project_id": project_name,
             "site_name":site_name,
             "latitude":50,
             "longitude":10,
@@ -182,7 +183,7 @@ def test_listing_site(client):
 def test_create_instrument(client):
     with client:
         payload = {
-            "project_uuid": project_name,
+            "project_id": project_name,
             "topic_category_id": "2",
             "site_id": site_name,
             "inst_name": inst_name,
@@ -201,7 +202,7 @@ def test_create_instrument(client):
 def test_update_instrument(client):
     with client:
         payload = {
-            "project_uuid": project_name,
+            "project_id": project_name,
             "topic_category_id": "2",
             "site_id": site_name,
             "inst_name": inst_name,
@@ -231,7 +232,7 @@ def test_listing_instrument(client):
 def test_create_variable(client):
     with client:
         payload = {
-            "project_uuid":project_name,
+            "project_id":project_name,
             "topic_category_id":"2",
             "site_id":site_name,
             "inst_id":inst_name,
@@ -262,7 +263,7 @@ def test_list_variables(client):
 def test_update_variable(client):
     with client:
         payload = {
-            "project_uuid":project_name,
+            "project_id":project_name,
             "topic_category_id":"2",
             "site_id":site_name,
             "inst_id":inst_name,
@@ -284,8 +285,8 @@ def test_create_measurements(client):
     with client:
         payload = {
             "inst_id":inst_name,
-            "vars":[{var_name: 10}],
-            "datetime":time_now
+            "vars":[{var_name: 10,
+            "datetime":time_now}]
         }
         response = client.post(
             measurements_url,
