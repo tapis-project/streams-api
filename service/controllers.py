@@ -678,6 +678,8 @@ class MeasurementsResource(Resource):
             site,msg = meta.get_site(project_id,site_id)
             logger.debug(site)
             replace_cols = {}
+            params = request.args
+            logger.debug(params)
             for inst in site['instruments']:
                 logger.debug(inst)
                 if inst['inst_id'] == instrument_id:
@@ -709,9 +711,11 @@ class MeasurementsResource(Resource):
                 else:
                     result = json.loads(df1.to_json())
                     result['measurements_in_file'] = len(df1.index)
-                    result['instrument'] = instrument
-                    site.pop('instruments',None)
-                    result['site'] = meta.strip_meta(site)
+                    if 'with_metadata' in params:
+                        if params['with_metadata'] == 'True':
+                            result['instrument'] = instrument
+                            site.pop('instruments',None)
+                            result['site'] = meta.strip_meta(site)
                     logger.debug("JSON in Bytes: "+ str(sys.getsizeof(result)))
                     metric = {'created_at':datetime.now().isoformat(),'type':'download','project_id':project_id,'username':g.username,'size': str(sys.getsizeof(result))}
                     metric_result, metric_bug =auth.t.meta.createDocument(db=conf.tenant[g.tenant_id]['stream_db'], collection='streams_metrics', request_body=metric, _tapis_debug=True)
@@ -733,6 +737,8 @@ class MeasurementsReadResource(Resource):
         #inst_result = meta.get_instrument(project_id,site_id,instrument_id)
         inst_index = meta.fetch_instrument_index(instrument_id)
         logger.debug(inst_index)
+        params = request.args
+        logger.debug(params)
         if len(inst_index) > 0:
             logger.debug(f'Instrument index length is gt 0')
             logger.debug(inst_index['project_id'])
@@ -769,16 +775,18 @@ class MeasurementsReadResource(Resource):
                         output = make_response(df1.to_csv())
                         output.headers["Content-Disposition"] = "attachment; filename=export.csv"
                         output.headers["Content-type"] = "text/csv"
-                        metric = {'created_at':datetime.now().isoformat(),'type':'download','project_id':inst_idex['project_id'],'username':g.username,'size': sys.getsizeof(df1.to_csv)}
+                        metric = {'created_at':datetime.now().isoformat(),'type':'download','project_id':inst_index['project_id'],'username':g.username,'size': sys.getsizeof(df1.to_csv)}
                         metric_result, metric_bug =auth.t.meta.createDocument(db=conf.tenant[g.tenant_id]['stream_db'], collection='streams_metrics', request_body=metric, _tapis_debug=True)
                         logger.debug(metric_result)
                         return output
                     else:
                         result = json.loads(df1.to_json())
                         result['measurements_in_file'] = len(df1.index)
-                        result['instrument'] = instrument
-                        site.pop('instruments',None)
-                        result['site'] = meta.strip_meta(site)
+                        if 'with_metadata' in params:
+                            if params['with_metadata'] == 'True':
+                                result['instrument'] = instrument
+                                site.pop('instruments',None)
+                                result['site'] = meta.strip_meta(site)
                         metric = {'created_at':datetime.now().isoformat(),'type':'download','project_id':inst_index['project_id'],'username':g.username,'size': str(sys.getsizeof(result))}
                         metric_result, metric_bug =auth.t.meta.createDocument(db=conf.tenant[g.tenant_id]['stream_db'], collection='streams_metrics', request_body=metric, _tapis_debug=True)
                         logger.debug(metric_result)
