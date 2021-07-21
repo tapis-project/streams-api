@@ -391,6 +391,9 @@ class InstrumentsResource(Resource):
                 if body['inst_id'].__contains__('.'):
                     logger.debug(f'Invalid Instrument ID!')
                     raise common_errors.PermissionsError(msg=f'Invalid Instrument ID format - period "." is not allowed- please use another identifier')
+                if body['inst_id'].__contains__(':'):
+                    logger.debug(f'Invalid Instrument ID!')
+                    raise common_errors.PermissionsError(msg=f'Invalid Instrument ID format - colon ":" is not allowed- please use another identifier')
             logger.debug(f'before ChordsInstrument assignment')
             #id, site_id, name, sensor_id, topic_category_id, description, display_points, plot_offset_value, plot_offset_units, sample_rate_seconds):
             site_result, site_bug = meta.get_site(project_id, site_id)
