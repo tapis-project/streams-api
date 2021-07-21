@@ -236,6 +236,10 @@ class SitesResource(Resource):
                 logger.debug(f'Request body'+ str(request.json))
                 req_body = request.json
                 for body in req_body:
+                    site = auth.t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection=project_id,filter='{"$and":[{"site_id":"'+body['site_id']+'"},{"tapis_deleted":{ "$exists" : false }}]}')
+                    if len(json.loads(site)) > 0:
+                        raise common_errors.ResourceError(msg=f'Site ID: '+body['site_id']+' already use in project namepsace')
+                for body in req_body:
                     postSite = ChordsSite("",body['site_name'],
                                             body['latitude'],
                                             body['longitude'],
