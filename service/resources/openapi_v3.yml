@@ -1452,7 +1452,7 @@ paths:
                  result:
                     type: array
                     items:
-                      $ref: '#/components/schemas/Measurement'
+                      $ref: '#/components/schemas/Measurements'
 
         '400':
           description: Input error.
@@ -1536,7 +1536,7 @@ paths:
                   result:
                     type: array
                     items:
-                      $ref: '#/components/schemas/Measurement'
+                      $ref: '#/components/schemas/Measurements'
 
         '400':
           description: Input error.
@@ -1638,7 +1638,7 @@ paths:
                    result:
                     type: array
                     items:
-                      $ref: '#/components/schemas/Measurement'
+                      $ref: '#/components/schemas/Measurements'
 
         '400':
           description: Input error.
@@ -2854,7 +2854,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Archive'
+              $ref: '#/components/schemas/NewArchive'
       responses:
         '201':
           description: OK
@@ -2913,7 +2913,7 @@ paths:
                   result:
                     type: array
                     items:
-                      $ref: '#/components/schemas/Archive'
+                      $ref: '#/components/schemas/Archives'
 
         '400':
           description: Input error.
@@ -3295,23 +3295,26 @@ components:
           type: integer
           description: Variable ID in chords
 
-    Measurement:
+    Measurements:
       type: object
       properties:
-        datetime:
-          type: string
-          description: The datetimestamp of the measurement.
-        inst_id:
+        instrument:
+          type: object
+          description: The instrument metadata - if with_metadata is set to True.
+          $ref: '#/components/schemas/Instrument'
+        site:
+          type: object
+          description: The site metadata - if with_metadata is set to True.
+          $ref: '#/components/schemas/Site'
+        measurements_in_file:
           type: integer
-          description: The  identifier for an instrument.
-        vars:
-          type: array
+          description: The count of measurements records.
+        additionalProperties:
+          type: object
           items:
             type: object
-            properties:
-              var_id:
-                type: string
-                description: Field Name needs to be the variable id and value is the observed measuremnet. Example {"temp1":75.0}
+            description: example "ph":[{"2021-05-15T15:23:00+05:00":7.2,"2021-05-15T25:23:00+05:00":7.3}]
+          example: {"2021-05-15T15:23:00+05:00":7.2,"2021-05-15T25:23:00+05:00":7.3}
 
     NewMeasurement:
       type: object
@@ -3319,15 +3322,18 @@ components:
         inst_id:
           type: integer
           description: Associate instrument id.
-        datetime:
-          type: string
-          description: The Datatime of the measurement
         vars:
           type: array
           description: Array of measurement objects. Example [{"temp1":"75.0","pc_hmd":"34","datatime":"2021-05-15T15:23:00+05:00"},{"temp1":"77.0","pc_hmd":"36","datatime":"2021-05-15T15:54:00+05:00"}]
           items:
             type: object
-
+            properties:
+              datetime:
+                type: string
+                description: Datetime ISO8601 formated string
+              additionalProperties:
+                type: number
+                description: this is a key:value pair of var_id:value
 
     NewOntology:
       type: object
@@ -3627,10 +3633,61 @@ components:
           description: role name
           enum: [admin, manager, user]
 
+    NewArchive:
+      type: object
+      properties:
+        archive_type:
+          type: string
+          description: The type of archive object - system or chords
+          enum: [system, chords]
+        owner:
+          type: string
+          description: Owner of this archive
+        settings:
+          type: object
+          properties:
+            project_id:
+              type: string
+              description: ID of Project to archive
+            system_id:
+              type: string
+              description: ID os System ID to send archive too.
+            path:
+              type: string
+              description: The directory path to write archive to on selected System.
+            archive_format:
+              type: string
+              description: The archive file format - zip is currently supported
+              enum: [zip] #will be [zip,tar]
+            data_format:
+              type: string
+              description: The data measurement format - csv or JSON is currently supported
+              enum: [csv,json]
+            frequency:
+              type: string
+              description: How often should this archive occur - currently supports one-time_now
+              enum: [one-time]
+            range:
+              type: string
+              description: The range of data to archive_type - all or custom supported
+              enum: [custom, all] #day, week, month, year coming soon
+            start_date:
+              type: string
+              description: A ISO8601 formatted datetime string for the starting time for archival data- only for custom range
+            end_date:
+              type: string
+              description: A ISO8601 formatted datetime string for the end time for archival data - only for custom range
+    Archives:
+      type: array
+      items:
+        $ref: '#/components/schemas/Archive'
 
     Archive:
       type: object
       properties:
+        archive_id:
+          type: string
+          description: the unique id assigned to the archive
         archive_type:
           type: string
           description: The type of archive object - system or chords
