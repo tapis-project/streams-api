@@ -228,33 +228,34 @@ class SitesResource(Resource):
     def post(self, project_id):
         logger.debug(f'In create sites')
         # Check if the user is authorized to create the site by checking if the user has project specific role
-
+        result=[]
         authorized = sk.check_if_authorized_post(project_id)
         logger.debug(authorized)
         if (authorized):
                 logger.debug(f'User is authorized to create sites for project : ' + str(project_id))
                 logger.debug(f'Request body'+ str(request.json))
-                body = request.json
-                postSite = ChordsSite("",body['site_name'],
-                                        body['latitude'],
-                                        body['longitude'],
-                                        body['elevation'],
-                                        body['description'])
-                # Create chords site
-                resp, msg = chords.create_site(postSite)
-                # If site is successfully created in chords create a document in MongoDB
-                if msg == "Site created":
-                    site_result, message = meta.create_site(project_id, resp['id'],body)
-                    #resp['results']=meta_resp['results']
-                    logger.debug(f'Metadata site creation success')
-                    logger.debug(f'Site object' +str(site_result))
-                    # Remove the _id and _etag for a list of metadata objects
+                req_body = request.json
+                for body in req_body:
+                    postSite = ChordsSite("",body['site_name'],
+                                            body['latitude'],
+                                            body['longitude'],
+                                            body['elevation'],
+                                            body['description'])
+                    # Create chords site
+                    resp, msg = chords.create_site(postSite)
+                    # If site is successfully created in chords create a document in MongoDB
+                    if msg == "Site created":
+                        site_result, message = meta.create_site(project_id, resp['id'],body)
+                        #resp['results']=meta_resp['results']
+                        logger.debug(f'Metadata site creation success')
+                        logger.debug(f'Site object' +str(site_result))
+                        # Remove the _id and _etag for a list of metadata objects
 
-                    result = meta.strip_meta(site_result)
-                else:
-                    logger.debug(f'Metadata site creation failed')
-                    message = msg
-                    result=''
+                        result.append( meta.strip_meta(site_result))
+                    else:
+                        logger.debug(f'Metadata site creation failed')
+                        message = msg
+                        result=''
                 return utils.ok(result=result,msg=message)
         else:
             logger.debug(f'User does not have Admin or Manager role on the project')
@@ -371,11 +372,13 @@ class InstrumentsResource(Resource):
             #logger.debug(type(request.json))
             logger.debug(f'Request body' +str(request.json))
             result=[]
+            message="Instrument Created Successfully."
             #TODO loop through list objects to support build operations
             # if type(request.json) is dict:
             #     body = request.json
             # else:
             req_body = request.json
+            logger.debug(req_body)
             #check for . in inst_id - can't have it due to kapacitor
             for body in req_body:
                 if 'instrument_id' in meta.fetch_instrument_index(body['inst_id']):
