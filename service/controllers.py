@@ -9,8 +9,6 @@ from flask_restful import Resource
 from openapi_core.shortcuts import RequestValidator
 from openapi_core.wrappers.flask import FlaskOpenAPIRequest
 
-# import psycopg2
-#import sqlalchemy
 from service import archive
 from service import transfer
 from service import chords
