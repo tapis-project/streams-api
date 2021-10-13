@@ -11,13 +11,8 @@ from common import utils, errors
 from common.logs import get_logger
 logger = get_logger(__name__)
 
-from influxdb import InfluxDBClient
-
-influx_client = InfluxDBClient(host=conf.influxdb_host, port=conf.influxdb_port, username=conf.influxdb_username, password=conf.influxdb_password, database=conf.influxdb_database)
-
-def create_database(database_name):
-    result = influx_client.create_database(database_name)
-    return result
+from influxdb_client import InfluxDBClient
+from influxdb_client.client.write_api import SYNCHRONOUS
 
 def create_measurement(site_id,inst_id,var_id,value, timestamp):
     json_body = [
@@ -52,6 +47,7 @@ def compact_write_measurements(site_id, instrument, body):
         for k in itm:
             logger.debug(k)
             if k != 'datetime':
+                logger.debug('not datetime')
                 if k in inst_vars and 'datetime' in itm:
                     json_body.append(
                         {
@@ -79,7 +75,9 @@ def compact_write_measurements(site_id, instrument, body):
                     logger.debug(msg)
                     return {'resp':False,'msg':msg}
     logger.debug(json_body)
-    result = influx_client.write_points(json_body)
+    with InfluxDBClient(host=conf.influxdb_host+':'+conf.influxdb_port, token=conf.influxdb_token, org=conf.influxdb_org) as client:
+        write_api = client.write_api(write_options=SYNCHRONOUS)
+        result = write_api.write(bucket=conf.influxdb_bucket, record=json_body)
     return {'resp':result,'msg':'','body':return_body}
 
 def write_measurements(site_id, instrument, body):
@@ -109,31 +107,34 @@ def write_measurements(site_id, instrument, body):
         else:
             return {'resp':False,'msg':'Variable ID: '+itm['var_id']+' is invalid!'}
     logger.debug(json_body)
-    result = influx_client.write_points(json_body)
+    with InfluxDBClient(host=conf.influxdb_host+':'+conf.influxdb_port, token=conf.influxdb_token, org=conf.influxdb_org) as client:
+            write_api = client.write_api(write_options=SYNCHRONOUS)
+            result = write_api.write(bucket=conf.influxdb_bucket, record=json_body)
     return {'resp':result,'msg':''}
 
 #expects a list of fields {key:value} to build and AND query to influxdb to fetch CHORDS measurments
 def query_measurments(query_field_list):
     logger.debug("IN INFLUX QUERY")
-    base_query = "SELECT * FROM \"tsdata\" WHERE "
-    query_list=[];
     for fields in query_field_list:
         #fields = json.loads(itm)
         print(fields)
         for k in fields:
-            if k ==  "start_date":
+            if k == "start_date":
                 if str(fields[k]) != 'None':
-                    query_list.append("\"time\">='"+str(fields[k])+"' ")
+                    start=str(fields[k])
             elif k == "end_date":
                 if str(fields[k]) != 'None':
-                    query_list.append("\"time\"<='"+str(fields[k])+"' ")
+                    stop=str(fields[k])
             else:
-                query_list.append("\""+k+"\"='"+str(fields[k])+"' ")
-
-    query_where = ' AND '.join(query_list)
-    logger.debug(base_query+query_where)
-    result = influx_client.query(base_query+query_where)
-    #logger.debug(result)
+                query_list.append('r["'+k+'"]=="'+str(fields[k])+'"')
+    query_filters = ' and '.join(query_list)
+    query = 'from(bucket: "'+conf.influxdb_bucket+'")'+'''
+    |> range(start: ''' +start+' stop:'+ stop+''' )
+    |> filter(fn: (r) => '''+query_fileters+')'
+    logger.debug(query)
+    with InfluxDBClient(host=conf.influxdb_host+':'+conf.influxdb_port, token=conf.influxdb_token, org=conf.influxdb_org) as client:
+        result = client.query_api().query_raw(query)
+    logger.debug(result)
     return result.raw
 
 def fetch_archive_measurements(query_field_list):
