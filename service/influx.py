@@ -75,7 +75,7 @@ def compact_write_measurements(site_id, instrument, body):
                     logger.debug(msg)
                     return {'resp':False,'msg':msg}
     logger.debug(json_body)
-    with InfluxDBClient(host=conf.influxdb_host+':'+conf.influxdb_port, token=conf.influxdb_token, org=conf.influxdb_org) as client:
+    with InfluxDBClient(url=conf.influxdb_host+':'+conf.influxdb_port, token=conf.influxdb_token, org=conf.influxdb_org) as client:
         write_api = client.write_api(write_options=SYNCHRONOUS)
         result = write_api.write(bucket=conf.influxdb_bucket, record=json_body)
     return {'resp':result,'msg':'','body':return_body}
@@ -107,17 +107,18 @@ def write_measurements(site_id, instrument, body):
         else:
             return {'resp':False,'msg':'Variable ID: '+itm['var_id']+' is invalid!'}
     logger.debug(json_body)
-    with InfluxDBClient(host=conf.influxdb_host+':'+conf.influxdb_port, token=conf.influxdb_token, org=conf.influxdb_org) as client:
+    with InfluxDBClient(url=conf.influxdb_host+':'+conf.influxdb_port, token=conf.influxdb_token, org=conf.influxdb_org) as client:
             write_api = client.write_api(write_options=SYNCHRONOUS)
             result = write_api.write(bucket=conf.influxdb_bucket, record=json_body)
     return {'resp':result,'msg':''}
 
 #expects a list of fields {key:value} to build and AND query to influxdb to fetch CHORDS measurments
 def query_measurments(query_field_list):
-    logger.debug("IN INFLUX QUERY")
+    logger.debug("IN INFLUX QUERY: ")
+    query_list=[]
     for fields in query_field_list:
         #fields = json.loads(itm)
-        print(fields)
+        logger.debug(fields)
         for k in fields:
             if k == "start_date":
                 if str(fields[k]) != 'None':
@@ -129,29 +130,29 @@ def query_measurments(query_field_list):
                 query_list.append('r["'+k+'"]=="'+str(fields[k])+'"')
     query_filters = ' and '.join(query_list)
     query = 'from(bucket: "'+conf.influxdb_bucket+'")'+'''
-    |> range(start: ''' +start+' stop:'+ stop+''' )
-    |> filter(fn: (r) => '''+query_fileters+')'
+    |> range(start: ''' +start+', stop:'+ stop+''' )
+    |> filter(fn: (r) => '''+query_filters+')'
     logger.debug(query)
-    with InfluxDBClient(host=conf.influxdb_host+':'+conf.influxdb_port, token=conf.influxdb_token, org=conf.influxdb_org) as client:
-        result = client.query_api().query_raw(query)
-    logger.debug(result)
-    return result.raw
-
-def fetch_archive_measurements(query_field_list):
-    logger.debug("IN INFLUX QUERY")
-    base_query = "SELECT * FROM \"tsdata\" WHERE "
-    query_list=[];
-    for fields in query_field_list:
-        #fields = json.loads(itm)
-        print(fields)
-        for k in fields:
-            query_list.append("\""+k+"\"='"+str(fields[k])+"' ")
-
-    query_where = ' AND '.join(query_list)
-    logger.debug(base_query+query_where)
-    result = influx_client.query(base_query+query_where)
-    logger.debug(result)
-    return result.raw
+    with InfluxDBClient(url=conf.influxdb_host+':'+conf.influxdb_port, token=conf.influxdb_token, org=conf.influxdb_org) as client:
+        result = client.query_api().query_data_frame(query)
+    logger.debug(result.to_string())
+    return result
+#
+# def fetch_archive_measurements(query_field_list):
+#     logger.debug("IN INFLUX QUERY")
+#     base_query = "SELECT * FROM \"tsdata\" WHERE "
+#     query_list=[];
+#     for fields in query_field_list:
+#         #fields = json.loads(itm)
+#         print(fields)
+#         for k in fields:
+#             query_list.append("\""+k+"\"='"+str(fields[k])+"' ")
+#
+#     query_where = ' AND '.join(query_list)
+#     logger.debug(base_query+query_where)
+#     result = influx_client.query(base_query+query_where)
+#     logger.debug(result)
+#     return result
 
 def list_measurements(instrument_id):
     #curl -G 'http://localhost:8086/query?pretty=true' --data-urlencode "db=mydb" --data-urlencode "q=SELECT \"value\" FROM \"cpu_load_short\" WHERE \"region\"='us-west'"
