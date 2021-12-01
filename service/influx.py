@@ -172,5 +172,5 @@ def ping():
     headers = {
         'content-type': "application/json"
     }
-    res = requests.get('http://'+conf.influxdb_host + ':' + conf.influxdb_port +'/ping',  verify=False)
+    res = requests.get(conf.influxdb_host + ':' + conf.influxdb_port +'/ping',  verify=False)
     return res.status_code
