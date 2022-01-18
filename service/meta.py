@@ -406,8 +406,8 @@ def list_variables(project_id, site_id, instrument_id):
                         logger.debug(variable)
                         if 'tapis_deleted' not in variable:
                             variables.append(variable)
-                        result = variable
                         logger.debug(result)
+                    result = variables
                 if len(result) > 0 :
                     message = "Variables Found"
                 else:
