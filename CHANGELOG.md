@@ -1,14 +1,15 @@
 # Change Log
 All notable changes to this project will be documented in this file.
-## 1.1.0- 2022-1-?? (target)
+## 1.1.0- 2022-1-27 (target)
 ### Added
 - nothing added
 
 ### Changed
-- No change.
+- Influx2 database support for measurements storage was added
 
 ### Removed
-- No change.
+- Alerts support is removed in 1.1.0
+- Influx1 support was removed
 
 ## 1.0.0 - 2021-7-22 
 ### Added
