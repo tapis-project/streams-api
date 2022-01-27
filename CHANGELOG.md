@@ -13,7 +13,7 @@ All notable changes to this project will be documented in this file.
 
 ## 1.0.0 - 2021-7-22 
 ### Added
-- nothing added
+-  Initial Release 
 
 ### Changed
 - No change.
