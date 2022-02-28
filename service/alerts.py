@@ -116,7 +116,18 @@ def create_channel(req_body):
     logger.debug("actor_id " + actor_id + " is valid. Status is " + res.status)
     channel_id = req_body['channel_id']
     template_id = req_body['template_id']
-
+    if template_id == '': 
+        logger.debug(f'tempalte_id cannot be blank')
+        raise errors.ResourceError(msg=f'template_id cannot be blank - you can use the public threshold_template for and id as an option. : {body}.')
+    try:    
+       template_result, template_debug  = get_template(template_id)
+    except Exception as e:
+        er = e
+        msg = er.response.json()
+        err_msg = msg['message']
+        logger.debug(msg['message'])
+        raise errors.ResourceError(msg=f'INVALID template_id : {err_msg}.')
+    logger.debug(template_result)
     # create a check task
     # channel_id is same as task_id
     # if task_id already exists in kapacitor, task creation will fail. This will in turn lead to channel creation failure
@@ -141,7 +152,8 @@ def create_channel(req_body):
         # vars = parse_condition_expr.convert_condition_list_to_vars( lambda_expr, lambda_expr_list, channel_id)
     #task_body['vars'] = vars
     logger.debug("In Alert - before create Check")
-    check_result = checks.create_check(site_id=vars['site_id'], 
+    check_result = checks.create_check(template_result,
+                                        site_id=vars['site_id'], 
                                         inst_id=vars['inst_id'],
                                         var_id=vars['var_id'],
                                         check_name=channel_id,

@@ -876,7 +876,7 @@ class ChannelsResource(Resource):
                 msg = f"Could not create channel"
                 return utils.error(result='null', msg=msg)
         except Exception as e:
-
+            logger.debug(e)
             msg = f"Could not create channel: " + e.msg
 
             return utils.error(result='null', msg=msg)

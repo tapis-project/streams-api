@@ -41,7 +41,7 @@ org_name = conf.influxdb_org
 bucket_name = conf.influxdb_bucket
 
 
-def create_check(site_id,inst_id,var_id,check_name,threshold_type, threshold_value):
+def create_check(template,site_id,inst_id,var_id,check_name,threshold_type, threshold_value):
     logger.debug("Top of create_check")
     with InfluxDBClient(url=url, token=token, org=org_name, debug=False) as client:
         logger.debug('Inside InfluxDBCLienct')
@@ -52,25 +52,23 @@ def create_check(site_id,inst_id,var_id,check_name,threshold_type, threshold_val
         
         # Prepare Query
 
-                    #     from(bucket: "streams")
-                    # |> range(start: -1s)
-                    # |> filter(fn: (r) => r["_measurement"] == "tsdata")
-                    # |> filter(fn: (r) => r["_field"] == "value")
-                    # |> filter(fn: (r) => r["inst"] == "2")
-                    # |> filter(fn: (r) => r["site"] == "2")
-                    # |> filter(fn: (r) => r["var"] == "12" and r["_value"] > 90 and r["_value"] < 100)
-                    # |> aggregateWindow(every: 1s, fn: mean, createEmpty: false)
-                    # |> count(column: "_value")
-        query = f'''
-                from(bucket:"{bucket_name}") 
-                    |> range(start: v.timeRangeStart, stop: v.timeRangeStop)
-                    |> filter(fn: (r) => r["_measurement"] == "tsdata")
-                    |> filter(fn: (r) => r["_field"] == "value")
-                    |> filter(fn: (r) => r["inst"] == "{inst_id}")
-                    |> filter(fn: (r) => r["site"] == "{site_id}")
-                    |> filter(fn: (r) => r["var"] == "{var_id}")
-                    |> aggregateWindow(every: 5s, fn: mean, createEmpty: false)
-                '''
+        # query = f'''
+        #         from(bucket:"{bucket_name}") 
+        #             |> range(start: v.timeRangeStart, stop: v.timeRangeStop)
+        #             |> filter(fn: (r) => r["_measurement"] == "tsdata")
+        #             |> filter(fn: (r) => r["_field"] == "value")
+        #             |> filter(fn: (r) => r["inst"] == "{inst_id}")
+        #             |> filter(fn: (r) => r["site"] == "{site_id}")
+        #             |> filter(fn: (r) => r["var"] == "{var_id}")
+        #             |> aggregateWindow(every: 5s, fn: mean, createEmpty: false)
+        #         '''
+        scriptvars={}
+        scriptvars["var_id"]=var_id
+        scriptvars["site_id"]=site_id
+        scriptvars["inst_id"]=inst_id
+        scriptvars["bucket_name"]=bucket_name
+        logger.debug(template)
+        query = template["script"].format(**scriptvars)
         logger.debug(query)
         
         #Create Threshold Check - set status to `Critical` if the count of values matching our expression of > or < our value.
