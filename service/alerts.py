@@ -117,16 +117,28 @@ def create_channel(req_body):
     channel_id = req_body['channel_id']
     template_id = req_body['template_id']
     if template_id == '': 
-        logger.debug(f'tempalte_id cannot be blank')
-        raise errors.ResourceError(msg=f'template_id cannot be blank - you can use the public threshold_template for and id as an option. : {body}.')
-    try:    
-       template_result, template_debug  = get_template(template_id)
-    except Exception as e:
-        er = e
-        msg = er.response.json()
-        err_msg = msg['message']
-        logger.debug(msg['message'])
-        raise errors.ResourceError(msg=f'INVALID template_id : {err_msg}.')
+        logger.debug(f'template_id cannot be blank')
+        raise errors.ResourceError(msg=f'template_id cannot be blank - you can use the public "default_threshold" for and id as an option. : {body}.')
+    elif template_id == 'default_threshold':
+        template_result={}
+        template_result["script"] = f'''from(bucket:"{{bucket_name}}") 
+                                        |> range(start: v.timeRangeStart, stop: v.timeRangeStop)
+                                        |> filter(fn: (r) => r["_measurement"] == "tsdata")
+                                        |> filter(fn: (r) => r["_field"] == "value")
+                                        |> filter(fn: (r) => r["inst"] == "{{inst_id}}")
+                                        |> filter(fn: (r) => r["site"] == "{{site_id}}")
+                                        |> filter(fn: (r) => r["var"] == "{{var_id}}")
+                                        |> aggregateWindow(every: 5s, fn: mean, createEmpty: false)
+                                    '''
+    else:
+        try:    
+            template_result, template_debug  = get_template(template_id)
+        except Exception as e:
+            er = e
+            msg = er.response.json()
+            err_msg = msg['message']
+            logger.debug(msg['message'])
+            raise errors.ResourceError(msg=f'INVALID template_id : {err_msg}.')
     logger.debug(template_result)
     # create a check task
     # channel_id is same as task_id
