@@ -100,20 +100,21 @@ def create_channel(req_body):
     logger.debug("IN CREATE CHANNEL")
 
     # validating actor_id
-    actor_id = req_body['triggers_with_actions'][0]['action']['actor_id']
-    if actor_id == '':
-        logger.debug(f'actor_id cannot be blank')
-        raise errors.ResourceError(msg=f'actor_id cannot be blank : {body}.')
-    try:
-        res, debug_msg = t.actors.getActor(actor_id = actor_id,headers={'X-Tapis-Tenant': g.tenant_id},_tapis_debug=True)
-    except Exception as e:
-        er = e
-        msg = er.response.json()
-        err_msg = msg['message']
-        logger.debug(msg['message'])
-        raise errors.ResourceError(msg=f'INVALID actor_id : {err_msg}.')
+    if  req_body['triggers_with_actions'][0]['action']["method"] == 'ACTOR': 
+        actor_id = req_body['triggers_with_actions'][0]['action']['actor_id']
+        if actor_id == '':
+            logger.debug(f'actor_id cannot be blank')
+            raise errors.ResourceError(msg=f'actor_id cannot be blank : {body}.')
+        try:
+            res, debug_msg = t.actors.getActor(actor_id = actor_id,headers={'X-Tapis-Tenant': g.tenant_id},_tapis_debug=True)
+        except Exception as e:
+            er = e
+            msg = er.response.json()
+            err_msg = msg['message']
+            logger.debug(msg['message'])
+            raise errors.ResourceError(msg=f'INVALID actor_id : {err_msg}.')
 
-    logger.debug("actor_id " + actor_id + " is valid. Status is " + res.status)
+        logger.debug("actor_id " + actor_id + " is valid. Status is " + res.status)
     channel_id = req_body['channel_id']
     template_id = req_body['template_id']
     if template_id == '': 
@@ -170,13 +171,23 @@ def create_channel(req_body):
                                         var_id=vars['var_id'],
                                         check_name=channel_id,
                                         threshold_type=vars['threshold_type'], 
-                                        threshold_value=vars['threshold_value'])
+                                        threshold_value=vars['threshold_value'],
+                                        check_message=req_body['triggers_with_actions'][0]['action']['message'])
     logger.debug(check_result)
     logger.debug("Before create_notification")
     #maybe don't need to create this each time - just fetch one maybe
-    notification_endpoint = checks.create_notification_endpoint_actor(endpoint_name=channel_id+'_endpoint', notification_url=conf.tenant[g.tenant_id]['tapis_base_url'] +'/v3/streams/alerts?tenant='+g.tenant_id,actor_id=actor_id)
 
-    notification_rule = checks.create_http_notification_rule(rule_name=channel_id+'_rule', notification_endpoint=notification_endpoint, check_id=check_result.id)
+    if req_body['triggers_with_actions'][0]['action']["method"] == "ACTOR":
+        logger.debug("In Alert - before create ACTOR CHECK")
+        notification_endpoint = checks.create_notification_endpoint_actor(endpoint_name=channel_id+'_endpoint', 
+                                                                        notification_url=conf.tenant[g.tenant_id]['tapis_base_url'] +'/v3/streams/alerts?tenant='+g.tenant_id)
+        notification_rule = checks.create_http_notification_rule(rule_name=channel_id+'_rule', notification_endpoint=notification_endpoint, check_id=check_result.id)[0]
+    
+    elif req_body['triggers_with_actions'][0]['action']["method"] == "SLACK":
+        logger.debug("In Alert - before create SLACK Check")
+        notification_endpoint = checks.create_slack_notification_endpoint(endpoint_name=channel_id+'_endpoint', 
+                                                                        notification_url=req_body['triggers_with_actions'][0]['action']["slack_webhook_url"])
+        notification_rule = checks.create_slack_notification_rule(rule_name=channel_id+'_rule', notification_endpoint=notification_endpoint, check_id=check_result.id)
     # create task call to Kapacitor
     #ktask_result, ktask_status = create_task(task_body)
     #logger.debug('Kapacitor task status: ' + str(ktask_status))
@@ -190,7 +201,7 @@ def create_channel(req_body):
     req_body['last_updated'] = str(datetime.datetime.utcnow())
     req_body['check_id'] = check_result.id
     req_body['endpoint_id'] = notification_endpoint.id
-    req_body['notifiction_rule_id'] =notification_rule[0].id
+    req_body['notifiction_rule_id'] =notification_rule.id
     try:
         #create a metadata record with kapacitor task id to the channel metadata collection
         mchannel_result, mchannel_bug = t.meta.createDocument(db=conf.tenant[g.tenant_id]['stream_db'], collection='streams_channel_metadata', request_body=req_body, _tapis_debug=True)

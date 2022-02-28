@@ -34,14 +34,15 @@ from influxdb_client.domain.task_status_type import TaskStatusType
 from influxdb_client.domain.threshold_check import ThresholdCheck
 from influxdb_client.service.checks_service import ChecksService
 from influxdb_client.service.notification_endpoints_service import NotificationEndpointsService
-
+from influxdb_client.domain.slack_notification_rule import SlackNotificationRule
+from influxdb_client.domain.slack_notification_endpoint import SlackNotificationEndpoint
 url = conf.influxdb_host+':'+conf.influxdb_port
 token = conf.influxdb_token
 org_name = conf.influxdb_org
 bucket_name = conf.influxdb_bucket
 
 
-def create_check(template,site_id,inst_id,var_id,check_name,threshold_type, threshold_value):
+def create_check(template,site_id,inst_id,var_id,check_name,threshold_type, threshold_value, check_message):
     logger.debug("Top of create_check")
     with InfluxDBClient(url=url, token=token, org=org_name, debug=False) as client:
         logger.debug('Inside InfluxDBCLienct')
@@ -51,23 +52,13 @@ def create_check(template,site_id,inst_id,var_id,check_name,threshold_type, thre
         org = client.organizations_api().find_organizations(org=org_name)[0]
         
         # Prepare Query
-
-        # query = f'''
-        #         from(bucket:"{bucket_name}") 
-        #             |> range(start: v.timeRangeStart, stop: v.timeRangeStop)
-        #             |> filter(fn: (r) => r["_measurement"] == "tsdata")
-        #             |> filter(fn: (r) => r["_field"] == "value")
-        #             |> filter(fn: (r) => r["inst"] == "{inst_id}")
-        #             |> filter(fn: (r) => r["site"] == "{site_id}")
-        #             |> filter(fn: (r) => r["var"] == "{var_id}")
-        #             |> aggregateWindow(every: 5s, fn: mean, createEmpty: false)
-        #         '''
         scriptvars={}
         scriptvars["var_id"]=var_id
         scriptvars["site_id"]=site_id
         scriptvars["inst_id"]=inst_id
         scriptvars["bucket_name"]=bucket_name
         logger.debug(template)
+        # replace the template script variable placeholders with actual values
         query = template["script"].format(**scriptvars)
         logger.debug(query)
         
@@ -79,7 +70,7 @@ def create_check(template,site_id,inst_id,var_id,check_name,threshold_type, thre
 
         #Create Check object
         check = ThresholdCheck(name=check_name,
-                            status_message_template="For Channel- ${ r._check_name } the threshold alert measurement is: ${ r._source_measurement }",
+                            status_message_template="For Channel- ${ r._check_name } the threshold alert triggered at value=${r.value}. " + check_message,
                             every="5s",
                             offset="2s",
                             query=DashboardQuery(edit_mode=QueryEditMode.ADVANCED, text=query),
@@ -92,7 +83,7 @@ def create_check(template,site_id,inst_id,var_id,check_name,threshold_type, thre
         logger.debug(check_result)
         return check_result
 
-def create_notification_endpoint_actor(endpoint_name, notification_url, actor_id):
+def create_notification_endpoint_actor(endpoint_name, notification_url):
     logger.debug("Top of create_noftification_endpoint_actor")
     with InfluxDBClient(url=url, token=token, org=org_name, debug=False) as client:
         logger.debug("In InfluxDBclient")
@@ -129,30 +120,35 @@ def create_http_notification_rule(rule_name, notification_endpoint, check_id):
         return notification_rule_result
 
 
-def create_slack_notification_endpoint(rule_name, notification_endpoint, check_id):
+def create_slack_notification_endpoint(endpoint_name, notification_url):
+    logger.debug("Top of  create_slack_notification_endpoint")
     with InfluxDBClient(url=url, token=token, org=org_name, debug=False) as client:
+        logger.debug("In InfluxDBclient")
         org = client.organizations_api().find_organizations(org=org_name)[0]
     
-        notification_endpoint = SlackNotificationEndpoint(name=f"Slack Dev Channel_{uniqueId}",
-                                                        url="https://hooks.slack.com/services/x/y/z",
+        notification_endpoint = SlackNotificationEndpoint(name=endpoint_name,
+                                                        url=notification_url,
                                                         org_id=org.id)
         notification_endpoint_service = NotificationEndpointsService(api_client=client.api_client)
-        notification_endpoint_result = notification_endpoint = notification_endpoint_service.create_notification_endpoint(notification_endpoint)
+        notification_endpoint_result = notification_endpoint_service.create_notification_endpoint(notification_endpoint)
         return notification_endpoint_result
 
-def create_slack_notification_rule():
+def create_slack_notification_rule(rule_name, notification_endpoint, check_id):
+    logger.debug("Top of  create_slack_notification_rule")
     with InfluxDBClient(url=url, token=token, org=org_name, debug=False) as client:
+        logger.debug("In InfluxDBclient")
         org = client.organizations_api().find_organizations(org=org_name)[0]
-        notification_rule = SlackNotificationRule(name=f"Critical status to Slack_{uniqueId}",
+        notification_rule = SlackNotificationRule(name=rule_name,
                                               every="10s",
                                               offset="0s",
                                               message_template="${ r._message }",
                                               status_rules=[StatusRule(current_level=RuleStatusLevel.CRIT)],
-                                              tag_rules=[],
+                                              tag_rules=[TagRule(key='_check_id',value=check_id)],
                                               endpoint_id=notification_endpoint.id,
                                               org_id=org.id,
                                               status=TaskStatusType.ACTIVE)
 
         notification_rules_service = NotificationRulesService(api_client=client.api_client)
         notification_rule_result = notification_rules_service.create_notification_rule(notification_rule)
+        logger.debug(notification_rule_result)
         return notification_rule_result
