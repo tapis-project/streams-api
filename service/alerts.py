@@ -152,7 +152,7 @@ def create_channel(req_body):
     #maybe don't need to create this each time - just fetch one maybe
     notification_endpoint = checks.create_notification_endpoint_actor(endpoint_name=channel_id+'_endpoint', notification_url='http://192.168.1.17:5001/v3/streams/alerts?tenant='+g.tenant_id,actor_id=actor_id)
 
-    notification_rule = checks.create_notification_rule(rule_name=channel_id+'_rule', notification_endpoint=notification_endpoint, check_id=check_result.id)
+    notification_rule = checks.create_http_notification_rule(rule_name=channel_id+'_rule', notification_endpoint=notification_endpoint, check_id=check_result.id)
     # create task call to Kapacitor
     #ktask_result, ktask_status = create_task(task_body)
     #logger.debug('Kapacitor task status: ' + str(ktask_status))

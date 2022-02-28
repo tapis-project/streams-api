@@ -110,7 +110,7 @@ def create_notification_endpoint_actor(endpoint_name, notification_url, actor_id
         logger.debug(notification_endpoint_result)
         return notification_endpoint_result
 
-def create_notification_rule(rule_name, notification_endpoint, check_id):
+def create_http_notification_rule(rule_name, notification_endpoint, check_id):
     with InfluxDBClient(url=url, token=token, org=org_name, debug=False) as client:
         """
         Create Notification Rule to notify critical value to HTTP
@@ -128,4 +128,33 @@ def create_notification_rule(rule_name, notification_endpoint, check_id):
         notification_rules_service = NotificationRulesService(api_client=client.api_client)
         notification_rule_result = notification_rules_service.create_notification_rule_with_http_info(notification_rule)
         logger.debug(notification_rule_result)
+        return notification_rule_result
+
+
+def create_slack_notification_endpoint(rule_name, notification_endpoint, check_id):
+    with InfluxDBClient(url=url, token=token, org=org_name, debug=False) as client:
+        org = client.organizations_api().find_organizations(org=org_name)[0]
+    
+        notification_endpoint = SlackNotificationEndpoint(name=f"Slack Dev Channel_{uniqueId}",
+                                                        url="https://hooks.slack.com/services/x/y/z",
+                                                        org_id=org.id)
+        notification_endpoint_service = NotificationEndpointsService(api_client=client.api_client)
+        notification_endpoint_result = notification_endpoint = notification_endpoint_service.create_notification_endpoint(notification_endpoint)
+        return notification_endpoint_result
+
+def create_slack_notification_rule():
+    with InfluxDBClient(url=url, token=token, org=org_name, debug=False) as client:
+        org = client.organizations_api().find_organizations(org=org_name)[0]
+        notification_rule = SlackNotificationRule(name=f"Critical status to Slack_{uniqueId}",
+                                              every="10s",
+                                              offset="0s",
+                                              message_template="${ r._message }",
+                                              status_rules=[StatusRule(current_level=RuleStatusLevel.CRIT)],
+                                              tag_rules=[],
+                                              endpoint_id=notification_endpoint.id,
+                                              org_id=org.id,
+                                              status=TaskStatusType.ACTIVE)
+
+        notification_rules_service = NotificationRulesService(api_client=client.api_client)
+        notification_rule_result = notification_rules_service.create_notification_rule(notification_rule)
         return notification_rule_result
