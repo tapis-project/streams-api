@@ -150,7 +150,7 @@ def create_channel(req_body):
     logger.debug(check_result)
     logger.debug("Before create_notification")
     #maybe don't need to create this each time - just fetch one maybe
-    notification_endpoint = checks.create_notification_endpoint_actor(endpoint_name=channel_id+'_endpoint', notification_url='http://192.168.1.17:5001/v3/streams/alerts?tenant='+g.tenant_id,actor_id=actor_id)
+    notification_endpoint = checks.create_notification_endpoint_actor(endpoint_name=channel_id+'_endpoint', notification_url=conf.tenant[g.tenant_id]['tapis_base_url'] +'/v3/streams/alerts?tenant='+g.tenant_id,actor_id=actor_id)
 
     notification_rule = checks.create_http_notification_rule(rule_name=channel_id+'_rule', notification_endpoint=notification_endpoint, check_id=check_result.id)
     # create task call to Kapacitor
@@ -164,6 +164,9 @@ def create_channel(req_body):
     req_body['status'] = 'ACTIVE'
     req_body['create_time'] = str(datetime.datetime.utcnow())
     req_body['last_updated'] = str(datetime.datetime.utcnow())
+    req_body['check_id'] = check_result.id
+    req_body['endpoint_id'] = notification_endpoint.id
+    req_body['notifiction_rule_id'] =notification_rule[0].id
     try:
         #create a metadata record with kapacitor task id to the channel metadata collection
         mchannel_result, mchannel_bug = t.meta.createDocument(db=conf.tenant[g.tenant_id]['stream_db'], collection='streams_channel_metadata', request_body=req_body, _tapis_debug=True)

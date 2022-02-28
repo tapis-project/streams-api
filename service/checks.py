@@ -111,10 +111,9 @@ def create_notification_endpoint_actor(endpoint_name, notification_url, actor_id
         return notification_endpoint_result
 
 def create_http_notification_rule(rule_name, notification_endpoint, check_id):
+    logger.debug("Top of  create_http_notification_rule")
     with InfluxDBClient(url=url, token=token, org=org_name, debug=False) as client:
-        """
-        Create Notification Rule to notify critical value to HTTP
-        """
+        logger.debug("In InfluxDBclient")
         org = client.organizations_api().find_organizations(org=org_name)[0]
         notification_rule = HTTPNotificationRule(name=rule_name,
                                                 every="5s",
@@ -125,9 +124,10 @@ def create_http_notification_rule(rule_name, notification_endpoint, check_id):
                                                 endpoint_id=notification_endpoint.id,
                                                 org_id=org.id,
                                                 status=TaskStatusType.ACTIVE)
+        logger.debug("Notification Rule obj: "+ str(notification_rule))
         notification_rules_service = NotificationRulesService(api_client=client.api_client)
         notification_rule_result = notification_rules_service.create_notification_rule_with_http_info(notification_rule)
-        logger.debug(notification_rule_result)
+        logger.debug(notification_rule_result[0])
         return notification_rule_result
 
 
