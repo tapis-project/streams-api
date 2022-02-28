@@ -16,6 +16,8 @@ from service import chords
 from service import influx
 from service import meta
 from service import kapacitor
+from service import alerts
+
 from service import abaco
 from service import sk
 from service.models import ChordsSite, ChordsIntrument, ChordsVariable
@@ -847,8 +849,8 @@ class ChannelsResource(Resource):
         logger.debug("top of POST /channels")
         body = request.json
         try:
-            result, msg = kapacitor.create_channel(body)
-            logger.debug(f'Kapacitor create channel result: ' +str(result))
+            result, msg = alerts.create_channel(body)
+            logger.debug(f'Alerts create channel result: ' +str(result))
             # Channel creator will get assigned a channel admin role in SK. Any access request to the channel will check for assocaited role in SK
             channels_admin_role = 'streams_channel_' + result['_id']['$oid'] + '_admin'
             logger.debug(f' Channel admin role: '+ str(channels_admin_role))
@@ -986,10 +988,10 @@ class AlertsPostResource(Resource):
             raise errors.ResourceError(msg=f'Invalid POST data: {req_data}.')
 
         #parse 'id' field, first string is the channel_id
-        channel_id = req_data['id'].split(" ")[0]
+        channel_id = req_data["_check_name"]
 
         # prepare request for Abaco
-        channel, msg = kapacitor.get_channel(channel_id)
+        channel, msg = alerts.get_channel(channel_id)
         logger.debug(channel)
         result, message = abaco.create_alert(channel,req_data)
         logger.debug("end of POST /alerts")
@@ -1014,7 +1016,7 @@ class TemplatesResource(Resource):
     def post(self):
         logger.debug("top of POST /templates")
         body = request.json
-        result, msg = kapacitor.create_template(body)
+        result, msg = alerts.create_template(body)
         logger.debug(result)
         #if template was created
         if (result['_id']['$oid']):
