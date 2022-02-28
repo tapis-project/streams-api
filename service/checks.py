@@ -70,7 +70,7 @@ def create_check(template,site_id,inst_id,var_id,check_name,threshold_type, thre
 
         #Create Check object
         check = ThresholdCheck(name=check_name,
-                            status_message_template="For Channel- ${ r._check_name } the threshold alert triggered at value=${r.value}. " + check_message,
+                            status_message_template="For Channel- ${ r._check_name } the threshold alert triggered at value=${ r.value }. " + check_message,
                             every="5s",
                             offset="2s",
                             query=DashboardQuery(edit_mode=QueryEditMode.ADVANCED, text=query),
