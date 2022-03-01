@@ -83,8 +83,8 @@ def create_check(template,site_id,inst_id,var_id,check_name,threshold_type, thre
         logger.debug(check_result)
         return check_result
 
-def create_notification_endpoint_actor(endpoint_name, notification_url):
-    logger.debug("Top of create_noftification_endpoint_actor")
+def create_notification_endpoint_http(endpoint_name, notification_url):
+    logger.debug("Top of create_noftification_endpoint_http")
     with InfluxDBClient(url=url, token=token, org=org_name, debug=False) as client:
         logger.debug("In InfluxDBclient")
         #Create HTTP Notification endpoint

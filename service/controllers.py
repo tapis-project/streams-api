@@ -993,7 +993,15 @@ class AlertsPostResource(Resource):
         # prepare request for Abaco
         channel, msg = alerts.get_channel(channel_id)
         logger.debug(channel)
-        result, message = abaco.create_alert(channel,req_data)
+        if channel['triggers_with_actions'][0]['action']["method"] == "SLACK":
+            result = alerts.send_slack(channel, req_data)   
+        elif channel['triggers_with_actions'][0]['action']["method"] == "ACTOR":
+            result, message = abaco.create_alert(channel,req_data)
+        elif channel['triggers_with_actions'][0]['action']["method"] == "HTTP":
+            result, message = alerts.post_to_http(channel,req_data)
+        else:
+            logger.debug('Invalid actin method')
+            raise errors.ResourceError(msg=f'Invalid action method: ' + channel['triggers_with_actions'][0]['action']["method"])
         logger.debug("end of POST /alerts")
 
         return utils.ok(result=result, msg=message)

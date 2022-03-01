@@ -15,6 +15,8 @@ import subprocess
 from service import meta
 from service import parse_condition_expr
 from service import checks
+import uuid
+
 
 # access the tapipy instance
 t = auth.t
@@ -141,29 +143,14 @@ def create_channel(req_body):
             logger.debug(msg['message'])
             raise errors.ResourceError(msg=f'INVALID template_id : {err_msg}.')
     logger.debug(template_result)
-    # create a check task
-    # channel_id is same as task_id
-    # if task_id already exists in kapacitor, task creation will fail. This will in turn lead to channel creation failure
-    
-    # task_id = channel_id
-    # task_body = {'id': task_id,
-    #              'dbrps': [{"db": "chords_ts_production", "rp": "autogen"}], 'status': 'enabled'}
-
-    # task_body['template-id'] = template_id
-
-    # parse condition and convert it to vars for kapacitor template used in task creation
-    # vars is of the form :
+   
+    #parse conditions for creating check 
     vars = {}
     if(isinstance(req_body['triggers_with_actions'][0]['condition'],dict)):
         vars = convert_conditions_to_vars(req_body)
     else:
         logger.debug('No Condition Provided')
-        # condn_list = json.loads(json.dumps(req_body['triggers_with_actions'][0]['condition']))
-        # lambda_expr, lambda_expr_list, count, expr_list_keys = parse_condition_expr.parse_expr_list(condn_list,'',1,[], [])
-        # logger.debug(lambda_expr_list)
-        # logger.debug(lambda_expr)
-        # vars = parse_condition_expr.convert_condition_list_to_vars( lambda_expr, lambda_expr_list, channel_id)
-    #task_body['vars'] = vars
+
     logger.debug("In Alert - before create Check")
     check_result = checks.create_check(template_result,
                                         site_id=vars['site_id'], 
@@ -175,24 +162,23 @@ def create_channel(req_body):
                                         check_message=req_body['triggers_with_actions'][0]['action']['message'])
     logger.debug(check_result)
     logger.debug("Before create_notification")
-    #maybe don't need to create this each time - just fetch one maybe
 
-    if req_body['triggers_with_actions'][0]['action']["method"] == "ACTOR":
-        logger.debug("In Alert - before create ACTOR CHECK")
-        notification_endpoint = checks.create_notification_endpoint_actor(endpoint_name=channel_id+'_endpoint', 
-                                                                        notification_url=conf.tenant[g.tenant_id]['tapis_base_url'] +'/v3/streams/alerts?tenant='+g.tenant_id)
-        notification_rule = checks.create_http_notification_rule(rule_name=channel_id+'_rule', notification_endpoint=notification_endpoint, check_id=check_result.id)[0]
-    
-    elif req_body['triggers_with_actions'][0]['action']["method"] == "SLACK":
-        logger.debug("In Alert - before create SLACK Check")
-        notification_endpoint = checks.create_slack_notification_endpoint(endpoint_name=channel_id+'_endpoint', 
-                                                                        notification_url=req_body['triggers_with_actions'][0]['action']["slack_webhook_url"])
-        notification_rule = checks.create_slack_notification_rule(rule_name=channel_id+'_rule', notification_endpoint=notification_endpoint, check_id=check_result.id)
-    # create task call to Kapacitor
-    #ktask_result, ktask_status = create_task(task_body)
-    #logger.debug('Kapacitor task status: ' + str(ktask_status))
-    #if ktask_status == 200:
-    # if the Kapacitor task is successfully created, sends a request to meta service to store the channel information
+    #if req_body['triggers_with_actions'][0]['action']["method"] == "ACTOR":
+    logger.debug("In Alert - before create  CHECK")
+    alert_url = "http://192.168.1.17:5001" +'/v3/streams/alerts?tenant='+g.tenant_id
+    #conf.tenant[g.tenant_id]['tapis_base_url'] +'/v3/streams/alerts?tenant='+g.tenant_id
+    notification_endpoint = checks.create_notification_endpoint_http(endpoint_name=channel_id+'_endpoint', 
+                                                                     notification_url=alert_url)
+    notification_rule = checks.create_http_notification_rule(rule_name=channel_id+'_rule', 
+                                                             notification_endpoint=notification_endpoint, 
+                                                             check_id=check_result.id)[0]
+
+    # elif req_body['triggers_with_actions'][0]['action']["method"] == "SLACK":
+    #     logger.debug("In Alert - before create SLACK Check")
+    #     notification_endpoint = checks.create_notification_endpoint_http(endpoint_name=channel_id+'_endpoint', 
+    #                                                                     notification_url=conf.tenant[g.tenant_id]['tapis_base_url'] +'/v3/streams/alerts?tenant='+g.tenant_id)
+    #     notification_rule = checks.create_slack_notification_rule(rule_name=channel_id+'_rule', notification_endpoint=notification_endpoint, check_id=check_result.id)
+
     # create request body for meta service
     # it is same as the request received from the user with four added fields: permissions, status, create_time, last_updated
     req_body['permissions'] = {'users': [g.username]}
@@ -203,7 +189,7 @@ def create_channel(req_body):
     req_body['endpoint_id'] = notification_endpoint.id
     req_body['notifiction_rule_id'] =notification_rule.id
     try:
-        #create a metadata record with kapacitor task id to the channel metadata collection
+        #create a metadata record with check/endpoint/notification_rule ids to the channel metadata collection
         mchannel_result, mchannel_bug = t.meta.createDocument(db=conf.tenant[g.tenant_id]['stream_db'], collection='streams_channel_metadata', request_body=req_body, _tapis_debug=True)
         logger.debug("Status_Code: " + str(mchannel_bug.response.status_code))
         logger.debug(mchannel_result)
@@ -214,11 +200,7 @@ def create_channel(req_body):
             logger.debug('Channel Returned From Meta: ' + str(result))
     except:
         raise errors.ResourceError(msg=f'Meta Channel Creation Failed')
-
-    # else:
-    #     msg = str(ktask_result) + 'Channel Creation Failed'
-    #     raise errors.ResourceError(msg=msg)
-
+        #TO-DO delete the check/endpoint/notification_rule
     return result, message
 
 # Converts a condition provided by the user to vars for Kapacitor tasks creation API request
@@ -390,6 +372,102 @@ def update_channel_status(channel_id, body):
 def remove_channel():
     return True
 
+def send_slack(channel, body):
+    logger.debug("Top of send_slack")
+    webhook_url = channel['triggers_with_actions'][0]['action']["slack_webhook_url"]
+    logger.debug(body)
+    response = requests.post(
+        webhook_url, json={"text" : str(body['_message'])},
+        headers={'Content-Type': 'application/json'}
+    )
+    logger.debug(response.content)
+    if response.status_code == 200:
+        # create alert response data
+        logger.debug("saving Alert to Slack...")
+
+        # prepare request for abaco
+        message_data = {}
+        message_data['message'] = body
+        message_data['message']['channel_id'] = channel['channel_id']
+        logger.debug('message_data so far ~~~: '+ str(message_data))
+        logger.debug('Fetching from Meta')
+        result = meta.fetch_instrument_index(channel['triggers_with_actions'][0]["condition"]["key"].split('.')[0])
+        logger.debug(str(result))
+        message_data['message']['project_id'] = result['project_id']
+        message_data['message']['site_id'] = result['site_id']
+        message_data['message']['inst_id'] = result['instrument_id']
+
+        alert = {}
+        alert['alert_id'] = str(uuid.uuid4())
+        alert['type'] = 'SLACK'
+        alert['channel_name'] = channel['channel_name']
+        alert['channel_id'] = channel['channel_id']
+        alert['message'] =  message_data['message'] 
+        alert['create_time'] = str(datetime.datetime.utcnow())
+        logger.debug(alert)
+        # send alert response data to Meta V3
+        alert_result, msg = meta.create_alert(alert)
+        if msg == "Alert Added":
+            logger.debug(alert_result)
+            result = meta.strip_meta(alert_result)
+            logger.debug(result)
+            return result, msg
+        else:
+            err_msg = f" Failed to add Alert for{channel['channel_id']} in Meta"
+            raise errors.ResourceError(msg=err_msg)
+    else:
+        msg = f"Slack Alert unable to perform the execution on the message: {message_data}."
+        raise errors.ResourceError(msg=msg)
+
+    return response
+
+def post_to_http(channel, body):
+    
+    webhook_url = channel['triggers_with_actions'][0]['action']["http_url"]
+    #TO-DO add in checks for basic or bearer auth and add to headers
+    response = requests.post(
+        webhook_url, data=json.dumps(body),
+        headers={'Content-Type': 'application/json'}
+    )
+    if response.status_code == 200:
+        # create alert response data
+        logger.debug("saving Alert to HTTP...")
+
+        # prepare request for abaco
+        message_data = {}
+        message_data['message'] = body
+        message_data['message']['channel_id'] = channel['channel_id']
+        logger.debug('message_data so far ~~~: '+ str(message_data))
+        logger.debug('Fetching from Meta')
+        result = meta.fetch_instrument_index(channel['triggers_with_actions'][0]["condition"]["key"].split('.')[0])
+        logger.debug(str(result))
+        message_data['message']['project_id'] = result['project_id']
+        message_data['message']['site_id'] = result['site_id']
+        message_data['message']['inst_id'] = result['instrument_id']
+
+        alert = {}
+        alert['alert_id'] = str(uuid.uuid4())
+        alert['type'] = 'HTTP'
+        alert['channel_name'] = channel['channel_name']
+        alert['channel_id'] = channel['channel_id']
+        alert['message'] =  message_data['message'] 
+        alert['create_time'] = str(datetime.datetime.utcnow())
+        logger.debug(alert)
+        # send alert response data to Meta V3
+        alert_result, msg = meta.create_alert(alert)
+        if msg == "Alert Added":
+            logger.debug(alert_result)
+            result = meta.strip_meta(alert_result)
+            logger.debug(result)
+            return result, msg
+        else:
+            err_msg = f" Failed to add Alert for{channel['channel_id']} in Meta"
+            raise errors.ResourceError(msg=err_msg)
+    else:
+        msg = f"HTTP Alert unable to perform the execution on the message: {message_data}."
+        raise errors.ResourceError(msg=msg)
+
+    return response
 ################### ALERT ############################################
 def create_alert():
     return True

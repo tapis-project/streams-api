@@ -93,6 +93,7 @@ def create_alert(channel, req_data):
         execution_id =  res.execution_id
         alert = {}
         alert['alert_id'] = str(uuid.uuid4())
+        alert['type'] = 'ACTOR'
         alert['channel_name'] = channel['channel_name']
         alert['channel_id'] = channel['channel_id']
         alert['actor_id'] = actor_id
