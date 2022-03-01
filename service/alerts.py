@@ -169,8 +169,8 @@ def create_channel(req_body):
 
     #if req_body['triggers_with_actions'][0]['action']["method"] == "ACTOR":
     logger.debug("In Alert - before create  CHECK")
-    alert_url = "http://192.168.1.17:5001" +'/v3/streams/alerts?tenant='+g.tenant_id
-    #conf.tenant[g.tenant_id]['tapis_base_url'] +'/v3/streams/alerts?tenant='+g.tenant_id
+    
+    alert_url = conf.tenant[g.tenant_id]['tapis_base_url'] +'/v3/streams/alerts?tenant='+g.tenant_id
     notification_endpoint = checks.create_notification_endpoint_http(endpoint_name=channel_id+'_endpoint', 
                                                                      notification_url=alert_url)
     notification_rule = checks.create_http_notification_rule(rule_name=channel_id+'_rule', 
