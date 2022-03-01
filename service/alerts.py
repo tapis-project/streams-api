@@ -152,6 +152,10 @@ def create_channel(req_body):
         logger.debug('No Condition Provided')
 
     logger.debug("In Alert - before create Check")
+    if 'message' in req_body['triggers_with_actions'][0]['action']:
+        check_msg = req_body['triggers_with_actions'][0]['action']['message']
+    else:
+        check_msg = ''
     check_result = checks.create_check(template_result,
                                         site_id=vars['site_id'], 
                                         inst_id=vars['inst_id'],
@@ -159,7 +163,7 @@ def create_channel(req_body):
                                         check_name=channel_id,
                                         threshold_type=vars['threshold_type'], 
                                         threshold_value=vars['threshold_value'],
-                                        check_message=req_body['triggers_with_actions'][0]['action']['message'])
+                                        check_message=check_msg)
     logger.debug(check_result)
     logger.debug("Before create_notification")
 
@@ -369,25 +373,32 @@ def update_channel_status(channel_id, body):
         raise errors.ResourceError(msg=msg)
     return meta_result,message
 
-def remove_channel():
+def remove_channel(channel):
+    delete_check(channel)
+    del_channel=channel
+    del_channel["tapis_deleted"]=True
+    update_channel(channel_id=channel["channel_id"], req_body=del_channel )
     return True
 
 def send_webhook(type,channel, body):
     logger.debug("Top of send_slack")
-    webhook_url = channel['triggers_with_actions'][0]['action']["slack_webhook_url"]
+    webhook_url = channel['triggers_with_actions'][0]['action']["webhook_url"]
     logger.debug(body)
     if type == 'SLACK':
         json_payload ={"text" : str(body['_message'])}
     elif type == 'DISCORD':
         json_payload={"content" : str(body['_message'])}
+    elif type == 'WEBHOOK':
+        json_payload={channel['triggers_with_actions'][0]['action']["data_field"]: str(body['_message'])}
     response = requests.post(
         webhook_url, json=json_payload,
         headers={'Content-Type': 'application/json'}
     )
+    logger.debug(response.status_code)
     logger.debug(response.content)
-    if response.status_code == 200:
+    if response.status_code == 200 or response.status_code == 204:
         # create alert response data
-        logger.debug("saving Alert to Slack...")
+        logger.debug("saving Alert...")
 
         # prepare request for abaco
         message_data = {}
@@ -403,7 +414,7 @@ def send_webhook(type,channel, body):
 
         alert = {}
         alert['alert_id'] = str(uuid.uuid4())
-        alert['type'] = 'SLACK'
+        alert['type'] = type
         alert['channel_name'] = channel['channel_name']
         alert['channel_id'] = channel['channel_id']
         alert['message'] =  message_data['message'] 
@@ -420,7 +431,7 @@ def send_webhook(type,channel, body):
             err_msg = f" Failed to add Alert for{channel['channel_id']} in Meta"
             raise errors.ResourceError(msg=err_msg)
     else:
-        msg = f"Slack Alert unable to perform the execution on the message: {message_data}."
+        msg = f"Webhook {type} Alert unable to perform the execution on the message: {message_data}."
         raise errors.ResourceError(msg=msg)
 
     return response

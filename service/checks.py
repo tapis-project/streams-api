@@ -69,8 +69,11 @@ def create_check(template,site_id,inst_id,var_id,check_name,threshold_type, thre
           threshold = LesserThreshold(value=threshold_value,level=CheckStatusLevel.CRIT) 
 
         #Create Check object
+        msg_template = '{"trigger_info":"For Channel- ${ r._check_name } the threshold alert triggered at ${r._time} value=${ r.value }.","value:"${ r.value }"}'
+        if check_message != '':
+          msg_template = check_message
         check = ThresholdCheck(name=check_name,
-                            status_message_template="For Channel- ${ r._check_name } the threshold alert triggered at value=${ r.value }. " + check_message,
+                            status_message_template=msg_template,
                             every="5s",
                             offset="2s",
                             query=DashboardQuery(edit_mode=QueryEditMode.ADVANCED, text=query),

@@ -996,8 +996,10 @@ class AlertsPostResource(Resource):
         logger.debug(channel)
         if channel['triggers_with_actions'][0]['action']["method"] == "SLACK":
             result = alerts.send_webhook(type='SLACK',channel=channel, body=req_data)   
-        if channel['triggers_with_actions'][0]['action']["method"] == "DISCORD":
+        elif channel['triggers_with_actions'][0]['action']["method"] == "DISCORD":
             result = alerts.send_webhook(type='DISCORD',channel=channel, body=req_data)   
+        elif channel['triggers_with_actions'][0]['action']["method"] == "WEBHOOK":
+            result = alerts.send_webhook(type='WEBHOOK',channel=channel, body=req_data) 
         elif channel['triggers_with_actions'][0]['action']["method"] == "ACTOR":
             result, message = abaco.create_alert(channel,req_data)
         elif channel['triggers_with_actions'][0]['action']["method"] == "HTTP":
