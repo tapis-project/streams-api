@@ -48,9 +48,13 @@ def authentication():
 
             if request.method == 'POST' and (request.endpoint == 'alertspostresource'):
                 logger.debug(request.endpoint)
+                logger.debug(request.args)
+                logger.debug(request.headers)
                 g.tenant_id = request.args.get('tenant')
+                bearer = request.headers.get('Authorization')    # Bearer YourTokenHere
+                token = bearer.split()[1]
                 logger.debug(f"Threadlocal tenant id: "+str(g.tenant_id))
-                if request.headers['alert-secret'] == conf.alert_secret:
+                if token == conf.alert_secret:
                     return True
                 else:
                     return False
