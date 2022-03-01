@@ -69,8 +69,11 @@ def create_check(template,site_id,inst_id,var_id,check_name,threshold_type, thre
           threshold = LesserThreshold(value=threshold_value,level=CheckStatusLevel.CRIT) 
 
         #Create Check object
+        msg_template = '{"trigger_info":"For Channel- ${ r._check_name } the threshold alert triggered at ${r._time} value=${ r.value }.","value:"${ r.value }"}'
+        if check_message != '':
+          msg_template = check_message
         check = ThresholdCheck(name=check_name,
-                            status_message_template="For Channel- ${ r._check_name } the threshold alert triggered at value=${ r.value }. " + check_message,
+                            status_message_template=msg_template,
                             every="5s",
                             offset="2s",
                             query=DashboardQuery(edit_mode=QueryEditMode.ADVANCED, text=query),
@@ -129,8 +132,8 @@ def create_slack_notification_endpoint(endpoint_name, notification_url):
         notification_endpoint = SlackNotificationEndpoint(name=endpoint_name,
                                                         url=notification_url,
                                                         org_id=org.id)
-        notification_endpoint_service = NotificationEndpointsService(api_client=client.api_client)
-        notification_endpoint_result = notification_endpoint_service.create_notification_endpoint(notification_endpoint)
+        notification_rules_service = NotificationRulesService(api_client=client.api_client)
+        notification_rule_result = notification_rules_service.create_notification_rule(notification_rule)
         return notification_endpoint_result
 
 def create_slack_notification_rule(rule_name, notification_endpoint, check_id):
@@ -152,3 +155,16 @@ def create_slack_notification_rule(rule_name, notification_endpoint, check_id):
         notification_rule_result = notification_rules_service.create_notification_rule(notification_rule)
         logger.debug(notification_rule_result)
         return notification_rule_result
+
+def delete_check(channel):
+    logger.debug("Top of delete_check")
+    with InfluxDBClient(url=url, token=token, org=org_name, debug=False) as client:
+
+        notification_endpoint_service = NotificationEndpointsService(api_client=client.api_client)
+        notification_endpoint_service.delete_notification_endpoints_id(endpoint_id=channel["endpoint_id"])
+
+        notification_rules_service = NotificationRulesService(api_client=client.api_client)
+        notification_rules_service.delete_notification_rules_id(rule_id=channel["notification_rule_id"])
+
+        checks_service = ChecksService(api_client=client.api_client)
+        check_result = checks_service.delete_checks_id(check_id=channel["check_id"])

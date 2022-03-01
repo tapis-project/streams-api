@@ -912,7 +912,7 @@ class ChannelResource(Resource):
         authorized = sk.check_if_authorized_put_channel(channel_id)
         if (authorized):
             try:
-                result, msg = kapacitor.update_channel(channel_id, body)
+                result, msg = alerts.update_channel(channel_id, body)
             except Exception as e:
                 msg = f"Could not update the channel: {channel_id}; exception: {e}"
             logger.debug(f'Update channel result: ' + str(result))
@@ -954,6 +954,7 @@ class ChannelResource(Resource):
 
     def delete(self, channel_id):
         logger.debug("top of DELETE /channels/{channel_id}")
+        
 
 class AlertsResource(Resource):
     """"
@@ -994,7 +995,11 @@ class AlertsPostResource(Resource):
         channel, msg = alerts.get_channel(channel_id)
         logger.debug(channel)
         if channel['triggers_with_actions'][0]['action']["method"] == "SLACK":
-            result = alerts.send_slack(channel, req_data)   
+            result = alerts.send_webhook(type='SLACK',channel=channel, body=req_data)   
+        elif channel['triggers_with_actions'][0]['action']["method"] == "DISCORD":
+            result = alerts.send_webhook(type='DISCORD',channel=channel, body=req_data)   
+        elif channel['triggers_with_actions'][0]['action']["method"] == "WEBHOOK":
+            result = alerts.send_webhook(type='WEBHOOK',channel=channel, body=req_data) 
         elif channel['triggers_with_actions'][0]['action']["method"] == "ACTOR":
             result, message = abaco.create_alert(channel,req_data)
         elif channel['triggers_with_actions'][0]['action']["method"] == "HTTP":
