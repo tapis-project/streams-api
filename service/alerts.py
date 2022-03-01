@@ -372,12 +372,16 @@ def update_channel_status(channel_id, body):
 def remove_channel():
     return True
 
-def send_slack(channel, body):
+def send_webhook(type,channel, body):
     logger.debug("Top of send_slack")
     webhook_url = channel['triggers_with_actions'][0]['action']["slack_webhook_url"]
     logger.debug(body)
+    if type == 'SLACK':
+        json_payload ={"text" : str(body['_message'])}
+    elif type == 'DISCORD':
+        json_payload={"content" : str(body['_message'])}
     response = requests.post(
-        webhook_url, json={"text" : str(body['_message'])},
+        webhook_url, json=json_payload,
         headers={'Content-Type': 'application/json'}
     )
     logger.debug(response.content)
