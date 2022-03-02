@@ -16,6 +16,8 @@ from service import chords
 from service import influx
 from service import meta
 from service import kapacitor
+from service import alerts
+
 from service import abaco
 from service import sk
 from service.models import ChordsSite, ChordsIntrument, ChordsVariable
@@ -847,8 +849,8 @@ class ChannelsResource(Resource):
         logger.debug("top of POST /channels")
         body = request.json
         try:
-            result, msg = kapacitor.create_channel(body)
-            logger.debug(f'Kapacitor create channel result: ' +str(result))
+            result, msg = alerts.create_channel(body)
+            logger.debug(f'Alerts create channel result: ' +str(result))
             # Channel creator will get assigned a channel admin role in SK. Any access request to the channel will check for assocaited role in SK
             channels_admin_role = 'streams_channel_' + result['_id']['$oid'] + '_admin'
             logger.debug(f' Channel admin role: '+ str(channels_admin_role))
@@ -874,7 +876,7 @@ class ChannelsResource(Resource):
                 msg = f"Could not create channel"
                 return utils.error(result='null', msg=msg)
         except Exception as e:
-
+            logger.debug(e)
             msg = f"Could not create channel: " + e.msg
 
             return utils.error(result='null', msg=msg)
@@ -910,7 +912,7 @@ class ChannelResource(Resource):
         authorized = sk.check_if_authorized_put_channel(channel_id)
         if (authorized):
             try:
-                result, msg = kapacitor.update_channel(channel_id, body)
+                result, msg = alerts.update_channel(channel_id, body)
             except Exception as e:
                 msg = f"Could not update the channel: {channel_id}; exception: {e}"
             logger.debug(f'Update channel result: ' + str(result))
@@ -952,6 +954,7 @@ class ChannelResource(Resource):
 
     def delete(self, channel_id):
         logger.debug("top of DELETE /channels/{channel_id}")
+        
 
 class AlertsResource(Resource):
     """"
@@ -986,12 +989,24 @@ class AlertsPostResource(Resource):
             raise errors.ResourceError(msg=f'Invalid POST data: {req_data}.')
 
         #parse 'id' field, first string is the channel_id
-        channel_id = req_data['id'].split(" ")[0]
+        channel_id = req_data["_check_name"]
 
         # prepare request for Abaco
-        channel, msg = kapacitor.get_channel(channel_id)
+        channel, msg = alerts.get_channel(channel_id)
         logger.debug(channel)
-        result, message = abaco.create_alert(channel,req_data)
+        if channel['triggers_with_actions'][0]['action']["method"] == "SLACK":
+            result = alerts.send_webhook(type='SLACK',channel=channel, body=req_data)   
+        elif channel['triggers_with_actions'][0]['action']["method"] == "DISCORD":
+            result = alerts.send_webhook(type='DISCORD',channel=channel, body=req_data)   
+        elif channel['triggers_with_actions'][0]['action']["method"] == "WEBHOOK":
+            result = alerts.send_webhook(type='WEBHOOK',channel=channel, body=req_data) 
+        elif channel['triggers_with_actions'][0]['action']["method"] == "ACTOR":
+            result, message = abaco.create_alert(channel,req_data)
+        elif channel['triggers_with_actions'][0]['action']["method"] == "HTTP":
+            result, message = alerts.post_to_http(channel,req_data)
+        else:
+            logger.debug('Invalid actin method')
+            raise errors.ResourceError(msg=f'Invalid action method: ' + channel['triggers_with_actions'][0]['action']["method"])
         logger.debug("end of POST /alerts")
 
         return utils.ok(result=result, msg=message)
@@ -1014,7 +1029,7 @@ class TemplatesResource(Resource):
     def post(self):
         logger.debug("top of POST /templates")
         body = request.json
-        result, msg = kapacitor.create_template(body)
+        result, msg = alerts.create_template(body)
         logger.debug(result)
         #if template was created
         if (result['_id']['$oid']):
