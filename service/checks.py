@@ -160,11 +160,20 @@ def delete_check(channel):
     logger.debug("Top of delete_check")
     with InfluxDBClient(url=url, token=token, org=org_name, debug=False) as client:
 
-        notification_endpoint_service = NotificationEndpointsService(api_client=client.api_client)
-        notification_endpoint_service.delete_notification_endpoints_id(endpoint_id=channel["endpoint_id"])
+        try:
+            notification_endpoint_service = NotificationEndpointsService(api_client=client.api_client)
+            notification_endpoint_service.delete_notification_endpoints_id(endpoint_id=channel["endpoint_id"])
+        except Exception as e:
+            logger.debug(e)
+        try:
+            notification_rules_service = NotificationRulesService(api_client=client.api_client)
+            notification_rules_service.delete_notification_rules_id(rule_id=channel["notification_rule_id"])
+        except Exception as e:
+            logger.debug(e)
+        try:
+            checks_service = ChecksService(api_client=client.api_client)
+            check_result = checks_service.delete_checks_id(check_id=channel["check_id"])
+        except Exception as e:
+            logger.debug(e)
 
-        notification_rules_service = NotificationRulesService(api_client=client.api_client)
-        notification_rules_service.delete_notification_rules_id(rule_id=channel["notification_rule_id"])
-
-        checks_service = ChecksService(api_client=client.api_client)
-        check_result = checks_service.delete_checks_id(check_id=channel["check_id"])
+        return True
