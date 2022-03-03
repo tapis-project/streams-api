@@ -40,7 +40,7 @@ def create_alert(channel, req_data):
     message_data['message']['channel_id'] = channel['channel_id']
     logger.debug('message_data so far ~~~: '+ str(message_data))
     logger.debug('Fetching from Meta')
-    result = meta.fetch_instrument_index(channel["triggers_with_actions"][0]['inst_ids'][0])
+    result = meta.fetch_instrument_index(channel['triggers_with_actions'][0]["condition"]["key"].split('.')[0])
     logger.debug(str(result))
     message_data['message']['project_id'] = result['project_id']
     message_data['message']['site_id'] = result['site_id']
@@ -70,10 +70,12 @@ def create_alert(channel, req_data):
     logger.debug('####Testing Abaco ---')
     #message_data = {'message': {'id': 'demo_wq_channel2021-02-12T22_34_31.780856 tsdata/var=113/demo_wq_channel2021-02-12T22_34_31.780856/113', 'message': 'demo_wq_channel2021-02-12T22_34_31.780856 tsdata/var=113/demo_wq_channel2021-02-12T22_34_31.780856/113 is CRITICAL at time: 2021-02-25 22:18:39.362644 +0000 UTC as value: 168 exceeded the threshold', 'details': '', 'time': '2021-02-25T22:18:39.362644Z', 'duration': 1120793048278000, 'level': 'CRITICAL', 'data': {'series': [{'name': 'tsdata', 'tags': {'inst': '85', 'site': '82', 'var': '113'}, 'columns': ['time', 'value'], 'values': [['2021-02-25T22:18:39.362644Z', 168]]}]}, 'previousLevel': 'CRITICAL', 'recoverable': False, 'channel_id': 'demo_wq_channel2021-02-12T22_34_31.780856', 'project_id': 'wq_demo_tapis_proj12021-02-12T22:34:31.780702', 'site_id': 'wq_demo_site', 'inst_id': 'Ohio_River_Robert_C_Byrd_Locks_11', 'var_id': 'temp'}}
     logger.debug('message_data: '+ str(message_data))
-
+    logger.debug(actor_id)
+    #logger.debug(t.actors.getActor(actor_id = actor_id,headers={'X-Tapis-Tenant': g.tenant_id},_tapis_debug=True))
+    #logger.debug(t.actors.sendMessage(actor_id=actor_id, request_body='{"message":"message"}',headers={'X-Tapis-Tenant': g.tenant_id}))
     # send request to Abaco with the nonce
     try:
-        res, debug_msg = t.actors.sendMessage(actor_id=actor_id, message= json.dumps(message_data), headers={'X-Tapis-Tenant': g.tenant_id, "Content-Type":"application/json"},_tapis_debug=True)
+        res, debug_msg = t.actors.sendMessage(actor_id=actor_id, message= json.dumps(message_data), request_body=message_data,headers={'X-Tapis-Tenant': g.tenant_id},_tapis_debug=True)
     except Exception as e:
         er = e
         logger.debug(er.request.url)
@@ -81,21 +83,22 @@ def create_alert(channel, req_data):
         logger.debug(er.response.json())
         msg = f"Got exception trying to post message to Abaco actor: {actor_id}; exception: {e}"
         raise errors.BaseTapyException(msg=msg, request=res.request)
-
+    logger.debug(res)
     logger.debug('abaco response status code:' + str(debug_msg.response.status_code))
     logger.debug(debug_msg.request.body)
     logger.debug(debug_msg.request.headers)
     if str(debug_msg.response.status_code) == '200':
         # create alert response data
         logger.debug("saving executionId from Abaco and generating alert...")
-        execution_id =  res.executionId
+        execution_id =  res.execution_id
         alert = {}
         alert['alert_id'] = str(uuid.uuid4())
+        alert['type'] = 'ACTOR'
         alert['channel_name'] = channel['channel_name']
         alert['channel_id'] = channel['channel_id']
         alert['actor_id'] = actor_id
         alert['execution_id'] = execution_id
-        alert['message'] = req_data['message']
+        alert['message'] =  message_data['message'] 
         alert['create_time'] = str(datetime.datetime.utcnow())
         logger.debug(alert)
         # send alert response data to Meta V3
