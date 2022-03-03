@@ -44,9 +44,6 @@ class ReadyResource(Resource):
     # GET v3/streams/ready
     def get(self):
         try:
-            # Ping Kapacitor
-            #status_kapacitor=kapacitor.ping()
-            #logger.debug(f'Kapacitor status: '+str(status_kapacitor))
 
             # Ping Chords
             status_chords=chords.ping()
@@ -67,13 +64,13 @@ class HealthcheckResource(Resource):
     # GET v3/streams/healthchceck?tenant=tenant.id
     # This is similar to ready except it checks the readiness of meta service
     def get(self):
-        try:
-            # Ping Kapacitor
-            status_kapacitor = kapacitor.ping()
-            logger.debug(f' Check Kapacitor status:'+str(status_kapacitor))
-        except:
-            # If Kapacitor is not ready raise resource error
-            raise errors.ResourceError(msg=f'Kapacitor not ready')
+        # try:
+        #     # Ping Kapacitor
+        #     status_kapacitor = kapacitor.ping()
+        #     logger.debug(f' Check Kapacitor status:'+str(status_kapacitor))
+        # except:
+        #     # If Kapacitor is not ready raise resource error
+        #     raise errors.ResourceError(msg=f'Kapacitor not ready')
         try:
             # Ping Chords
             status_chords = chords.ping()
@@ -838,7 +835,7 @@ class ChannelsResource(Resource):
     # List channels: GET /v3/streams/channels
     def get(self):
         logger.debug("top of GET /channels")
-        channel_result, msg = kapacitor.list_channels()
+        channel_result, msg = alerts.list_channels()
         logger.debug(channel_result)
         result = meta.strip_meta_list(channel_result)
         logger.debug(f' Channels Result: ' +str(result))
@@ -876,11 +873,11 @@ class ChannelsResource(Resource):
                 msg = f"Could not create channel"
                 return utils.error(result='null', msg=msg)
         except Exception as e:
-            logger.debug(e)
-            msg = f"Could not create channel: " + e.msg
-
-            return utils.error(result='null', msg=msg)
-        return utils.error(result='null', msg=msg)
+            msg = f"Could not create channel: " + str(e.msg)
+            logger.debug(msg)
+            #return utils.error(result='null', msg=msg)
+            raise common_errors.ResourceError(msg=msg)
+        #return utils.error(result='null', msg=msg)
 
 # Channel resource: GET, PUT, POST, DELETE
 class ChannelResource(Resource):
@@ -894,8 +891,8 @@ class ChannelResource(Resource):
         authorized = sk.check_if_authorized_get_channel(channel_id)
         if (authorized):
             logger.debug(f'User is authorized to access project : ' + str(channel_id))
-            channel_result, msg = kapacitor.get_channel(channel_id)
-            logger.debug(f'Kapacitor get channel result: '+str(channel_result))
+            channel_result, msg = alerts.get_channel(channel_id)
+            logger.debug(f'ALerts get channel result: '+str(channel_result))
             result = meta.strip_meta(channel_result)
             logger.debug(result)
             return utils.ok(result=result, msg=msg)
@@ -938,7 +935,7 @@ class ChannelResource(Resource):
                 raise errors.ResourceError(msg=f'Invalid POST data: {body}.')
             result = {}
             try:
-                result, msg = kapacitor.update_channel_status(channel_id,body)
+                result, msg = alerts.update_channel_status(channel_id,body)
             except Exception as e:
                 logger.debug(type(e))
                 logger.debug(e.args)
@@ -954,7 +951,9 @@ class ChannelResource(Resource):
 
     def delete(self, channel_id):
         logger.debug("top of DELETE /channels/{channel_id}")
-        
+        result, msg =  alerts.remove_channel(channel_id)
+        logger.debug("end of Channel Delete")
+        return utils.ok(result=meta.strip_meta(result), msg=msg)
 
 class AlertsResource(Resource):
     """"
@@ -1069,7 +1068,7 @@ class TemplateResource(Resource):
     # permission check in template object permission field
     def get(self, template_id):
         logger.debug("top of GET /templates/{template_id}")
-        template_result, msg = kapacitor.get_template(template_id)
+        template_result, msg = alerts.get_template(template_id)
         logger.debug(str(template_result))
         result = meta.strip_meta(template_result)
         logger.debug(result)
@@ -1088,7 +1087,7 @@ class TemplateResource(Resource):
         if (authorized):
             logger.debug(f'User is authorized to update template : '+str(template_id))
             try:
-                result, msg = kapacitor.update_template(template_id,body)
+                result, msg = alerts.update_template(template_id,body)
                 logger.debug(str(result))
                 return utils.ok(result=meta.strip_meta(result), msg=msg)
             except Exception as e:

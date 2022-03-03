@@ -8,6 +8,7 @@ app = Flask(__name__)
 from common import utils, errors
 # get the logger instance -
 from common.logs import get_logger
+from common import errors as common_errors
 logger = get_logger(__name__)
 from service import auth
 from requests.auth import HTTPBasicAuth
@@ -100,7 +101,21 @@ def update_kapacitor_task(task_id,body):
 #  channel_id, channel_name, triggers_with_actions, template_id
 def create_channel(req_body):
     logger.debug("IN CREATE CHANNEL")
-
+    #check that channel id is unique
+    if req_body['channel_id']:
+        logger.debug("CHANNEL ID: "+  req_body['channel_id'])
+        try:
+            #try and fetch channel using the channel_id
+            ch_result = t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_channel_metadata',filter='{"channel_id":"'+ req_body['channel_id'] +'","tapis_deleted":null}')
+            
+        except Exception as e:
+            raise errors.ResourceError(msg=f'{e}.')
+        logger.debug(ch_result)
+        logger.debug(len(ch_result.decode('utf-8')))
+        if len(ch_result.decode('utf-8')) > 2: 
+            logger.debug(f'''INVALID channel_id: {req_body['channel_id']} already exists''')
+            raise common_errors.ResourceError(msg=f'''INVALID channel_id: {req_body['channel_id']} already exists''')
+            #raise errors.ResourceError(msg=f'''INVALID channel_id: {req_body['channel_id']} already exists''')
     # validating actor_id
     if  req_body['triggers_with_actions'][0]['action']["method"] == 'ACTOR': 
         actor_id = req_body['triggers_with_actions'][0]['action']['actor_id']
@@ -169,7 +184,6 @@ def create_channel(req_body):
 
     #if req_body['triggers_with_actions'][0]['action']["method"] == "ACTOR":
     logger.debug("In Alert - before create  CHECK")
-    
     alert_url = conf.tenant[g.tenant_id]['tapis_base_url'] +'/v3/streams/alerts?tenant='+g.tenant_id
     notification_endpoint = checks.create_notification_endpoint_http(endpoint_name=channel_id+'_endpoint', 
                                                                      notification_url=alert_url)
@@ -191,7 +205,7 @@ def create_channel(req_body):
     req_body['last_updated'] = str(datetime.datetime.utcnow())
     req_body['check_id'] = check_result.id
     req_body['endpoint_id'] = notification_endpoint.id
-    req_body['notifiction_rule_id'] =notification_rule.id
+    req_body['notification_rule_id'] =notification_rule.id
     try:
         #create a metadata record with check/endpoint/notification_rule ids to the channel metadata collection
         mchannel_result, mchannel_bug = t.meta.createDocument(db=conf.tenant[g.tenant_id]['stream_db'], collection='streams_channel_metadata', request_body=req_body, _tapis_debug=True)
@@ -257,7 +271,7 @@ def convert_conditions_to_vars(req_body):
 
 def list_channels():
     logger.debug('in Channel list ')
-    result= t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_channel_metadata',filter='{"permissions.users":"'+g.username+'"}')
+    result= t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_channel_metadata',filter='{"permissions.users":"'+g.username+'","tapis_deleted":null}')
     logger.debug(result)
     if len(result.decode('utf-8')) > 0:
         message = "Channels found"
@@ -271,13 +285,15 @@ def get_channel(channel_id):
     logger.debug(g.tenant_id)
     logger.debug(conf.tenant[g.tenant_id]['stream_db'])
 
-    result = t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_channel_metadata',filter='{"channel_id":"'+channel_id+'"}')
-
-    if len(result.decode('utf-8')) > 0:
+    result = t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_channel_metadata',filter='{"channel_id":"'+channel_id+'","tapis_deleted":null}')
+    logger.debug(result)
+    logger.debug(len(result.decode('utf-8')))
+    if len(result.decode('utf-8')) > 2: #if empty [] this is 2 characters
         message = "Channel found."
         channel_result = json.loads(result.decode('utf-8'))[0]
         result = channel_result
         logger.debug("CHANNEL FOUND")
+        logger.debug(result)
     else:
         logger.debug("NO CHANNEL FOUND")
         raise errors.ResourceError(msg=f'No Channel found')
@@ -295,44 +311,47 @@ def update_channel(channel_id, req_body):
         raise errors.ResourceError(msg=msg)
 
     # TODO check if Kapacitor Task exist
-    logger.debug('UPDATING ... Kapacitor Task')
-    task_id = channel_id
-    task_body = {'id': task_id,
-                 'dbrps': [{"db": "chords_ts_production", "rp": "autogen"}]}
+    # logger.debug('UPDATING ... Kapacitor Task')
+    # task_id = channel_id
+    # task_body = {'id': task_id,
+    #              'dbrps': [{"db": "chords_ts_production", "rp": "autogen"}]}
 
-    task_body['template-id'] = req_body['template_id']
-    vars = {}
-    vars = convert_conditions_to_vars(req_body)
-    task_body['vars'] = vars
-    logger.debug('update_task request body: ' + str(task_body))
+    # task_body['template-id'] = req_body['template_id']
+    # vars = {}
+    # vars = convert_conditions_to_vars(req_body)
+    # task_body['vars'] = vars
+    # logger.debug('update_task request body: ' + str(task_body))
 
-    try:
-        kapacitor_result, kapacitor_status_code = update_kapacitor_task(channel_id, task_body)
-    except Exception as e:
-        msg = f" Not able to connect to Kapacitor for the task {channel_id} update; exception: {e}"
-        raise errors.ResourceError(msg=msg)
+    # try:
+    #     kapacitor_result, kapacitor_status_code = update_kapacitor_task(channel_id, task_body)
+    # except Exception as e:
+    #     msg = f" Not able to connect to Kapacitor for the task {channel_id} update; exception: {e}"
+    #     raise errors.ResourceError(msg=msg)
 
-    if kapacitor_status_code == 200:
-        logger.debug("UPDATED ... Kapacitor task  ")
-        logger.debug("UPDATING ... channel object in meta")
+    # if kapacitor_status_code == 200:
+    #     logger.debug("UPDATED ... Kapacitor task  ")
+    #     logger.debug("UPDATING ... channel object in meta")
 
-        if kapacitor_result['status'] == 'enabled':
-            channel_result['status'] = 'ACTIVE'
-        elif kapacitor_result['status'] == 'disabled':
-            channel_result['status'] = 'INACTIVE'
-        else:
-            channel_result['status'] = 'ERROR'
-        channel_result['last_updated'] = str(datetime.datetime.utcnow())
-        channel_result['template_id'] = kapacitor_result['template-id']
-        channel_result['channel_name'] = req_body['channel_name']
-        channel_result['triggers_with_actions'] = req_body['triggers_with_actions']
-        meta_result = {}
-        meta_result, meta_message = meta.update_channel(channel_result)
-    else:
-        str_response = kapacitor_result['error']
-        msg = f" Could Not Find Channel {channel_id} with Task ID {channel_result['channel_id']}: {str_response} "
-        logger.debug(msg)
-        raise errors.ResourceError(msg=msg)
+    #     if kapacitor_result['status'] == 'enabled':
+    #         channel_result['status'] = 'ACTIVE'
+    #     elif kapacitor_result['status'] == 'disabled':
+    #         channel_result['status'] = 'INACTIVE'
+    #     else:
+    #         channel_result['status'] = 'ERROR'
+    channel_result['last_updated'] = str(datetime.datetime.utcnow())
+    #channel_result['template_id'] = kapacitor_result['template-id']
+    channel_result['channel_name'] = req_body['channel_name']
+    channel_result['triggers_with_actions'] = req_body['triggers_with_actions']
+    if req_body['tapis_deleted']:
+         channel_result['tapis_deleted'] = req_body['tapis_deleted']
+    meta_result = {}
+    meta_result, meta_message = meta.update_channel(channel_result)
+    logger.debug(meta_result)
+    # else:
+    #     str_response = kapacitor_result['error']
+    #     msg = f" Could Not Find Channel {channel_id} with Task ID {channel_result['channel_id']}: {str_response} "
+    #     logger.debug(msg)
+    #     raise errors.ResourceError(msg=msg)
     return meta_result, meta_message
 
 def update_channel_status(channel_id, body):
@@ -373,12 +392,21 @@ def update_channel_status(channel_id, body):
         raise errors.ResourceError(msg=msg)
     return meta_result,message
 
-def remove_channel(channel):
-    delete_check(channel)
+def remove_channel(channel_id):
+    logger.debug("Top of remove_channel")
+    try:
+        channel_result, msg = get_channel(channel_id)
+        logger.debug("got channel object")
+        logger.debug(channel_result)
+    except Exception as e:
+        msg = f" Channel {channel_id} NOT Found; exception: {e}"
+        raise errors.ResourceError(msg=msg)
+    channel= channel_result
+    checks.delete_check(channel)
     del_channel=channel
     del_channel["tapis_deleted"]=True
-    update_channel(channel_id=channel["channel_id"], req_body=del_channel )
-    return True
+    result, msg = update_channel(channel_id=channel["channel_id"], req_body=del_channel )
+    return result, msg
 
 def send_webhook(type,channel, body):
     logger.debug("Top of send_slack")
