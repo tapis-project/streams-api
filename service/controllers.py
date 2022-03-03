@@ -44,9 +44,6 @@ class ReadyResource(Resource):
     # GET v3/streams/ready
     def get(self):
         try:
-            # # Ping Kapacitor
-            # status_kapacitor=kapacitor.ping()
-            # logger.debug(f'Kapacitor status: '+str(status_kapacitor))
 
             # Ping Chords
             status_chords=chords.ping()
@@ -57,7 +54,7 @@ class ReadyResource(Resource):
             logger.debug(f'Check Influx status: '+str(status_influx))
 
             # Check if the all pings returned success, if so the streams service is ready otherwise not ready
-            if(status_kapacitor == 204 and status_chords == 200 and status_influx == 204):
+            if(status_chords == 200 and status_influx == 204):
                 return utils.ok(result='', msg=f'Streams Service ready')
         except:
             raise errors.ResourceError(msg=f'Streams Service not ready')
