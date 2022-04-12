@@ -118,6 +118,8 @@ def query_measurments(query_field_list):
     query_list=[]
     start=''
     stop=''
+    limit=''
+    offset=''
     for fields in query_field_list:
         #fields = json.loads(itm)
         logger.debug(fields)
@@ -128,6 +130,12 @@ def query_measurments(query_field_list):
             elif k == "end_date":
                 if str(fields[k]) != 'None':
                     stop=str(fields[k])
+            elif k == "limit":
+                if str(fields[k]) != 'None':
+                    limit=str(fields[k])
+            elif k == "offset":
+                if str(fields[k]) != 'None':
+                    offset=str(fields[k])
             else:
                 query_list.append('r["'+k+'"]=="'+str(fields[k])+'"')
     query_filters = ' and '.join(query_list)
@@ -140,7 +148,13 @@ def query_measurments(query_field_list):
         query = query + '\n|> range(start: 0, stop:'+ stop+' )'
     else:
         query = query + '|> range(start: 0)'
-    query = query +'|> filter(fn: (r) => '+query_filters+')'
+    query = query +'|> filter(fn: (r) => '+query_filters+') |> sort(columns: ["_time"], desc: false)'
+    if limit != '' and offset != '':
+        query = query +'|> limit(n: '+limit+', offset: '+offset+')'
+    elif limit != '':
+        query = query +'|> limit(n: '+limit+')'
+    elif offset !='':
+        query = query +'|> limit(offset: '+offset+')'
     logger.debug(query)
     with InfluxDBClient(url=conf.influxdb_host+':'+conf.influxdb_port, token=conf.influxdb_token, org=conf.influxdb_org) as client:
         result = client.query_api().query_data_frame(query)

@@ -17,7 +17,7 @@ from service import influx
 from service import meta
 from service import kapacitor
 from service import alerts
-
+from service import measurements
 from service import abaco
 from service import sk
 from service.models import ChordsSite, ChordsIntrument, ChordsVariable
@@ -695,12 +695,13 @@ class MeasurementsResource(Resource):
                     for v in inst['variables']:
                         logger.debug(v)
                         replace_cols[str(v['chords_id'])]=v['var_id']
-            influx_query_input = [{"inst":str(instrument['chords_id'])}]
-            if request.args.get('start_date'):
-                influx_query_input.append({"start_date": request.args.get('start_date')})
-            if request.args.get('end_date'):
-                influx_query_input.append({"end_date": request.args.get('end_date')})    
-            df= influx.query_measurments( influx_query_input)
+            # influx_query_input = [{"inst":str(instrument['chords_id'])}]
+            # if request.args.get('start_date'):
+            #     influx_query_input.append({"start_date": request.args.get('start_date')})
+            # if request.args.get('end_date'):
+            #     influx_query_input.append({"end_date": request.args.get('end_date')})    
+            # df= influx.query_measurments( influx_query_input)
+            df = measurements.fetch_measurement_dataframe(instrument,request)
             logger.debug(df)
             logger.debug(list(df.columns.values))
             #if len(df) > 1 and len(js['series']) > 0:
@@ -745,7 +746,6 @@ class MeasurementsResource(Resource):
             else:
                 df1=df
                 if request.args.get('format') == "csv":
-                    #df1.set_index('_time',inplace=True)
                     logger.debug("CSV")
                     logger.debug(f"CSV in Bytess: "+ str(sys.getsizeof(df1.to_csv)))
                     output = make_response(df1.to_csv())
