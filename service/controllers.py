@@ -1,4 +1,5 @@
 import datetime
+from re import I
 from statistics import mean
 import requests
 import json
@@ -700,8 +701,7 @@ class MeasurementsResource(Resource):
                         logger.debug(v)
                         replace_cols[str(v['chords_id'])]=v['var_id']
 
-            df = measurements.fetch_measurement_dataframe(instrument,request)
-            logger.debug(df)
+            df = measurements.fetch_measurement_dataframe(inst_chords_id=instrument['chords_id'],request=request)
             if df.empty == False:
                 logger.debug(list(df.columns.values))
                 pv = df.pivot(index='_time', columns='var', values=['_value'])
@@ -719,7 +719,9 @@ class MeasurementsResource(Resource):
                 return measurements.create_csv_response(df1,project_id)
             else:
                 return utils.ok(result=measurements.create_json_response(df1,project_id,instrument,params), msg=msg)
-
+        else:
+            logger.debug('User does not have any role on project')
+            raise common_errors.PermissionsError(msg=f'User not authorized to access the resource')
 
 class MeasurementsReadResource(Resource):
     """
@@ -744,52 +746,35 @@ class MeasurementsReadResource(Resource):
             authorized = sk.check_if_authorized_post(project_id)
             logger.debug(f' Authorized: ' +str(authorized))
             if (authorized):
+                replace_cols={}
+                for inst in site['instruments']:
+                    logger.debug(inst)
+                    if inst['inst_id'] == instrument_id:
+                        instrument = inst
+                        logger.debug(inst)
+                        for v in inst['variables']:
+                            logger.debug(v)
+                            replace_cols[str(v['chords_id'])]=v['var_id']
+                df = measurements.fetch_measurement_dataframe(inst_chords_id=inst_index['chords_inst_id'],request=request)
                 logger.debug(f'User is authorized to download measurements')
-                js= influx.query_measurments([{"inst":str(inst_index['chords_inst_id'])},{"start_date": request.args.get('start_date')},{"end_date": request.args.get('end_date')}])
-                logger.debug(js)
-                if len(js) > 1 and len(js['series']) > 0:
-                    df = pd.DataFrame(js['series'][0]['values'],columns=js['series'][0]['columns'])
-                    pv = df.pivot(index='time', columns='var', values=['value'])
+                logger.debug(df)
+                if df.empty == False:
+                    logger.debug(list(df.columns.values))
+                    pv = df.pivot(index='_time', columns='var', values=['_value'])
                     df1 = pv
                     df1.columns = df1.columns.droplevel(0)
                     df1 = df1.reset_index().rename_axis(None, axis=1)
-                    replace_cols = {}
-                    logger.debug(site)
-                    for inst in site['instruments']:
-                        logger.debug(inst)
-                        if inst['inst_id'] == instrument_id:
-                            instrument = inst
-                            logger.debug(inst)
-                            for v in inst['variables']:
-                                logger.debug(v)
-                                replace_cols[str(v['chords_id'])]=v['var_id']
-                    logger.debug(replace_cols)
+                    replace_cols['_time']='time'
                     df1.rename(columns=replace_cols,inplace=True)
                     df1.set_index('time',inplace=True)
-                    if request.args.get('format') == "csv":
-                        logger.debug("CSV")
-                        output = make_response(df1.to_csv())
-                        output.headers["Content-Disposition"] = "attachment; filename=export.csv"
-                        output.headers["Content-type"] = "text/csv"
-                        metric = {'created_at':datetime.now().isoformat(),'type':'download','project_id':inst_index['project_id'],'username':g.username,'size': sys.getsizeof(df1.to_csv)}
-                        metric_result, metric_bug =auth.t.meta.createDocument(db=conf.tenant[g.tenant_id]['stream_db'], collection='streams_metrics', request_body=metric, _tapis_debug=True)
-                        logger.debug(metric_result)
-                        return output
-                    else:
-                        result = json.loads(df1.to_json())
-                        logger.debug(result)
-                        result['measurements_in_file'] = len(df1.index)
-                        if 'with_metadata' in params:
-                            if params['with_metadata'] == 'True':
-                                result['instrument'] = instrument
-                                site.pop('instruments',None)
-                                result['site'] = meta.strip_meta(site)
-                        metric = {'created_at':datetime.now().isoformat(),'type':'download','project_id':inst_index['project_id'],'username':g.username,'size': str(sys.getsizeof(result))}
-                        metric_result, metric_bug =auth.t.meta.createDocument(db=conf.tenant[g.tenant_id]['stream_db'], collection='streams_metrics', request_body=metric, _tapis_debug=True)
-                        logger.debug(metric_result)
-                        return utils.ok(result=result, msg="Measurements Found")
+                    msg="Measurements Found"
                 else:
-                    return utils.ok(result=[], msg="No Measurements Founds")
+                    df1 = df
+                    msg="Measurements Not Found"
+                if request.args.get('format') == "csv":
+                    return measurements.create_csv_response(df1,project_id)
+                else:
+                    return utils.ok(result=measurements.create_json_response(df1,project_id,instrument,params), msg=msg)
             else:
                 logger.debug('User does not have any role on project')
                 raise common_errors.PermissionsError(msg=f'User not authorized to access the resource')

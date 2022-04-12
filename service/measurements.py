@@ -19,8 +19,8 @@ import sys
 from datetime import datetime
 from io import StringIO
 
-def fetch_measurement_dataframe(instrument, request):
-    influx_query_input = [{"inst":str(instrument['chords_id'])}]
+def fetch_measurement_dataframe(inst_chords_id, request):
+    influx_query_input = [{"inst":str(inst_chords_id)}]
     if request.args.get('start_date'):
         influx_query_input.append({"start_date": request.args.get('start_date')})
     if request.args.get('end_date'):
