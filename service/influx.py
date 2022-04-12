@@ -116,6 +116,8 @@ def write_measurements(site_id, instrument, body):
 def query_measurments(query_field_list):
     logger.debug("IN INFLUX QUERY: ")
     query_list=[]
+    start=''
+    stop=''
     for fields in query_field_list:
         #fields = json.loads(itm)
         logger.debug(fields)
@@ -129,9 +131,16 @@ def query_measurments(query_field_list):
             else:
                 query_list.append('r["'+k+'"]=="'+str(fields[k])+'"')
     query_filters = ' and '.join(query_list)
-    query = 'from(bucket: "'+conf.influxdb_bucket+'")'+'''
-    |> range(start: ''' +start+', stop:'+ stop+''' )
-    |> filter(fn: (r) => '''+query_filters+')'
+    query = 'from(bucket: "'+conf.influxdb_bucket+'")'
+    if start !='' and stop!='':
+        query = query + '\n|> range(start: '+start+', stop:'+ stop+' )'
+    elif start !='':
+        query = query + '\n|> range(start: '+start+' )'
+    elif stop!='':
+        query = query + '\n|> range(start: 0, stop:'+ stop+' )'
+    else:
+        query = query + '|> range(start: 0)'
+    query = query +'|> filter(fn: (r) => '+query_filters+')'
     logger.debug(query)
     with InfluxDBClient(url=conf.influxdb_host+':'+conf.influxdb_port, token=conf.influxdb_token, org=conf.influxdb_org) as client:
         result = client.query_api().query_data_frame(query)

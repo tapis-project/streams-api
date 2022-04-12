@@ -695,48 +695,82 @@ class MeasurementsResource(Resource):
                     for v in inst['variables']:
                         logger.debug(v)
                         replace_cols[str(v['chords_id'])]=v['var_id']
-            df= influx.query_measurments([{"inst":str(instrument['chords_id'])},{"start_date": request.args.get('start_date')},{"end_date": request.args.get('end_date')}])
+            influx_query_input = [{"inst":str(instrument['chords_id'])}]
+            if request.args.get('start_date'):
+                influx_query_input.append({"start_date": request.args.get('start_date')})
+            if request.args.get('end_date'):
+                influx_query_input.append({"end_date": request.args.get('end_date')})    
+            df= influx.query_measurments( influx_query_input)
             logger.debug(df)
             logger.debug(list(df.columns.values))
             #if len(df) > 1 and len(js['series']) > 0:
             #    df = pd.DataFrame(js['series'][0]['values'],columns=js['series'][0]['columns'])
-            pv = df.pivot(index='_time', columns='var', values=['_value'])
-            df1 = pv
-            df1.columns = df1.columns.droplevel(0)
-            df1 = df1.reset_index().rename_axis(None, axis=1)
-            df1.rename(columns=replace_cols,inplace=True)
-            if request.args.get('format') == "csv":
-                df1.set_index('_time',inplace=True)
-                logger.debug("CSV")
-                logger.debug(f"CSV in Bytess: "+ str(sys.getsizeof(df1.to_csv)))
-                output = make_response(df1.to_csv())
-                output.headers["Content-Disposition"] = "attachment; filename=export.csv"
-                output.headers["Content-type"] = "text/csv"
-                metric = {'created_at':datetime.now().isoformat(),'type':'download','project_id':project_id,'username':g.username,'size': sys.getsizeof(df1.to_csv)}
-                metric_result, metric_bug =auth.t.meta.createDocument(db=conf.tenant[g.tenant_id]['stream_db'], collection='streams_metrics', request_body=metric, _tapis_debug=True)
-                logger.debug(f' Metric result: ' +str(metric_result))
-                return output
+            if df.empty == False:
+                pv = df.pivot(index='_time', columns='var', values=['_value'])
+                df1 = pv
+                df1.columns = df1.columns.droplevel(0)
+                df1 = df1.reset_index().rename_axis(None, axis=1)
+                replace_cols['_time']='time'
+                df1.rename(columns=replace_cols,inplace=True)
+                if request.args.get('format') == "csv":
+                    df1.set_index('time',inplace=True)
+                    logger.debug("CSV")
+                    logger.debug(f"CSV in Bytess: "+ str(sys.getsizeof(df1.to_csv)))
+                    output = make_response(df1.to_csv())
+                    output.headers["Content-Disposition"] = "attachment; filename=export.csv"
+                    output.headers["Content-type"] = "text/csv"
+                    metric = {'created_at':datetime.now().isoformat(),'type':'download','project_id':project_id,'username':g.username,'size': sys.getsizeof(df1.to_csv)}
+                    metric_result, metric_bug =auth.t.meta.createDocument(db=conf.tenant[g.tenant_id]['stream_db'], collection='streams_metrics', request_body=metric, _tapis_debug=True)
+                    logger.debug(f' Metric result: ' +str(metric_result))
+                    return output
+                else:
+                    logger.debug(df1)
+                    df2 = df1.set_index('time')
+                    df3 = pd.read_csv(StringIO(df2.to_csv()),index_col="time")
+                    logger.debug(df3)
+                    result = json.loads(df3.to_json())
+                    logger.debug(result)
+                    result['measurements_in_file'] = len(df3.index)
+                    logger.debug('after')
+                    if 'with_metadata' in params:
+                        if params['with_metadata'] == 'True':
+                            result['instrument'] = instrument
+                            site.pop('instruments',None)
+                            result['site'] = meta.strip_meta(site)
+                    logger.debug("JSON in Bytes: "+ str(sys.getsizeof(result)))
+                    metric = {'created_at':datetime.now().isoformat(),'type':'download','project_id':project_id,'username':g.username,'size': sys.getsizeof(result)}
+                    metric_result, metric_bug =auth.t.meta.createDocument(db=conf.tenant[g.tenant_id]['stream_db'], collection='streams_metrics', request_body=metric, _tapis_debug=True)
+                    logger.debug(metric_result)
+                    return utils.ok(result=result, msg="Measurements Found")
             else:
-                logger.debug(df1)
-                df2 = df1.set_index('_time')
-                df3 = pd.read_csv(StringIO(df2.to_csv()),index_col="_time")
-                logger.debug(df3)
-                result = json.loads(df3.to_json())
-                logger.debug(result)
-                result['measurements_in_file'] = len(df3.index)
-                logger.debug('after')
-                if 'with_metadata' in params:
-                    if params['with_metadata'] == 'True':
-                        result['instrument'] = instrument
-                        site.pop('instruments',None)
-                        result['site'] = meta.strip_meta(site)
-                logger.debug("JSON in Bytes: "+ str(sys.getsizeof(result)))
-                metric = {'created_at':datetime.now().isoformat(),'type':'download','project_id':project_id,'username':g.username,'size': sys.getsizeof(result)}
-                metric_result, metric_bug =auth.t.meta.createDocument(db=conf.tenant[g.tenant_id]['stream_db'], collection='streams_metrics', request_body=metric, _tapis_debug=True)
-                logger.debug(metric_result)
-                return utils.ok(result=result, msg="Measurements Found")
-            #else:
-            #    return utils.ok(result=[], msg="No Measurements Founds")
+                df1=df
+                if request.args.get('format') == "csv":
+                    #df1.set_index('_time',inplace=True)
+                    logger.debug("CSV")
+                    logger.debug(f"CSV in Bytess: "+ str(sys.getsizeof(df1.to_csv)))
+                    output = make_response(df1.to_csv())
+                    output.headers["Content-Disposition"] = "attachment; filename=export.csv"
+                    output.headers["Content-type"] = "text/csv"
+                    metric = {'created_at':datetime.now().isoformat(),'type':'download','project_id':project_id,'username':g.username,'size': sys.getsizeof(df1.to_csv)}
+                    metric_result, metric_bug =auth.t.meta.createDocument(db=conf.tenant[g.tenant_id]['stream_db'], collection='streams_metrics', request_body=metric, _tapis_debug=True)
+                    logger.debug(f' Metric result: ' +str(metric_result))
+                    return output
+                else:
+                    logger.debug(df1)
+                    result = json.loads(df1.to_json())
+                    logger.debug(result)
+                    result['measurements_in_file'] = 0
+                    logger.debug('after')
+                    if 'with_metadata' in params:
+                        if params['with_metadata'] == 'True':
+                            result['instrument'] = instrument
+                            site.pop('instruments',None)
+                            result['site'] = meta.strip_meta(site)
+                    logger.debug("JSON in Bytes: "+ str(sys.getsizeof(result)))
+                    metric = {'created_at':datetime.now().isoformat(),'type':'download','project_id':project_id,'username':g.username,'size': sys.getsizeof(result)}
+                    metric_result, metric_bug =auth.t.meta.createDocument(db=conf.tenant[g.tenant_id]['stream_db'], collection='streams_metrics', request_body=metric, _tapis_debug=True)
+                    logger.debug(metric_result)
+                    return utils.ok(result=result, msg="Measurements Found")
 
 
 class MeasurementsReadResource(Resource):
