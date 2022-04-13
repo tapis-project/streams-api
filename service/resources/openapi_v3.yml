@@ -170,9 +170,9 @@ paths:
         description: limit the number of records returned.
         schema:
           type: integer
-      - name: offset
+      - name: skip
         in: query
-        description: index (offset) to start list.
+        description: index (skip) to start list.
         schema:
           type: integer
       responses:
@@ -446,9 +446,9 @@ paths:
         description: limit the number of records returned.
         schema:
           type: integer
-      - name: offset
+      - name: skip
         in: query
-        description: index (offset) to start list.
+        description: index (skip) to start list.
         schema:
           type: integer
       responses:
@@ -757,9 +757,9 @@ paths:
           description: limit the number of records returned
           schema:
             type: integer
-        - name: offset
+        - name: skip
           in: query
-          description: index (offset) to start list
+          description: index (skip) to start list
           schema:
             type: integer
       responses:
@@ -1094,9 +1094,9 @@ paths:
           description: limit the number of records returned.
           schema:
             type: integer
-        - name: offset
+        - name: skip
           in: query
-          description: index (offset) to start list.
+          description: index (skip) to start list.
           schema:
             type: integer
       responses:
@@ -1488,9 +1488,9 @@ paths:
           description: limit the number of records returned.
           schema:
             type: integer
-        - name: offset
+        - name: skip
           in: query
-          description: index (offset) to start list.
+          description: index (skip) to start list.
           schema:
             type: integer
         - name: start_date
@@ -1582,9 +1582,9 @@ paths:
           description: limit the number of records returned.
           schema:
             type: integer
-        - name: offset
+        - name: skip
           in: query
-          description: index (offset) to start list.
+          description: index (skip) to start list.
           schema:
             type: integer
         - name: start_date
@@ -1666,9 +1666,9 @@ paths:
         description: limit the number of records returned.
         schema:
           type: integer
-      - name: offset
+      - name: skip
         in: query
-        description: index (offset) to start list.
+        description: index (skip) to start list.
         schema:
           type: integer
       responses:
@@ -1938,9 +1938,9 @@ paths:
         description: limit the number of records returned.
         schema:
           type: integer
-      - name: offset
+      - name: skip
         in: query
-        description: index (offset) to start list.
+        description: index (skip) to start list.
         schema:
           type: integer
       responses:
@@ -2328,9 +2328,9 @@ paths:
           description: limit the number of records returned.
           schema:
             type: integer
-        - name: offset
+        - name: skip
           in: query
-          description: index (offset) to start list.
+          description: index (skip) to start list.
           schema:
             type: integer
       responses:
@@ -2538,9 +2538,9 @@ paths:
         description: limit the number of records returned.
         schema:
           type: integer
-      - name: offset
+      - name: skip
         in: query
-        description: index (offset) to start list.
+        description: index (skip) to start list.
         schema:
           type: integer
       responses:
@@ -2602,9 +2602,9 @@ paths:
         description: limit the number of records returned.
         schema:
           type: integer
-      - name: offset
+      - name: skip
         in: query
-        description: index (offset) to start list.
+        description: index (skip) to start list.
         schema:
           type: integer
       responses:
