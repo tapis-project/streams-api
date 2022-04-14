@@ -75,7 +75,7 @@ def create_alert(channel, req_data):
     #logger.debug(t.actors.sendMessage(actor_id=actor_id, request_body='{"message":"message"}',headers={'X-Tapis-Tenant': g.tenant_id}))
     # send request to Abaco with the nonce
     try:
-        res, debug_msg = t.actors.sendMessage(_tapis_set_x_headers_from_service=True, actor_id=actor_id, message= json.dumps(message_data), request_body=message_data,headers={'X-Tapis-Tenant': g.tenant_id},_tapis_debug=True)
+        res, debug_msg = t.actors.sendMessage(_x_tapis_tenant=g.tenant_id, _x_tapis_user=g.username, actor_id=actor_id, message= json.dumps(message_data), request_body=message_data,headers={'X-Tapis-Tenant': g.tenant_id},_tapis_debug=True)
     except Exception as e:
         er = e
         logger.debug(er.request.url)
