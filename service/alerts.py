@@ -8,7 +8,7 @@ app = Flask(__name__)
 from common import utils, errors
 # get the logger instance -
 from common.logs import get_logger
-from common import errors as common_errors
+from tapisservice import errors as common_errors
 logger = get_logger(__name__)
 from service import auth
 from requests.auth import HTTPBasicAuth

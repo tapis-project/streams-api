@@ -1,7 +1,7 @@
 from flask import g, request
 from tapisservice.tapisflask.utils import conf
 from common import auth
-from common import errors as common_errors
+from tapisservice import errors as common_errors
 from common.auth import tenants
 
 # get the logger instance -
