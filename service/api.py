@@ -8,7 +8,7 @@ from service.controllers import ProjectsResource, ProjectResource, SitesResource
 
 
 from service.models import app
-
+from service import auth
 # get the logger instance -
 from tapisservice.logs import get_logger
 logger = get_logger(__name__)
@@ -16,7 +16,7 @@ logger = get_logger(__name__)
 # Before every request check the authentication and authorization
 @app.before_request
 def authnz_for_authenticator():
-    authn_and_authz()
+    auth.authn_and_authz()
     logger.debug("Authentication complete")
 
 # flask restful API object ----
