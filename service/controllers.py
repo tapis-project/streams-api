@@ -31,7 +31,7 @@ from service import auth
 from datetime import datetime
 
 # get the logger instance -
-from common.logs import get_logger
+from tapisservice.logs import get_logger
 logger = get_logger(__name__)
 
 # Hello resource: GET

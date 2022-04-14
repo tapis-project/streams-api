@@ -10,7 +10,7 @@ from service.controllers import ProjectsResource, ProjectResource, SitesResource
 from service.models import app
 
 # get the logger instance -
-from common.logs import get_logger
+from tapisservice.logs import get_logger
 logger = get_logger(__name__)
 
 # Before every request check the authentication and authorization

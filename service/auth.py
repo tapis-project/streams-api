@@ -6,7 +6,7 @@ from tapisservice import errors as common_errors
 from common.auth import tenants
 
 # get the logger instance -
-from common.logs import get_logger
+from tapisservice.logs import get_logger
 logger = get_logger(__name__)
 
 
