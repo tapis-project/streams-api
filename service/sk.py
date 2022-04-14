@@ -6,8 +6,8 @@ from service import meta
 from service import kapacitor
 
 from flask import g, Flask
-from tapisservice.tapisflask.utils import conf
-from common import auth
+from tapisservice.config import conf
+from tapisservice import auth
 import datetime
 app = Flask(__name__)
 from tapisservice.tapisflask import utils

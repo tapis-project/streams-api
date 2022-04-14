@@ -14,7 +14,7 @@ from service import auth
 from tapisservice import errors
 from tapisservice.logs import get_logger
 logger = get_logger(__name__)
-from tapisservice.tapisflask.utils import conf
+from tapisservice.config import conf
 import sys
 import os
 from tapipy.tapis import Tapis

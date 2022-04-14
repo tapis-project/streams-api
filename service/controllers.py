@@ -25,7 +25,7 @@ from service import sk
 from service.models import ChordsSite, ChordsIntrument, ChordsVariable
 from tapisservice.tapisflask import utils
 from tapisservice import errors
-from tapisservice.tapisflask.utils import conf
+from tapisservice.config import conf
 from requests.auth import HTTPBasicAuth
 from tapisservice import errors as common_errors
 from service import auth

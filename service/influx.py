@@ -3,7 +3,7 @@ import enum
 import requests
 import json
 from flask import g, Flask
-from tapisservice.tapisflask.utils import conf
+from tapisservice.config import conf
 app = Flask(__name__)
 
 from tapisservice import errors

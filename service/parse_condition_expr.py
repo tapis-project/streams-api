@@ -2,7 +2,7 @@ import requests
 import json
 import datetime
 from flask import g, Flask
-from tapisservice.tapisflask.utils import conf
+from tapisservice.config import conf
 app = Flask(__name__)
 from tapisservice.tapisflask import utils
 from tapisservice import errors

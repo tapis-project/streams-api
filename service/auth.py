@@ -1,5 +1,5 @@
 from flask import g, request
-from tapisservice.tapisflask.utils import conf
+from tapisservice.config import conf
 from tapisservice import auth
 from tapisservice import tapisflask
 from tapisservice import errors as common_errors
@@ -61,8 +61,9 @@ def authentication():
                     return False
             raise e
 
-# this is the Tapis client that tenants will use for interacting with other services, such as the security kernel.
 
-t = auth.get_service_tapis_client(tenant_id=conf.service_admin_tenant_id, tenants=TenantCache)
+# this is the Tapis client that tenants will use for interacting with other services, such as the security kernel.
+Tenants = TenantCache()
+t = auth.get_service_tapis_client(tenant_id=conf.service_admin_tenant_id, tenants=Tenants)
 logger.debug(t.service_tokens)
 t.x_username = conf.streams_user

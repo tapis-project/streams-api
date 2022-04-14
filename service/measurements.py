@@ -1,7 +1,7 @@
 import requests
 import json
 from flask import g, Flask, request, make_response
-from tapisservice.tapisflask.utils import conf
+from tapisservice.config import conf
 import datetime
 app = Flask(__name__)
 
