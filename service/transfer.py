@@ -11,10 +11,10 @@ import pandas as pd
 app = Flask(__name__)
 
 from service import auth
-from common import utils, errors
-from common.logs import get_logger
+from tapisservice import errors
+from tapisservice.logs import get_logger
 logger = get_logger(__name__)
-from common.config import conf
+from tapisservice.config import conf
 import sys
 import os
 from tapipy.tapis import Tapis
@@ -58,7 +58,7 @@ def transfer_to_system(filename, system_id, path, project_id, instrument_id, dat
                     metric = {'created_at':datetime.now().isoformat(),'type':'transfer','project_id':project_id,'username':g.username,'size': str(sys.getsizeof(result))}
                 metric['request'] = {"filename":filename, "sytem_id":system_id, "path":path, "project_id":project_id,
                                      "inst_id":instrument_id, "data_format":data_format, "start_date":start_date, "end_date":end_date}
-                metric_result, metric_bug =t.meta.createDocument(db=conf.tenant[g.tenant_id]['stream_db'], collection='streams_metrics', request_body=metric, _tapis_debug=True)
+                metric_result, metric_bug =t.meta.createDocument(_tapis_set_x_headers_from_service=True,db=conf.tenant[g.tenant_id]['stream_db'], collection='streams_metrics', request_body=metric, _tapis_debug=True)
                 logger.debug(filename)
                 with open(filename, 'w') as f:
                     f.write(json.dumps(result))

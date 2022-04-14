@@ -2,12 +2,12 @@ import requests
 import json
 import datetime
 from flask import g, Flask
-from common.config import conf
+from tapisservice.config import conf
 app = Flask(__name__)
-
-from common import utils, errors
+from tapisservice.tapisflask import utils
+from tapisservice import errors
 # get the logger instance -
-from common.logs import get_logger
+from tapisservice.logs import get_logger
 logger = get_logger(__name__)
 from service import auth
 from requests.auth import HTTPBasicAuth

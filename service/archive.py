@@ -11,10 +11,10 @@ import pandas as pd
 app = Flask(__name__)
 
 from service import auth
-from common import utils, errors
-from common.logs import get_logger
+from tapisservice import errors
+from tapisservice.logs import get_logger
 logger = get_logger(__name__)
-from common.config import conf
+from tapisservice.config import conf
 import sys
 import os
 from tapipy.tapis import Tapis
@@ -114,16 +114,16 @@ def archive_to_system(system_id, path, project_id, archive_format, data_format):
     #upload file to system at the path
     t.access_token = t.service_tokens['admin']['access_token']
     t.x_username= g.username
-    t.x_tenant_id = g.tenant_id
+    t.x_tenant_id = g.username
     msg = ""
-    msg = t.upload(source_file_path=zipfilename, system_id=system_id, dest_file_path=path+'/'+zipfilename)
+    msg = t.upload(_x_tapis_tenant=g.username, _x_tapis_user=g.username,source_file_path=zipfilename, system_id=system_id, dest_file_path=path+'/'+zipfilename)
     logger.debug(msg)
     os.remove(zipfilename) #cleanup zipfile
     metric['transfer_status']=msg
     return metric
 
 def list_archives(project_id):
-    result = t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection=project_id,filter='{"tapis_deleted":{ "$exists" : false },"archive_type":{ "$exists" : true }}')
+    result = t.meta.listDocuments(_tapis_set_x_headers_from_service=True,db=conf.tenant[g.tenant_id]['stream_db'],collection=project_id,filter='{"tapis_deleted":{ "$exists" : false },"archive_type":{ "$exists" : true }}')
     if len(json.loads(result)) > 0:
         message = "Archives found"
     else:

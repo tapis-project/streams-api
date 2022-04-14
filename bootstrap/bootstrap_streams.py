@@ -2,7 +2,7 @@ import requests
 from tapipy.tapis import Tapis
 import json
 import os
-from common.config import conf
+from tapisservice.tapisflask.utils import conf
 
 def create_streams_service_token():
     t = Tapis(base_url=os.environ['TAPIS_BASEURL'], username=os.environ['STREAMS_USER'], account_type='service',
