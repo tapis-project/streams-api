@@ -29,7 +29,7 @@ from service import parse_condition_expr
 from service import errors
 from service import models
 from service.api import app
-from common.config import conf
+from tapisservice.config import conf
 import json
 import datetime
 

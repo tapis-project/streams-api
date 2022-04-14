@@ -2,13 +2,13 @@ import requests
 import json
 import datetime
 from flask import g, Flask
-from common.config import conf
+from tapisservice.config import conf
 app = Flask(__name__)
 
-from common import utils, errors
+from tapisservice import errors
 # get the logger instance -
-from common.logs import get_logger
-from common import errors as common_errors
+from tapisservice.logs import get_logger
+from tapisservice import errors as common_errors
 logger = get_logger(__name__)
 from service import auth
 from requests.auth import HTTPBasicAuth
@@ -106,7 +106,7 @@ def create_channel(req_body):
         logger.debug("CHANNEL ID: "+  req_body['channel_id'])
         try:
             #try and fetch channel using the channel_id
-            ch_result = t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_channel_metadata',filter='{"channel_id":"'+ req_body['channel_id'] +'","tapis_deleted":null}')
+            ch_result = t.meta.listDocuments(_tapis_set_x_headers_from_service=True,db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_channel_metadata',filter='{"channel_id":"'+ req_body['channel_id'] +'","tapis_deleted":null}')
             
         except Exception as e:
             raise errors.ResourceError(msg=f'{e}.')
@@ -123,7 +123,7 @@ def create_channel(req_body):
             logger.debug(f'actor_id cannot be blank')
             raise errors.ResourceError(msg=f'actor_id cannot be blank : {body}.')
         try:
-            res, debug_msg = t.actors.getActor(actor_id = actor_id,headers={'X-Tapis-Tenant': g.tenant_id},_tapis_debug=True)
+            res, debug_msg = t.actors.getActor(_x_tapis_tenant=g.tenant_id, _x_tapis_user=g.username,actor_id = actor_id,headers={'X-Tapis-Tenant': g.tenant_id},_tapis_debug=True)
         except Exception as e:
             er = e
             msg = er.response.json()
@@ -208,7 +208,7 @@ def create_channel(req_body):
     req_body['notification_rule_id'] =notification_rule.id
     try:
         #create a metadata record with check/endpoint/notification_rule ids to the channel metadata collection
-        mchannel_result, mchannel_bug = t.meta.createDocument(db=conf.tenant[g.tenant_id]['stream_db'], collection='streams_channel_metadata', request_body=req_body, _tapis_debug=True)
+        mchannel_result, mchannel_bug = t.meta.createDocument(_tapis_set_x_headers_from_service=True,db=conf.tenant[g.tenant_id]['stream_db'], collection='streams_channel_metadata', request_body=req_body, _tapis_debug=True)
         logger.debug("Status_Code: " + str(mchannel_bug.response.status_code))
         logger.debug(mchannel_result)
         if (str(mchannel_bug.response.status_code) == '201' or str(mchannel_bug.response.status_code) == '200'):
@@ -271,7 +271,7 @@ def convert_conditions_to_vars(req_body):
 
 def list_channels():
     logger.debug('in Channel list ')
-    result= t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_channel_metadata',filter='{"permissions.users":"'+g.username+'","tapis_deleted":null}')
+    result= t.meta.listDocuments(_tapis_set_x_headers_from_service=True,db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_channel_metadata',filter='{"permissions.users":"'+g.username+'","tapis_deleted":null}')
     logger.debug(result)
     if len(result.decode('utf-8')) > 0:
         message = "Channels found"
@@ -285,7 +285,7 @@ def get_channel(channel_id):
     logger.debug(g.tenant_id)
     logger.debug(conf.tenant[g.tenant_id]['stream_db'])
 
-    result = t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_channel_metadata',filter='{"channel_id":"'+channel_id+'","tapis_deleted":null}')
+    result = t.meta.listDocuments(_tapis_set_x_headers_from_service=True,db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_channel_metadata',filter='{"channel_id":"'+channel_id+'","tapis_deleted":null}')
     logger.debug(result)
     logger.debug(len(result.decode('utf-8')))
     if len(result.decode('utf-8')) > 2: #if empty [] this is 2 characters
@@ -531,7 +531,7 @@ def create_template(body):
     body['permissions'] = {'users': [g.username]}
 
     try:
-        mtemplate_result, mtemplate_bug =t.meta.createDocument(db=conf.tenant[g.tenant_id]['stream_db'], collection='streams_templates_metadata', request_body=body, _tapis_debug=True)
+        mtemplate_result, mtemplate_bug =t.meta.createDocument(_tapis_set_x_headers_from_service=True,db=conf.tenant[g.tenant_id]['stream_db'], collection='streams_templates_metadata', request_body=body, _tapis_debug=True)
         logger.debug("Status_Code: " + str(mtemplate_bug.response.status_code))
         logger.debug(mtemplate_result)
         if str(mtemplate_bug.response.status_code) == '201' :
@@ -555,7 +555,7 @@ def get_template(template_id):
     logger.debug('In get_template')
     result = {}
     #Insure user permissions in the Meta records
-    result = t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'], collection='streams_templates_metadata',filter='{"template_id":"' + template_id + '", "permissions.users":"'+ g.username+'"}')
+    result = t.meta.listDocuments(_tapis_set_x_headers_from_service=True,db=conf.tenant[g.tenant_id]['stream_db'], collection='streams_templates_metadata',filter='{"template_id":"' + template_id + '", "permissions.users":"'+ g.username+'"}')
     logger.debug(len(result.decode('utf-8')))
     if len(result.decode('utf-8')) > 2:
         message = "Template found."
@@ -655,9 +655,9 @@ def remove_template():
 ############################ CHANNEL INDEX #############################
 def create_channel_index(project_id, channel_id):
     req_body = {'project_id':project_id, 'channel_id': channel_id}
-    result, bug =t.meta.createDocument(db=conf.tenant[g.tenant_id]['stream_db'], collection='streams_channel_index', request_body=req_body, _tapis_debug=True)
+    result, bug =t.meta.createDocument(_tapis_set_x_headers_from_service=True,db=conf.tenant[g.tenant_id]['stream_db'], collection='streams_channel_index', request_body=req_body, _tapis_debug=True)
     return result, str(bug.response.status_code)
 
 def fetch_channel_index(channel_id):
-    result= t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_channel_index',filter='{"channel_id":"'+channel_id+'"}')
+    result= t.meta.listDocuments(_tapis_set_x_headers_from_service=True,db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_channel_index',filter='{"channel_id":"'+channel_id+'"}')
     return json.loads(result.decode('utf-8'))

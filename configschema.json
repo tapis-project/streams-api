@@ -21,6 +21,10 @@
     "alert_secret": {
       "type": "string",
       "description": "alert secret"
+    },
+    "python_framework_type": {
+      "type": "string",
+      "default": "flask"
     }
   }
 }
