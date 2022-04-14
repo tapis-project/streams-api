@@ -24,7 +24,7 @@ from service import abaco
 from service import sk
 from service.models import ChordsSite, ChordsIntrument, ChordsVariable
 from common import utils, errors
-from common.config import conf
+from tapisservice.tapisflask.utils import conf
 from requests.auth import HTTPBasicAuth
 from common import errors as common_errors
 from service import auth
