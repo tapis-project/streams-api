@@ -10,8 +10,8 @@ from tapisservice.tapisflask.utils import conf
 from common import auth
 import datetime
 app = Flask(__name__)
-
-from common import utils, errors
+from tapisservice.tapisflask import utils
+from tapisservice import errors
 from service import auth
 # get the logger instance -
 from tapisservice.logs import get_logger

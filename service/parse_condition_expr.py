@@ -4,8 +4,8 @@ import datetime
 from flask import g, Flask
 from tapisservice.tapisflask.utils import conf
 app = Flask(__name__)
-
-from common import utils, errors
+from tapisservice.tapisflask import utils
+from tapisservice import errors
 # get the logger instance -
 from tapisservice.logs import get_logger
 logger = get_logger(__name__)

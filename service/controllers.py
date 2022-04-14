@@ -23,7 +23,8 @@ from service import measurements
 from service import abaco
 from service import sk
 from service.models import ChordsSite, ChordsIntrument, ChordsVariable
-from common import utils, errors
+from tapisservice.tapisflask import utils
+from tapisservice import errors
 from tapisservice.tapisflask.utils import conf
 from requests.auth import HTTPBasicAuth
 from tapisservice import errors as common_errors

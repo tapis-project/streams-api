@@ -6,7 +6,7 @@ from tapisservice.tapisflask.utils import conf
 import datetime
 app = Flask(__name__)
 
-from common import utils, errors
+from tapisservice import errors
 from service import auth
 from service import chords
 # get the logger instance -

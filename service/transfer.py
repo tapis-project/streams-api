@@ -11,7 +11,7 @@ import pandas as pd
 app = Flask(__name__)
 
 from service import auth
-from common import utils, errors
+from tapisservice import errors
 from tapisservice.logs import get_logger
 logger = get_logger(__name__)
 from tapisservice.tapisflask.utils import conf
