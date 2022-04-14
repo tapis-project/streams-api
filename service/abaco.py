@@ -8,7 +8,7 @@ import uuid
 from flask import g, Flask
 app = Flask(__name__)
 
-from common import utils, errors
+from tapisservice import errors
 
 # get the logger instance -
 from tapisservice.logs import get_logger
