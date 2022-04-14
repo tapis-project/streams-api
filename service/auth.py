@@ -1,6 +1,7 @@
 from flask import g, request
 from tapisservice.tapisflask.utils import conf
-from common import auth
+from tapisservice import auth
+from tapisservice import tapisflask
 from tapisservice import errors as common_errors
 from common.auth import tenants
 
@@ -29,7 +30,7 @@ def authentication():
     # thread-local. If it fails due to a missing token, we then check if there is a public endpoint
     logger.debug(request.headers)
     try:
-        auth.authentication()
+        tapisflask.auth.authentication()
         logger.debug(f"Threadlocal tenant id: "+str(conf.tenant[g.tenant_id]))
     except common_errors.NoTokenError as e:
             logger.debug(f"Caught NoTokenError: {e}")
