@@ -27,11 +27,16 @@ def transfer_to_system(filename, system_id, path, project_id, instrument_id, dat
     if "project_id" in index_result:
         site = meta.get_site(index_result['project_id'],index_result['site_id'])[0]
         instrument = meta.get_instrument(index_result['project_id'],index_result['site_id'],index_result['instrument_id'])[0]
+        project = meta.get_project(project_id=project_id)
         if instrument:
             logger.debug("CHORDS_ID: "+str(instrument['chords_id']))
             logger.debug(start_date)
             logger.debug(end_date)
-            js= influx.query_measurments([{'inst':str(instrument['chords_id'])},{'start_date': str(start_date)},{'end_date': str(end_date)}])
+            if 'bucket' in project:
+                bucket_name=project.project_id
+            else:
+                bucket_name=conf.influxdb_bucket
+            js= influx.query_measurments(bucket_name=bucket_name,query_field_list=[{'inst':str(instrument['chords_id'])},{'start_date': str(start_date)},{'end_date': str(end_date)}])
             #logger.debug(js)
             if len(js) > 1 and len(js['series']) > 0:
                 df = pd.DataFrame(js['series'][0]['values'],columns=js['series'][0]['columns'])

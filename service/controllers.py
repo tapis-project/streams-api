@@ -115,41 +115,45 @@ class ProjectsResource(Resource):
         logger.debug(f'In create projects')
         logger.debug(f'Request body: '+str(request.json))
         body = request.json
-        req_body = body
-        # Project creator will be assigned project admin role in SK.
-        try:
-            proj_result, msg = meta.create_project(body)
-            logger.debug(f'Project Creation result from Meta'+str(proj_result))
-            # Every project admin role has a fixed format stream_ + proj_result['_id']['$oid'] + _admin
-            proj_admin_role = 'streams_projects_' + proj_result['_id']['$oid'] + '_admin'
-            logger.debug(f'Project Admin role to be created in SK: '+ str(proj_admin_role))
-            # Create role in SK. Only when the role creation is successful then grant it to the user.
-            create_role_status = sk.create_role(proj_admin_role, 'Project Admin Role')
-            if (create_role_status == 'success'):
-               grant_role_status = sk.grant_role(proj_admin_role,g.username)
-               # Check if the role was granted successfully to the user
-               if (grant_role_status == 'success'):
-                   # Only if the role is granted to user, call metadata service to create project collection
-                   if (str(proj_result) != 'null'):
-                    result = meta.strip_meta(proj_result)
-                    return utils.ok(result, msg=msg)
-               # If role granting was not success, we should cleanup the role from sk
-               else:
-                   try:
-                     delete_role_sk = sk.deleteRoleByName(roleName=proj_admin_role,tenant=g.tenant_id)
-                     logger.debug(f'Proj admin role deleted from SK: '+str(proj_admin_role))
-                     msg = f"Could not create project"
-                     return utils.error(result='null', msg=msg)
-                   except Exception as e:
-                       msg = f"Cound not delete role: {proj_admin_role};"
-                       return utils.error(result='null', msg=msg)
-            else:
+        body['bucket'] =  body['project_name']  
+        if influx.create_project_bucket(bucket_name=body['bucket']):
+            # Project creator will be assigned project admin role in SK.
+            try:
+                proj_result, msg = meta.create_project(body)
+                logger.debug(f'Project Creation result from Meta'+str(proj_result))
+                # Every project admin role has a fixed format stream_ + proj_result['_id']['$oid'] + _admin
+                proj_admin_role = 'streams_projects_' + proj_result['_id']['$oid'] + '_admin'
+                logger.debug(f'Project Admin role to be created in SK: '+ str(proj_admin_role))
+                # Create role in SK. Only when the role creation is successful then grant it to the user.
+                create_role_status = sk.create_role(proj_admin_role, 'Project Admin Role')
+                if (create_role_status == 'success'):
+                    grant_role_status = sk.grant_role(proj_admin_role,g.username)
+                    # Check if the role was granted successfully to the user
+                    if (grant_role_status == 'success'):
+                        # Only if the role is granted to user, call metadata service to create project collection
+                        if (str(proj_result) != 'null'):
+                            result = meta.strip_meta(proj_result)
+                            return utils.ok(result, msg=msg)
+                    # If role granting was not success, we should cleanup the role from sk
+                    else:
+                        try:
+                            delete_role_sk = sk.deleteRoleByName(roleName=proj_admin_role,tenant=g.tenant_id)
+                            logger.debug(f'Proj admin role deleted from SK: '+str(proj_admin_role))
+                            msg = f"Could not create project"
+                            return utils.error(result='null', msg=msg)
+                        except Exception as e:
+                            msg = f"Cound not delete role: {proj_admin_role};"
+                            return utils.error(result='null', msg=msg)
+                else:
+                    msg = f"Could not create project"
+                    return utils.error(result='null', msg=msg)
+            except Exception as e:
                 msg = f"Could not create project"
                 return utils.error(result='null', msg=msg)
-        except Exception as e:
-              msg = f"Could not create project"
-              return utils.error(result='null', msg=msg)
-        return utils.error(result='null', msg=msg)
+            return utils.error(result='null', msg=msg)
+        else:
+            msg="Failed to create storage bucket for Project."
+            return utils.error(result='null', msg=msg)
 
 # Projects Resource: GET, UPDATE, DELETE
 class ProjectResource(Resource):
@@ -646,12 +650,19 @@ class MeasurementsWriteResource(Resource):
                     logger.debug(f' Site resu;t' +str(site_result))
                     project_id=result['project_id']
                     logger.debug(project_id)
+                    project, proj_msg = meta.get_project(project_id=result['project_id'])
+                    logger.debug(project)
                     # Check if the user is authoried to post measurements
                     authorized = sk.check_if_authorized_post(project_id)
                     logger.debug(f'Authorization status' +str(authorized))
                     if (authorized):
                         logger.debug(f' User is authorized to create measurements')
-                        resp = influx.compact_write_measurements(site_result['chords_id'],instrument,body)
+                        if 'bucket' in project:
+                            bucket_name=result['project_id']
+                        else:
+                            bucket_name=conf.influxdb_bucket
+                        logger.debug(bucket_name)
+                        resp = influx.compact_write_measurements(bucket_name=bucket_name,site_id=site_result['chords_id'],instrument=instrument,body=body)
                         logger.debug(resp)
                         if 'resp' in resp:
                             metric = {'created_at':datetime.now().isoformat(),'type':'upload','project_id':result['project_id'],'username':g.username,'size':request.headers['content_length'],'var_count':len(body['vars'])}
@@ -700,8 +711,8 @@ class MeasurementsResource(Resource):
                     for v in inst['variables']:
                         logger.debug(v)
                         replace_cols[str(v['chords_id'])]=v['var_id']
-
-            df = measurements.fetch_measurement_dataframe(inst_chords_id=instrument['chords_id'],request=request)
+            project=meta.get_project(project_id=project_id)
+            df = measurements.fetch_measurement_dataframe(project=project, inst_chords_id=instrument['chords_id'],request=request)
             if df.empty == False:
                 logger.debug(list(df.columns.values))
                 pv = df.pivot(index='_time', columns='var', values=['_value'])
@@ -742,6 +753,7 @@ class MeasurementsReadResource(Resource):
             logger.debug(inst_index['project_id'])
             site,msg = meta.get_site(inst_index['project_id'],inst_index['site_id'])
             project_id = inst_index['project_id']
+            project = meta.get_project(project_id)
             logger.debug(project_id)
             authorized = sk.check_if_authorized_post(project_id)
             logger.debug(f' Authorized: ' +str(authorized))
@@ -755,7 +767,7 @@ class MeasurementsReadResource(Resource):
                         for v in inst['variables']:
                             logger.debug(v)
                             replace_cols[str(v['chords_id'])]=v['var_id']
-                df = measurements.fetch_measurement_dataframe(inst_chords_id=inst_index['chords_inst_id'],request=request)
+                df = measurements.fetch_measurement_dataframe(project=project, inst_chords_id=inst_index['chords_inst_id'],request=request)
                 logger.debug(f'User is authorized to download measurements')
                 logger.debug(df)
                 if df.empty == False:
@@ -1077,21 +1089,21 @@ class InfluxResource(Resource):
     # GET /influx
     def get(self):
         logger.debug(f'Inside GET /influx')
-        logger.debug(request.args)
-        field_list = request.args.getlist('fields[]')
+        #logger.debug(request.args)
+        #field_list = request.args.getlist('fields[]')
         #expects instrument_id=1&vars[]={"somename":1.0}&vars[]={"other":2.0} in the request.args
-        resp = influx.query_measurments(field_list)
-        logger.debug(resp)
-        return resp
+        #resp = influx.query_measurments(bucket_name=, field_list)
+        #logger.debug(resp)
+        return False#resp
 
 
     def post(self):
         logger.debug(f'Inside POST /influx')
-        logger.debug(request.args)
+        #logger.debug(request.args)
         #expects instrument_id=1&vars[]={"somename":1.0}&vars[]={"other":2.0} in the request.args
-        resp = influx.create_measurement(request.args.get('site_id'), request.args.get('inst_id'), request.args.get('var_id'),  float(request.args.get('value')), request.args.get('timestamp'), )
-        logger.debug(resp)
-        return resp
+        #resp = influx.create_measurement(request.args.get('site_id'), request.args.get('inst_id'), request.args.get('var_id'),  float(request.args.get('value')), request.args.get('timestamp'), )
+        #logger.debug(resp)
+        return False#resp
 
 # Metrics Resource for reporting
 class MetricsResource(Resource):

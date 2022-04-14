@@ -19,7 +19,7 @@ import sys
 from datetime import datetime
 from io import StringIO
 
-def fetch_measurement_dataframe(inst_chords_id, request):
+def fetch_measurement_dataframe(inst_chords_id, project, request):
     influx_query_input = [{"inst":str(inst_chords_id)}]
     if request.args.get('start_date'):
         influx_query_input.append({"start_date": request.args.get('start_date')})
@@ -27,9 +27,15 @@ def fetch_measurement_dataframe(inst_chords_id, request):
         influx_query_input.append({"end_date": request.args.get('end_date')})    
     if request.args.get('limit'):
         influx_query_input.append({"limit": request.args.get('limit')}) 
+    if request.args.get('skip'):
+        influx_query_input.append({"limit": request.args.get('limit')}) 
     if request.args.get('offset'):
         influx_query_input.append({"offset": request.args.get('offset')}) 
-    return influx.query_measurments( influx_query_input)
+    if 'bucket' in project:
+        bucket_name=project.project_id
+    else:
+        bucket_name=conf.influxdb_bucket
+    return influx.query_measurments(bucket_name=bucket_name, query_field_list=influx_query_input)
 
 def create_csv_response(df1,project_id):
     logger.debug("CSV")
