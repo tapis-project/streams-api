@@ -26,7 +26,7 @@ t = auth.t
 def create_role(role_name, description):
     logger.debug('creating role '+role_name+ ' in tenant '+ g.tenant_id)
     try:
-        create_role_result,debug = t.sk.createRole(roleName=role_name, roleTenant=g.tenant_id, description='Streams role',_tapis_debug=True)
+        create_role_result,debug = t.sk.createRole(_tapis_set_x_headers_from_service=True,roleName=role_name, roleTenant=g.tenant_id, description='Streams role',_tapis_debug=True)
         logger.debug(debug)
         # If the result has string "url" we can confirm that role creation was success
         if ("url" in str(create_role_result)):
@@ -42,7 +42,7 @@ def create_role(role_name, description):
 def grant_role(role_name, username):
     logger.debug('granting role'+role_name+ 'in tenant'+g.tenant_id )
     try:
-        grant_role_result = t.sk.grantRole(roleName= role_name, tenant= g.tenant_id, user = username)
+        grant_role_result = t.sk.grantRole(_tapis_set_x_headers_from_service=True,roleName= role_name, tenant= g.tenant_id, user = username)
         # If the result has changes in the result grant role is successful
         # we can even call the sk.hasRole method to check this
         if ("changes" in str(grant_role_result)):
@@ -66,7 +66,7 @@ def check_if_authorized_get(project_id):
     admin = 'streams_projects_'+ project_oid+"_admin"
     manager = 'streams_projects_'+ project_oid+"_manager"
     user = 'streams_projects_'+ project_oid+"_user"
-    authorized = t.sk.hasRoleAny(tenant=g.tenant_id, user=g.username, roleNames=[admin, manager, user],
+    authorized = t.sk.hasRoleAny(_tapis_set_x_headers_from_service=True,tenant=g.tenant_id, user=g.username, roleNames=[admin, manager, user],
                                  orAdmin=False)
     logger.debug(authorized)
     return authorized.isAuthorized
@@ -80,7 +80,7 @@ def check_if_authorized_post(project_id):
     project_oid = project_result['_id']['$oid']
     admin = 'streams_projects_'+ project_oid+"_admin"
     manager = 'streams_projects_'+ project_oid+"_manager"
-    authorized = t.sk.hasRoleAny(tenant=g.tenant_id, user=g.username, roleNames=[admin, manager],
+    authorized = t.sk.hasRoleAny(_tapis_set_x_headers_from_service=True,tenant=g.tenant_id, user=g.username, roleNames=[admin, manager],
                                  orAdmin=False)
     logger.debug(authorized.isAuthorized)
     return authorized.isAuthorized
@@ -92,7 +92,7 @@ def check_if_authorized_put(project_id):
     project_oid = project_result['_id']['$oid']
     admin = 'streams_projects_' + project_oid + "_admin"
     manager = 'streams_projects_' + project_oid + "_manager"
-    authorized = t.sk.hasRoleAny(tenant=g.tenant_id, user=g.username, roleNames=[admin, manager],
+    authorized = t.sk.hasRoleAny(_tapis_set_x_headers_from_service=True,tenant=g.tenant_id, user=g.username, roleNames=[admin, manager],
                                  orAdmin=False)
     logger.debug(authorized)
     return authorized.isAuthorized
@@ -103,7 +103,7 @@ def check_if_authorized_delete(project_id):
     project_result, msg = meta.get_project(project_id)
     project_oid = project_result['_id']['$oid']
     admin = 'streams_projects_' + project_oid + "_admin"
-    authorized = t.sk.hasRoleAny(tenant=g.tenant_id, user=g.username, roleNames=[admin],
+    authorized = t.sk.hasRoleAny(_tapis_set_x_headers_from_service=True,tenant=g.tenant_id, user=g.username, roleNames=[admin],
                                  orAdmin=False)
     logger.debug(authorized)
     return authorized.isAuthorized
@@ -117,7 +117,7 @@ def check_if_authorized_get_channel(channel_id):
     admin = 'streams_channel_'+ channel_oid+"_admin"
     manager = 'streams_channel_'+ channel_oid+"_manager"
     user = 'streams_channel_'+ channel_oid+"_user"
-    authorized = t.sk.hasRoleAny(tenant=g.tenant_id, user=g.username, roleNames=[admin, manager, user],
+    authorized = t.sk.hasRoleAny(_tapis_set_x_headers_from_service=True,tenant=g.tenant_id, user=g.username, roleNames=[admin, manager, user],
                                  orAdmin=False)
     logger.debug(authorized)
     return authorized.isAuthorized
@@ -130,7 +130,7 @@ def check_if_authorized_post_channel(channel_id):
     logger.debug(channel_oid)
     admin = 'streams_channel_'+ channel_oid+"_admin"
     manager = 'streams_channel_'+ channel_oid+"_manager"
-    authorized = t.sk.hasRoleAny(tenant=g.tenant_id, user=g.username, roleNames=[admin, manager],
+    authorized = t.sk.hasRoleAny(_tapis_set_x_headers_from_service=True,tenant=g.tenant_id, user=g.username, roleNames=[admin, manager],
                                  orAdmin=False)
     logger.debug(authorized)
     return authorized.isAuthorized
@@ -142,7 +142,7 @@ def check_if_authorized_put_channel(channel_id):
     logger.debug(channel_oid)
     admin = 'streams_channel_'+ channel_oid+"_admin"
     manager = 'streams_channel_'+ channel_oid+"_manager"
-    authorized = t.sk.hasRoleAny(tenant=g.tenant_id, user=g.username, roleNames=[admin, manager],
+    authorized = t.sk.hasRoleAny(_tapis_set_x_headers_from_service=True,tenant=g.tenant_id, user=g.username, roleNames=[admin, manager],
                                  orAdmin=False)
     logger.debug(authorized)
     return authorized.isAuthorized
@@ -153,7 +153,7 @@ def check_if_authorized_delete_channel(channel_id):
     channel_oid = channel_result['_id']['$oid']
     logger.debug(channel_oid)
     admin = 'streams_channel_'+ channel_oid+"_admin"
-    authorized = t.sk.hasRoleAny(tenant=g.tenant_id, user=g.username, roleNames=[admin],
+    authorized = t.sk.hasRoleAny(_tapis_set_x_headers_from_service=True,tenant=g.tenant_id, user=g.username, roleNames=[admin],
                                  orAdmin=False)
     logger.debug(authorized)
     return authorized.isAuthorized
@@ -187,22 +187,22 @@ def check_user_has_role(username, resource_type, resource_id,jwt_user_flag):
     # If jwt_user_flag is false, we are getting roles for user specified in query paramters or request body
     # Before the jwt_user can access roles, we need to check if the jwt_user has any of the three roles on the resource_id
     if not jwt_user_flag:
-        jwt_user_role = t.sk.hasRoleAny(tenant=g.tenant_id, user=g.username, roleNames=[admin, manager, user], orAdmin=False)
+        jwt_user_role = t.sk.hasRoleAny(_tapis_set_x_headers_from_service=True,tenant=g.tenant_id, user=g.username, roleNames=[admin, manager, user], orAdmin=False)
         logger.debug(jwt_user_role.isAuthorized)
         # jwt user has role on the resource id
         if(jwt_user_role.isAuthorized):
             # Check if the user in request body/query parameter has either of the three roles, if so append the rolenames to a list
-            is_admin = t.sk.hasRole(tenant=g.tenant_id, user=username, roleName=admin,
+            is_admin = t.sk.hasRole(_tapis_set_x_headers_from_service=True,tenant=g.tenant_id, user=username, roleName=admin,
                                  orAdmin=False)
             if(is_admin.isAuthorized):
                 user_roles.append('admin')
 
-            is_manager = t.sk.hasRole(tenant=g.tenant_id, user=username, roleName=manager,
+            is_manager = t.sk.hasRole(_tapis_set_x_headers_from_service=True,tenant=g.tenant_id, user=username, roleName=manager,
                                  orAdmin=False)
             if(is_manager.isAuthorized):
                user_roles.append('manager')
 
-            is_user = t.sk.hasRole(tenant=g.tenant_id, user=username, roleName=user,
+            is_user = t.sk.hasRole(_tapis_set_x_headers_from_service=True,tenant=g.tenant_id, user=username, roleName=user,
                                   orAdmin=False)
             if (is_user.isAuthorized):
                 user_roles.append('user')
@@ -220,19 +220,19 @@ def check_user_has_role(username, resource_type, resource_id,jwt_user_flag):
         return user_roles, msg
     # get the jwt user roles
     else:
-        is_admin = t.sk.hasRole(tenant=g.tenant_id, user=g.username, roleName=admin,
+        is_admin = t.sk.hasRole(_tapis_set_x_headers_from_service=True,tenant=g.tenant_id, user=g.username, roleName=admin,
                                 orAdmin=False)
         logger.debug(is_admin)
         if (is_admin.isAuthorized):
            jwt_user_roles.append('admin')
            logger.debug(jwt_user_roles)
-        is_manager = t.sk.hasRole(tenant=g.tenant_id, user=g.username, roleName=manager,
+        is_manager = t.sk.hasRole(_tapis_set_x_headers_from_service=True,tenant=g.tenant_id, user=g.username, roleName=manager,
                                   orAdmin=False)
         logger.debug(is_admin)
         if (is_manager.isAuthorized):
             jwt_user_roles.append('manager')
             logger.debug(jwt_user_roles)
-        is_user = t.sk.hasRole(tenant=g.tenant_id, user=g.username, roleName=user,
+        is_user = t.sk.hasRole(_tapis_set_x_headers_from_service=True,tenant=g.tenant_id, user=g.username, roleName=user,
                                orAdmin=False)
         logger.debug(is_user)
         if (is_user.isAuthorized):
@@ -291,7 +291,7 @@ def grant_role_user_asking(resource_id,role_name, resource_type, username):
 def delete_role_user_asking(resource_id,role_name, resource_type, username):
     rolename_with_oid = construct_role_name(resource_id, role_name, resource_type)
     logger.debug(rolename_with_oid)
-    delete_role_sk = t.sk.revokeUserRole(roleName=rolename_with_oid, tenant=g.tenant_id, user=username)
+    delete_role_sk = t.sk.revokeUserRole(_tapis_set_x_headers_from_service=True,roleName=rolename_with_oid, tenant=g.tenant_id, user=username)
     logger.debug(delete_role_sk)
 
     if ('1' in str(delete_role_sk)):
@@ -312,7 +312,7 @@ def check_if_authorized_put_template(template_id):
     manager = 'streams_template_' + template_result + "_manager"
     logger.debug(admin)
     logger.debug(manager)
-    authorized = t.sk.hasRoleAny(tenant=g.tenant_id, user=g.username, roleNames=[admin, manager],
+    authorized = t.sk.hasRoleAny(_tapis_set_x_headers_from_service=True,tenant=g.tenant_id, user=g.username, roleNames=[admin, manager],
                                  orAdmin=False)
     logger.debug(authorized)
     return authorized.isAuthorized
