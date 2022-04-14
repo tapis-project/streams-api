@@ -3,7 +3,6 @@ import requests
 import json
 from flask import g, Flask
 from tapisservice.tapisflask.utils import conf
-from common import auth
 import datetime
 app = Flask(__name__)
 
