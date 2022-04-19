@@ -23,15 +23,16 @@ from service import measurements
 from service import abaco
 from service import sk
 from service.models import ChordsSite, ChordsIntrument, ChordsVariable
-from common import utils, errors
-from common.config import conf
+from tapisservice.tapisflask import utils
+from tapisservice import errors
+from tapisservice.config import conf
 from requests.auth import HTTPBasicAuth
-from common import errors as common_errors
+from tapisservice import errors as common_errors
 from service import auth
 from datetime import datetime
 
 # get the logger instance -
-from common.logs import get_logger
+from tapisservice.logs import get_logger
 logger = get_logger(__name__)
 
 # Hello resource: GET

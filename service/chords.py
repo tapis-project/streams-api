@@ -4,12 +4,12 @@ import requests
 import json
 from flask import g, Flask
 from service.models import ChordsSite, ChordsIntrument, ChordsVariable#, ChordsMeasurement
-from common.config import conf
+from tapisservice.config import conf
 app = Flask(__name__)
 
-from common import utils, errors
+from tapisservice import errors
 # get the logger instance -
-from common.logs import get_logger
+from tapisservice.logs import get_logger
 logger = get_logger(__name__)
 
 def create_get_request(path):

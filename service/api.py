@@ -1,6 +1,6 @@
 from flask_migrate import Migrate
-from common.utils import TapisApi, handle_error, flask_errors_dict
-from service.auth import authn_and_authz
+from tapisservice.tapisflask.utils import TapisApi, handle_error, flask_errors_dict
+from  tapisservice.tapisflask.auth import authn_and_authz
 from service.controllers import ProjectsResource, ProjectResource, SitesResource, SiteResource, InstrumentsResource, InstrumentResource, VariablesResource, \
     VariableResource, MeasurementsWriteResource, MeasurementsReadResource, MeasurementsResource, MeasurementResource, ChannelsResource, ChannelResource, AlertsResource, \
     AlertsPostResource, TemplatesResource, TemplateResource, InfluxResource, HelloResource, ReadyResource, HealthcheckResource, MetricsResource, PemsResource, PemsRevokeResource, \
@@ -8,15 +8,15 @@ from service.controllers import ProjectsResource, ProjectResource, SitesResource
 
 
 from service.models import app
-
+from service import auth
 # get the logger instance -
-from common.logs import get_logger
+from tapisservice.logs import get_logger
 logger = get_logger(__name__)
 
 # Before every request check the authentication and authorization
 @app.before_request
 def authnz_for_authenticator():
-    authn_and_authz()
+    auth.authn_and_authz()
     logger.debug("Authentication complete")
 
 # flask restful API object ----
