@@ -712,7 +712,7 @@ class MeasurementsResource(Resource):
                     for v in inst['variables']:
                         logger.debug(v)
                         replace_cols[str(v['chords_id'])]=v['var_id']
-            project=meta.get_project(project_id=project_id)
+            project, proj_mesg=meta.get_project(project_id=project_id)
             df = measurements.fetch_measurement_dataframe(project=project, inst_chords_id=instrument['chords_id'],request=request)
             if df.empty == False:
                 logger.debug(list(df.columns.values))

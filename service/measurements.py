@@ -30,8 +30,9 @@ def fetch_measurement_dataframe(inst_chords_id, project, request):
         influx_query_input.append({"limit": request.args.get('limit')}) 
     if request.args.get('offset'):
         influx_query_input.append({"offset": request.args.get('offset')}) 
+    logger.debug(project)
     if 'bucket' in project:
-        bucket_name=project.project_id
+        bucket_name=project['bucket']
     else:
         bucket_name=conf.influxdb_bucket
     return influx.query_measurments(bucket_name=bucket_name, query_field_list=influx_query_input)

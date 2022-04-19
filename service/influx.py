@@ -16,6 +16,7 @@ from influxdb_client.client.write_api import SYNCHRONOUS
 
 def create_project_bucket(bucket_name):
     #create a bucket name that is the same as the project_id
+    logger.debug("In Create Project Bucket")
     with InfluxDBClient(url=conf.influxdb_host+':'+conf.influxdb_port, token=conf.influxdb_token) as client:
         buckets_api = client.buckets_api()
         created_bucket = buckets_api.create_bucket(bucket_name=bucket_name, org=conf.influxdb_org)
@@ -66,7 +67,7 @@ def compact_write_measurements(bucket_name, site_id, instrument, body):
                          msg = 'Variable ID: '+k+' is invalid!'
                     logger.debug(msg)
                     return {'resp':False,'msg':msg}
-    logger.debug(json_body)
+    #logger.debug(json_body)
     with InfluxDBClient(url=conf.influxdb_host+':'+conf.influxdb_port, token=conf.influxdb_token, org=conf.influxdb_org) as client:
         write_api = client.write_api(write_options=SYNCHRONOUS)
         logger.debug(bucket_name)
