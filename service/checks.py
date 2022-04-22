@@ -39,10 +39,17 @@ from influxdb_client.domain.slack_notification_endpoint import SlackNotification
 url = conf.influxdb_host+':'+conf.influxdb_port
 token = conf.influxdb_token
 org_name = conf.influxdb_org
-bucket_name = conf.influxdb_bucket
+#bucket_name = conf.influxdb_bucket
 
+#replace references to a bucket with streams so it cannot be hardcoded
+def clean_template_script(template_script):
+    import re
+    t_script = re.sub(r'from\(bucket:[^;\)]*', 'from(bucket:"{{bucket_name}}")',template_script)
+    t_script2 = re.sub(r'from\("bucket":[^;\)]*', 'from(bucket:"{{bucket_name}}")',t_script)
+    t_script3 = re.sub(r"from\('bucket':[^;\)]*", 'from(bucket:"{{bucket_name}}")',t_script2)
+    return t_script3
 
-def create_check(template,site_id,inst_id,var_id,check_name,threshold_type, threshold_value, check_message):
+def create_check(template,site_id,inst_id,var_id,check_name,threshold_type, threshold_value, check_message, bucket_name):
     logger.debug("Top of create_check")
     with InfluxDBClient(url=url, token=token, org=org_name, debug=False) as client:
         logger.debug('Inside InfluxDBCLienct')
@@ -58,6 +65,7 @@ def create_check(template,site_id,inst_id,var_id,check_name,threshold_type, thre
         scriptvars["inst_id"]=inst_id
         scriptvars["bucket_name"]=bucket_name
         logger.debug(template)
+        template["script"] = clean_template_script(template["script"])
         # replace the template script variable placeholders with actual values
         query = template["script"].format(**scriptvars)
         logger.debug(query)
