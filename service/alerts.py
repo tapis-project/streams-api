@@ -158,7 +158,6 @@ def create_channel(req_body):
             logger.debug(msg['message'])
             raise errors.ResourceError(msg=f'INVALID template_id : {err_msg}.')
     logger.debug(template_result)
-   
     #parse conditions for creating check 
     vars = {}
     if(isinstance(req_body['triggers_with_actions'][0]['condition'],dict)):
@@ -171,6 +170,11 @@ def create_channel(req_body):
         check_msg = req_body['triggers_with_actions'][0]['action']['message']
     else:
         check_msg = ''
+    project,proj_mesg = meta.get_project(project_id=vars['project_id'])
+    if 'bucket' in project:
+        bucket_name= project['bucket']
+    else:
+        bucket_name= conf.influxdb_bucket
     check_result = checks.create_check(template_result,
                                         site_id=vars['site_id'], 
                                         inst_id=vars['inst_id'],
@@ -178,7 +182,8 @@ def create_channel(req_body):
                                         check_name=channel_id,
                                         threshold_type=vars['threshold_type'], 
                                         threshold_value=vars['threshold_value'],
-                                        check_message=check_msg)
+                                        check_message=check_msg,
+                                        bucket_name=bucket_name)
     logger.debug(check_result)
     logger.debug("Before create_notification")
 
