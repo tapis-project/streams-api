@@ -118,14 +118,19 @@ def create_channel(req_body):
             #raise errors.ResourceError(msg=f'''INVALID channel_id: {req_body['channel_id']} already exists''')
     # validating actor_id
     if  req_body['triggers_with_actions'][0]['action']["method"] == 'ACTOR': 
+        logger.debug("ACTOR is our method")
         actor_id = req_body['triggers_with_actions'][0]['action']['actor_id']
         if actor_id == '':
             logger.debug(f'actor_id cannot be blank')
             raise errors.ResourceError(msg=f'actor_id cannot be blank : {body}.')
         try:
+            logger.debug("trying to get_actor")
             res, debug_msg = t.actors.get_actor(_tapis_set_x_headers_from_service=True, actor_id = actor_id,headers={'X-Tapis-Tenant': g.tenant_id},_tapis_debug=True)
+            
         except Exception as e:
+            logger.debug("ACTOR isn't valid")
             er = e
+            logger.debug(er)
             msg = er.response.json()
             err_msg = msg['message']
             logger.debug(msg['message'])
