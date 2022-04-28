@@ -125,7 +125,7 @@ def create_channel(req_body):
             raise errors.ResourceError(msg=f'actor_id cannot be blank : {body}.')
         try:
             logger.debug("trying to get_actor")
-            res, debug_msg = t.actors.getActor(_tapis_set_x_headers_from_service=True, actor_id = actor_id,headers={'X-Tapis-Tenant': g.tenant_id},_tapis_debug=True)
+            res, debug_msg = t.actors.getActor(actor_id = actor_id,headers={'X-Tapis-Tenant': g.tenant_id},_tapis_debug=True)
             
         except Exception as e:
             logger.debug("ACTOR isn't valid")
