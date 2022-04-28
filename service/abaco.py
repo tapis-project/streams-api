@@ -77,7 +77,7 @@ def create_alert(channel, req_data):
     try:
         logger.debug("SendMessage Try")
         res, debug_msg = t.actors.sendMessage(actor_id=actor_id, message= json.dumps(message_data), request_body=message_data,headers={'X-Tapis-Tenant': g.tenant_id},_tapis_debug=True)
-        logger.debg("SendMessage Success")
+        logger.debug("SendMessage Success")
     except Exception as e:
         logger.debug("Failed SendMessage")
         logger.debug(e)
