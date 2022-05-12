@@ -52,6 +52,7 @@ def authentication():
                 logger.debug(request.args)
                 logger.debug(request.headers)
                 g.tenant_id = request.args.get('tenant')
+                g.request_tenant_id= g.tenant_id
                 bearer = request.headers.get('Authorization')    # Bearer YourTokenHere
                 token = bearer.split()[1]
                 logger.debug(f"Threadlocal tenant id: "+str(g.tenant_id))
