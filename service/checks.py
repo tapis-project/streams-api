@@ -65,7 +65,7 @@ def create_check(template,site_id,inst_id,var_id,check_name,threshold_type, thre
         scriptvars["inst_id"]=inst_id
         scriptvars["bucket_name"]=bucket_name
         logger.debug(template)
-        #template["script"] = clean_template_script(template["script"])
+        template["script"] = clean_template_script(template["script"])
         logger.debug(template['script'])
         # replace the template script variable placeholders with actual values
         query = template["script"].format(**scriptvars)

@@ -67,6 +67,8 @@ def create_project(body):
     #create project metadata record
     req_body = body
     req_body['project_id'] = body['project_name'].replace(" ", "")
+    req_body['created_at'] = str(datetime.datetime.now())
+    req_body['last_updated'] = str(datetime.datetime.now())
     req_body['permissions']={'users':[g.username]}
     logger.debug(req_body)
     #Check if project_id exists by creating collection - if so add something to id to unique it.
@@ -169,6 +171,7 @@ def create_site(project_id, chords_site_id, body):
     req_body = body
     req_body['chords_id'] = chords_site_id
     req_body['created_at'] = str(datetime.datetime.now())
+    req_body['last_updated'] = str(datetime.datetime.now())
     req_body['location'] = {"type":"Point", "coordinates":[float(req_body['longitude']),float(req_body['latitude'])]}
     #TODO validate fields
     logger.debug(body)
@@ -301,6 +304,7 @@ def create_instrument(project_id, site_id, post_body):
         if len(site_result) > 0:
             inst_body = post_body
             inst_body['created_at'] = str(datetime.datetime.now())
+            inst_body['last_updated'] = str(datetime.datetime.now())
             if 'instruments' in site_result:
                 site_result['instruments'].append(inst_body)
             else:
@@ -335,7 +339,7 @@ def update_instrument(project_id, site_id, instrument_id, put_body, remove_instr
     if len(site_result) > 0:
         logger.debug("IN IF")
         inst_body = put_body
-        inst_body['updated_at'] = str(datetime.datetime.now())
+        inst_body['last_updated'] = str(datetime.datetime.now())
         updated_instruments = []
         for inst in site_result['instruments']:
             logger.debug("IN LOOP")
@@ -349,6 +353,7 @@ def update_instrument(project_id, site_id, instrument_id, put_body, remove_instr
                         #add vars from current instrument so they are not removed
                         inst_body['inst_id'] = instrument_id
                         inst_body['chords_id'] = inst['chords_id']
+                        inst_body['last_updated'] = str(datetime.datetime.now())
                         if 'variables' in inst:
                             inst_body['variables'] = inst['variables']
                         updated_instruments.append(inst_body)
@@ -457,7 +462,8 @@ def create_variable(project_id, site_id, instrument_id, post_body):
     result={}
     if len(site_result) > 0:
         var_body = post_body
-        var_body['updated_at'] = str(datetime.datetime.now())
+        var_body['created_at'] = str(datetime.datetime.now())
+        var_body['last_updated'] = str(datetime.datetime.now())
         updated_instruments = []
         for inst in site_result['instruments']:
             if 'inst_id' in inst:
@@ -502,7 +508,7 @@ def update_variable(project_id, site_id, instrument_id, variable_id, put_body, r
     if len(site_result) > 0:
         var_body = put_body
         var_body['var_id'] = variable_id
-        var_body['updated_at'] = str(datetime.datetime.now())
+        var_body['last_updated'] = str(datetime.datetime.now())
         updated_variables = []
         updated_instruments = []
         for inst in site_result['instruments']:
@@ -522,7 +528,7 @@ def update_variable(project_id, site_id, instrument_id, variable_id, put_body, r
                                 else:
                                     #soft delete variable
                                     variable['tapis_deleted'] =True;
-                                    variable['updated_at']=str(datetime.datetime.now())
+                                    var_body['last_updated'] = str(datetime.datetime.now())
                                     updated_variables.append(variable)
                             else:
                                 #keep variable

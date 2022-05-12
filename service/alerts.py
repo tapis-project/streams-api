@@ -209,10 +209,10 @@ def create_channel(req_body):
     #     notification_rule = checks.create_slack_notification_rule(rule_name=channel_id+'_rule', notification_endpoint=notification_endpoint, check_id=check_result.id)
 
     # create request body for meta service
-    # it is same as the request received from the user with four added fields: permissions, status, create_time, last_updated
+    # it is same as the request received from the user with four added fields: permissions, status, created_at, last_updated
     req_body['permissions'] = {'users': [g.username]}
     req_body['status'] = 'ACTIVE'
-    req_body['create_time'] = str(datetime.datetime.utcnow())
+    req_body['created_at'] = str(datetime.datetime.utcnow())
     req_body['last_updated'] = str(datetime.datetime.utcnow())
     req_body['check_id'] = check_result.id
     req_body['endpoint_id'] = notification_endpoint.id
@@ -457,7 +457,7 @@ def send_webhook(type,channel, body):
         alert['channel_name'] = channel['channel_name']
         alert['channel_id'] = channel['channel_id']
         alert['message'] =  message_data['message'] 
-        alert['create_time'] = str(datetime.datetime.utcnow())
+        alert['created_at'] = str(datetime.datetime.utcnow())
         logger.debug(alert)
         # send alert response data to Meta V3
         alert_result, msg = meta.create_alert(alert)
@@ -505,7 +505,7 @@ def post_to_http(channel, body):
         alert['channel_name'] = channel['channel_name']
         alert['channel_id'] = channel['channel_id']
         alert['message'] =  message_data['message'] 
-        alert['create_time'] = str(datetime.datetime.utcnow())
+        alert['created_at'] = str(datetime.datetime.utcnow())
         logger.debug(alert)
         # send alert response data to Meta V3
         alert_result, msg = meta.create_alert(alert)
@@ -537,7 +537,7 @@ def list_alerts():
 # create templates
 def create_template(body):
     logger.debug("IN CREATE TEMPLATE")
-    body['create_time'] = str(datetime.datetime.utcnow())
+    body['creates_at'] = str(datetime.datetime.utcnow())
     body['last_updated'] = str(datetime.datetime.utcnow())
     body['permissions'] = {'users': [g.username]}
 
