@@ -197,10 +197,11 @@ def create_channel(req_body):
     alert_url = conf.tenant[g.tenant_id]['tapis_base_url'] +'/v3/streams/alerts?tenant='+g.tenant_id
     notification_endpoint = checks.create_notification_endpoint_http(endpoint_name=channel_id+'_endpoint', 
                                                                      notification_url=alert_url)
+    logger.debug("After Notification Endpoint")
     notification_rule = checks.create_http_notification_rule(rule_name=channel_id+'_rule', 
                                                              notification_endpoint=notification_endpoint, 
                                                              check_id=check_result.id)[0]
-
+    logger.debug("After Notification Rule")
     # elif req_body['triggers_with_actions'][0]['action']["method"] == "SLACK":
     #     logger.debug("In Alert - before create SLACK Check")
     #     notification_endpoint = checks.create_notification_endpoint_http(endpoint_name=channel_id+'_endpoint', 
