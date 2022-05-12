@@ -118,14 +118,19 @@ def create_channel(req_body):
             #raise errors.ResourceError(msg=f'''INVALID channel_id: {req_body['channel_id']} already exists''')
     # validating actor_id
     if  req_body['triggers_with_actions'][0]['action']["method"] == 'ACTOR': 
+        logger.debug("ACTOR is our method")
         actor_id = req_body['triggers_with_actions'][0]['action']['actor_id']
         if actor_id == '':
             logger.debug(f'actor_id cannot be blank')
             raise errors.ResourceError(msg=f'actor_id cannot be blank : {body}.')
         try:
-            res, debug_msg = t.actors.getActor(_x_tapis_tenant=g.tenant_id, _x_tapis_user=g.username,actor_id = actor_id,headers={'X-Tapis-Tenant': g.tenant_id},_tapis_debug=True)
+            logger.debug("trying to get_actor")
+            res, debug_msg = t.actors.getActor(actor_id = actor_id,headers={'X-Tapis-Tenant': g.tenant_id},_tapis_debug=True)
+            
         except Exception as e:
+            logger.debug("ACTOR isn't valid")
             er = e
+            logger.debug(er)
             msg = er.response.json()
             err_msg = msg['message']
             logger.debug(msg['message'])
@@ -158,7 +163,6 @@ def create_channel(req_body):
             logger.debug(msg['message'])
             raise errors.ResourceError(msg=f'INVALID template_id : {err_msg}.')
     logger.debug(template_result)
-   
     #parse conditions for creating check 
     vars = {}
     if(isinstance(req_body['triggers_with_actions'][0]['condition'],dict)):
@@ -171,6 +175,11 @@ def create_channel(req_body):
         check_msg = req_body['triggers_with_actions'][0]['action']['message']
     else:
         check_msg = ''
+    project,proj_mesg = meta.get_project(project_id=vars['project_id'])
+    if 'bucket' in project:
+        bucket_name= project['bucket']
+    else:
+        bucket_name= conf.influxdb_bucket
     check_result = checks.create_check(template_result,
                                         site_id=vars['site_id'], 
                                         inst_id=vars['inst_id'],
@@ -178,7 +187,8 @@ def create_channel(req_body):
                                         check_name=channel_id,
                                         threshold_type=vars['threshold_type'], 
                                         threshold_value=vars['threshold_value'],
-                                        check_message=check_msg)
+                                        check_message=check_msg,
+                                        bucket_name=bucket_name)
     logger.debug(check_result)
     logger.debug("Before create_notification")
 
@@ -187,10 +197,11 @@ def create_channel(req_body):
     alert_url = conf.tenant[g.tenant_id]['tapis_base_url'] +'/v3/streams/alerts?tenant='+g.tenant_id
     notification_endpoint = checks.create_notification_endpoint_http(endpoint_name=channel_id+'_endpoint', 
                                                                      notification_url=alert_url)
+    logger.debug("After Notification Endpoint")
     notification_rule = checks.create_http_notification_rule(rule_name=channel_id+'_rule', 
                                                              notification_endpoint=notification_endpoint, 
                                                              check_id=check_result.id)[0]
-
+    logger.debug("After Notification Rule")
     # elif req_body['triggers_with_actions'][0]['action']["method"] == "SLACK":
     #     logger.debug("In Alert - before create SLACK Check")
     #     notification_endpoint = checks.create_notification_endpoint_http(endpoint_name=channel_id+'_endpoint', 
