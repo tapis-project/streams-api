@@ -123,3 +123,10 @@ def query_measurments(bucket_name, query_field_list):
         result = client.query_api().query_data_frame(query)
     logger.debug(result.to_string())
     return result
+
+def ping():
+    headers = {
+        'content-type': "application/json"
+    }
+    res = requests.get(conf.influxdb_host + ':' + conf.influxdb_port +'/health',  verify=False)
+    return res.status_code
