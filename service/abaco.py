@@ -103,7 +103,7 @@ def create_alert(channel, req_data):
         alert['actor_id'] = actor_id
         alert['execution_id'] = execution_id
         alert['message'] =  message_data['message'] 
-        alert['create_time'] = str(datetime.datetime.utcnow())
+        alert['created_at'] = str(datetime.datetime.utcnow())
         logger.debug(alert)
         # send alert response data to Meta V3
         alert_result, msg = meta.create_alert(alert)

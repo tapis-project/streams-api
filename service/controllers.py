@@ -1276,7 +1276,7 @@ class ArchivesResource(Resource):
                     if 'transfer_status' in result:
                         if result['transfer_status'] == 'ok':
                             body['created_at'] = str(datetime.now())
-                            body['updated_at'] = str(datetime.now())
+                            body['last_updated'] = str(datetime.now())
                             meta_result, bug =auth.t.meta.createDocument(db=conf.tenant[g.tenant_id]['stream_db'], collection=project_id, request_body=body, _tapis_debug=True)
                             sfilter = '{"tapis_deleted":{ "$exists" : false },"archive_type":"'+body['archive_type']+'","created_at":"'+body['created_at']+'"}'
                             mresult = auth.t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection=project_id,filter=sfilter)

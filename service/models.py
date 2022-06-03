@@ -62,10 +62,10 @@ class ChannelAlert:
         self.execution_id = execution_id
 
 class ArchiveSystem:
-    def __init__(self, updated_at, created_at, owner, system_id, path, frequency, range):
+    def __init__(self, last_updated, created_at, owner, system_id, path, frequency, range):
         self.type='archive'
         self.archive_type= 'system'
-        self.updated_at = updated_at
+        self.last_updated = last_updated
         self.created_at = created_at
         self.owner = owner
         self.system_id = system_id
@@ -74,10 +74,10 @@ class ArchiveSystem:
         self.range = range
 
 class ArchiveChords:
-    def __init__(self, archive_type, updated_at, created_at, owner, chords_url, chords_email, chords_api_key, sites, instruments, variables):
+    def __init__(self, archive_type, last_updated, created_at, owner, chords_url, chords_email, chords_api_key, sites, instruments, variables):
         self.type='archive'
         self.archive_type= 'chords'
-        self.updated_at = updated_at
+        self.last_updated = last_updated
         self.created_at = created_at
         self.owner = owner
         self.chords_url = chords_url
