@@ -44,9 +44,9 @@ org_name = conf.influxdb_org
 #replace references to a bucket with streams so it cannot be hardcoded
 def clean_template_script(template_script):
     import re
-    t_script = re.sub(r'from\(bucket:[^;\)]*', '''from(bucket:"{bucket_name}")''',template_script)
-    t_script2 = re.sub(r'from\("bucket":[^;\)]*', '''from(bucket:"{bucket_name}")''',t_script)
-    t_script3 = re.sub(r"from\('bucket':[^;\)]*", '''from(bucket:"{bucket_name}")''',t_script2)
+    t_script = re.sub(r'from\(bucket:[^;\)]*', '''from(bucket:"{bucket_name}"''',template_script)
+    t_script2 = re.sub(r'from\("bucket":[^;\)]*', '''from(bucket:"{bucket_name}"''',t_script)
+    t_script3 = re.sub(r"from\('bucket':[^;\)]*", '''from(bucket:"{bucket_name}"''',t_script2)
     return t_script3
 
 def create_check(template,site_id,inst_id,var_id,check_name,threshold_type, threshold_value, check_message, bucket_name):
@@ -94,10 +94,10 @@ def create_check(template,site_id,inst_id,var_id,check_name,threshold_type, thre
             checks_service = ChecksService(api_client=client.api_client)
             check_result = checks_service.create_check(check)
             logger.debug(check_result)
-            return check_result
+            return check_result, "success"
         except Exception as e:
             logger.debug(e)
-            return e
+            return e, "error"
 
 def create_notification_endpoint_http(endpoint_name, notification_url):
     logger.debug("Top of create_noftification_endpoint_http")
@@ -114,10 +114,10 @@ def create_notification_endpoint_http(endpoint_name, notification_url):
             notification_endpoint_service = NotificationEndpointsService(api_client=client.api_client)
             notification_endpoint_result = notification_endpoint_service.create_notification_endpoint(notification_endpoint)
             logger.debug(notification_endpoint_result)
-            return notification_endpoint_result
+            return notification_endpoint_result, "success"
         except Exception as e:
             logger.debug(e)
-            return e
+            return e, "error"
 
 def create_http_notification_rule(rule_name, notification_endpoint, check_id):
     logger.debug("Top of  create_http_notification_rule")
@@ -138,10 +138,10 @@ def create_http_notification_rule(rule_name, notification_endpoint, check_id):
             notification_rules_service = NotificationRulesService(api_client=client.api_client)
             notification_rule_result = notification_rules_service.create_notification_rule_with_http_info(notification_rule)
             logger.debug(notification_rule_result[0])
-            return notification_rule_result
+            return notification_rule_result, "success"
         except Exception as e:
             logger.debug(e)
-            return e
+            return e, "error"
         
 
 
@@ -158,10 +158,10 @@ def create_slack_notification_endpoint(endpoint_name, notification_url):
             notification_rules_service = NotificationRulesService(api_client=client.api_client)
             notification_rule_result = notification_rules_service.create_notification_rule(notification_rule)
             logger.debug(notification_rule_result)
-            return notification_endpoint_result
+            return notification_endpoint_result, "sucess"
         except Exception as e:
             logger.debug(e)
-            return e
+            return e, "error"
 
 def create_slack_notification_rule(rule_name, notification_endpoint, check_id):
     logger.debug("Top of  create_slack_notification_rule")
@@ -181,10 +181,10 @@ def create_slack_notification_rule(rule_name, notification_endpoint, check_id):
             notification_rules_service = NotificationRulesService(api_client=client.api_client)
             notification_rule_result = notification_rules_service.create_notification_rule(notification_rule)
             logger.debug(notification_rule_result)
-            return notification_rule_result
+            return notification_rule_result, "sucess"
         except Exception as e:
             logger.debug(e)
-            return e
+            return e, "error"
 
 def delete_check(channel):
     logger.debug("Top of delete_check")

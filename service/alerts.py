@@ -125,7 +125,7 @@ def create_channel(req_body):
             raise errors.ResourceError(msg=f'actor_id cannot be blank : {body}.')
         try:
             logger.debug("trying to get_actor")
-            res, debug_msg = t.actors.getActor(actor_id = actor_id,headers={'X-Tapis-Tenant': g.tenant_id},_tapis_debug=True)
+            res, debug_msg = t.actors.get_actor(actor_id = actor_id,headers={'X-Tapis-Tenant': g.tenant_id},_tapis_debug=True)
             
         except Exception as e:
             logger.debug("ACTOR isn't valid")
@@ -180,7 +180,7 @@ def create_channel(req_body):
         bucket_name= project['bucket']
     else:
         bucket_name= conf.influxdb_bucket
-    check_result = checks.create_check(template_result,
+    check_result, c_msg = checks.create_check(template_result,
                                         site_id=vars['site_id'], 
                                         inst_id=vars['inst_id'],
                                         var_id=vars['var_id'],
@@ -189,18 +189,27 @@ def create_channel(req_body):
                                         threshold_value=vars['threshold_value'],
                                         check_message=check_msg,
                                         bucket_name=bucket_name)
-    logger.debug(check_result)
+    if c_msg == "error":
+        logger.debug(check_result)
+        e_msg = f'Error Channel Creation Failed to add check: ' + check_result
+        raise errors.BaseTapisError(msg=e_msg, code=400)
+        #raise errors.ResourceError(f'Error Channel Creation Failed to add check: ' + check_result)
     logger.debug("Before create_notification")
 
     #if req_body['triggers_with_actions'][0]['action']["method"] == "ACTOR":
     logger.debug("In Alert - before create  CHECK")
     alert_url = conf.tenant[g.tenant_id]['tapis_base_url'] +'/v3/streams/alerts?tenant='+g.tenant_id
-    notification_endpoint = checks.create_notification_endpoint_http(endpoint_name=channel_id+'_endpoint', 
+    notification_endpoint, ne_msg = checks.create_notification_endpoint_http(endpoint_name=channel_id+'_endpoint', 
                                                                      notification_url=alert_url)
+    if ne_msg == "error":
+        raise errors.ResourceError(msg=f'Error Channel Creation Failed to add notification enpoint: ' + notification_endpoint)
     logger.debug("After Notification Endpoint")
-    notification_rule = checks.create_http_notification_rule(rule_name=channel_id+'_rule', 
+    notification_rule, nr_msg = checks.create_http_notification_rule(rule_name=channel_id+'_rule', 
                                                              notification_endpoint=notification_endpoint, 
-                                                             check_id=check_result.id)[0]
+                                                             check_id=check_result.id)
+    if ne_msg == "error":
+        raise errors.ResourceError(msg=f'Error Channel Creation Failed to add notification rule: ' + notification_rule)
+    notification_rule = notification_rule[0]
     logger.debug("After Notification Rule")
     # elif req_body['triggers_with_actions'][0]['action']["method"] == "SLACK":
     #     logger.debug("In Alert - before create SLACK Check")
