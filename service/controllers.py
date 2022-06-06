@@ -106,7 +106,14 @@ class ProjectsResource(Resource):
     # Get project listings: GET v3/streams/projects
     def get(self):
             logger.debug(f'In list projects')
-            proj_result, msg = meta.list_projects()
+            skip=0
+            limit=0
+            if request.args.get('skip'):
+                skip = int(request.args.get('skip'))
+            if request.args.get('limit'):
+                limit=int(request.args.get('limit'))
+
+            proj_result, msg = meta.list_projects(skip, limit)
             result = meta.strip_meta_list(proj_result)
             logger.debug(f'After list projects')
             return utils.ok(result=result,msg=msg)

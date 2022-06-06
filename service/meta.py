@@ -32,16 +32,47 @@ def strip_meta_list(meta_list):
 
 #List projects a user has permission to read
 #strip out id and _etag fields
-def list_projects():
+def list_projects(skip, limit):
     logger.debug('in META list project')
-    result= t.meta.listDocuments(_tapis_set_x_headers_from_service=True, db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_project_metadata',filter='{"permissions.users":"'+g.username+'","tapis_deleted":null}')
+    page=1
+    if skip >= 1000:
+        page=skip/1000 + 1
+        skip = skip - (page * 1000)
+    if limit > 1000:
+        raise errors.ResourceError(msg=f'Limit cannot exceed 1000')
+    result= t.meta.listDocuments(_tapis_set_x_headers_from_service=True, db=conf.tenant[g.tenant_id]['stream_db'],page=page,pagesize=1000, collection='streams_project_metadata',filter='{"permissions.users":"'+g.username+'","tapis_deleted":null}')
     logger.debug(result)
     if len(json.loads(result.decode('utf-8'))) > 0:
         message = "Projects found"
+        sub_result=json.loads(result.decode('utf-8'))
+        if skip + limit > 1000 and len(sub_result) == 1000:
+          result2= t.meta.listDocuments(_tapis_set_x_headers_from_service=True, db=conf.tenant[g.tenant_id]['stream_db'],page=page+1,pagesize=1000, collection='streams_project_metadata',filter='{"permissions.users":"'+g.username+'","tapis_deleted":null}')
+          sub_result.append(json.loads(result2.decode('utf-8')))
+        try:
+            logger.debug(skip)
+            logger.debug(limit)
+            if skip >= 0:
+                logger.debug('in skip')
+                if limit > 0:
+                    logger.debug('in limit')
+                    end = int(skip)+int(limit)
+                    sub_result = sub_result[int(skip):int(end)]
+                else:
+                    sub_result = sub_result[int(skip):-1]  
+            else:
+                sub_result = sub_result[0:int(limit)]
+            logger.debug('before return')  
+            logger.debug(sub_result)
+            return sub_result, message  
+        except Exception as e:
+            logger.debug(e)
+            raise errors.ResourceError(msg=str(e))
     else:
+        logger.debug(result)
         raise errors.ResourceError(msg=f'No Projects found')
-    logger.debug(result)
-    return json.loads(result.decode('utf-8')), message
+        
+
+    
 
 #TODO add project get
 def get_project(project_id):
