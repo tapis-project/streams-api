@@ -522,14 +522,21 @@ class VariablesResource(Resource):
     # List variables: GET v3/streams/projects/{project_id}/sites/{site_id}/instruments/{instrument_id}/variables
     def get(self, project_id, site_id, instrument_id):
         logger.debug(f'In list variables')
+        skip=0
+        limit=100
+        if request.args.get('skip'):
+            skip = int(request.args.get('skip'))
+        if request.args.get('limit'):
+            limit=int(request.args.get('limit'))
         # Check if the user is authorized to list variables by checking if the user has project specific role
         authorized = sk.check_if_authorized_get(project_id)
         if (authorized):
             #result,msg = chords.list_variables()
             logger.debug(f'User is authorized to list variables for : ' + str(instrument_id))
             # List instruments
-            result, msg = meta.list_variables(project_id, site_id, instrument_id)
+            result, msg = meta.list_variables(project_id, site_id, instrument_id, skip, limit)
             logger.debug(instrument_id)
+            
             return utils.ok(result=result, msg=msg)
         else:
             logger.debug(f'User does not have any role on project')

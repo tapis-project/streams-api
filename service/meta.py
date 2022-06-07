@@ -453,7 +453,7 @@ def update_instrument(project_id, site_id, instrument_id, put_body, remove_instr
     return result, message
 
 
-def list_variables(project_id, site_id, instrument_id):
+def list_variables(project_id, site_id, instrument_id,skip,limit):
     site_result, site_bug = get_site(project_id,site_id)
     logger.debug(site_result)
     inst_exists = False
@@ -471,12 +471,32 @@ def list_variables(project_id, site_id, instrument_id):
                         if 'tapis_deleted' not in variable:
                             variables.append(variable)
                         logger.debug(result)
-                    result = variables
+                    sub_result = variables
+                    try:
+                        logger.debug(skip)
+                        logger.debug(limit)
+                        if skip > 0:
+                            logger.debug('in skip')
+                            if limit > 0:
+                                logger.debug('in limit')
+                                end = int(skip)+int(limit)
+                                sub_result = sub_result[int(skip):int(end)]
+                            else:
+                                sub_result = sub_result[int(skip):-1]  
+                        else:
+                            if limit > 0:
+                              sub_result = sub_result[0:int(limit)]
+                        logger.debug('before return')  
+                        logger.debug(sub_result)
+                        result = sub_result
+                    except Exception as e:
+                        logger.debug(e)
+                        raise errors.ResourceError(msg=str(e))
                 if len(result) > 0 :
                     message = "Variables Found"
                 else:
                     message = "No Variables Found"
-                    raise errors.ResourceError(msg=f'" No Variables Found for Site ID:'+str(site_id))
+                    #raise errors.ResourceError(msg=f'" No Variables Found for Site ID:'+str(site_id))
         if inst_exists == False:
             result = []
             message = "Instrument Not Found - No Variables Exist"
