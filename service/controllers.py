@@ -356,12 +356,18 @@ class InstrumentsResource(Resource):
     # Get Instrument listings: GET v3/streams/projects/{project_id}/sites/{site_id}/instruments
     def get(self,project_id,site_id):
         logger.debug(f'In list instruments')
+        skip=0
+        limit=100
+        if request.args.get('skip'):
+            skip = int(request.args.get('skip'))
+        if request.args.get('limit'):
+            limit=int(request.args.get('limit'))
         # Check if the user is authorized to list instruments  by checking if the user has project specific role
         authorized = sk.check_if_authorized_get(project_id)
         if (authorized):
             logger.debug(f'User is authorized to list instruments for site : ' + str(site_id))
             # List instruments for a given project and site id
-            result,msg = meta.list_instruments(project_id, site_id)
+            result,msg = meta.list_instruments(project_id, site_id,skip,limit)
             logger.debug(f'Site id' +str(site_id))
             '''
             #logic to filter instruments based on site id

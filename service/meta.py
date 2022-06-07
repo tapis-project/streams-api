@@ -325,7 +325,7 @@ def get_instrument_by_id(inst_id):
     else:
         return {},"Instrument ID not found"
 
-def list_instruments(project_id, site_id):
+def list_instruments(project_id, site_id,skip,limit):
     site_result, site_bug = get_site(project_id,site_id)
     if len(site_result) > 0:
         instruments = []
@@ -334,16 +334,40 @@ def list_instruments(project_id, site_id):
                 for inst in site_result['instruments']:
                     if 'tapis_deleted' not in inst:
                         instruments.append(inst)
-                result = instruments
-                message = "Instruments Found"
+                sub_result = instruments
+                if len(sub_result) > 0:
+                    message = "Instruments Found"
+                    try:
+                        logger.debug(skip)
+                        logger.debug(limit)
+                        if skip > 0:
+                            logger.debug('in skip')
+                            if limit > 0:
+                                logger.debug('in limit')
+                                end = int(skip)+int(limit)
+                                sub_result = sub_result[int(skip):int(end)]
+                            else:
+                                sub_result = sub_result[int(skip):-1]  
+                        else:
+                            if limit > 0:
+                                sub_result = sub_result[0:int(limit)]
+                        logger.debug('before return')  
+                        logger.debug(sub_result)
+                        result = sub_result
+                    except Exception as e:
+                        logger.debug(e)
+                        raise errors.ResourceError(msg=str(e))
+                else:
+                    result = {}
+                    message = "No Instruments Found"
             else:
                 result = {}
                 message = "No Instruments Found"
-                raise errors.ResourceError(msg=f'No Instruments Found for Site ID:' + str(site_id))
+                #raise errors.ResourceError(msg=f'No Instruments Found for Site ID:' + str(site_id))
         else:
             result = {}
             message = "No Instruments Found"
-            raise errors.ResourceError(msg=f'No Instruments Found for Site ID:'+str(site_id))
+            #raise errors.ResourceError(msg=f'No Instruments Found for Site ID:'+str(site_id))
     else:
         result = {}
         message ="Site Not Found - No Instruments Exist"
