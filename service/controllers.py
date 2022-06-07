@@ -106,7 +106,14 @@ class ProjectsResource(Resource):
     # Get project listings: GET v3/streams/projects
     def get(self):
             logger.debug(f'In list projects')
-            proj_result, msg = meta.list_projects()
+            skip=0
+            limit=100
+            if request.args.get('skip'):
+                skip = int(request.args.get('skip'))
+            if request.args.get('limit'):
+                limit=int(request.args.get('limit'))
+
+            proj_result, msg = meta.list_projects(skip, limit)
             result = meta.strip_meta_list(proj_result)
             logger.debug(f'After list projects')
             return utils.ok(result=result,msg=msg)
@@ -216,12 +223,19 @@ class SitesResource(Resource):
     #TODO metadata integration - need to use query, limit and offset
     def get(self, project_id):
         logger.debug(f'In list sites')
+        skip=0
+        limit=100
+        if request.args.get('skip'):
+            skip = int(request.args.get('skip'))
+        if request.args.get('limit'):
+            limit=int(request.args.get('limit'))
+
         # Check if the user is authorized to access the site by checking if the user has project specific role
         authorized = sk.check_if_authorized_get(project_id)
         logger.debug(f'Authorization status: '+ str(authorized))
         if (authorized):
             logger.debug(f'User is authorized to list sites for project : ' + str(project_id))
-            site_result, msg = meta.list_sites(project_id)
+            site_result, msg = meta.list_sites(project_id=project_id,skip=skip,limit=limit)
             result = meta.strip_meta_list(site_result)
             return utils.ok(result=result,msg=msg)
         else:
@@ -342,12 +356,18 @@ class InstrumentsResource(Resource):
     # Get Instrument listings: GET v3/streams/projects/{project_id}/sites/{site_id}/instruments
     def get(self,project_id,site_id):
         logger.debug(f'In list instruments')
+        skip=0
+        limit=100
+        if request.args.get('skip'):
+            skip = int(request.args.get('skip'))
+        if request.args.get('limit'):
+            limit=int(request.args.get('limit'))
         # Check if the user is authorized to list instruments  by checking if the user has project specific role
         authorized = sk.check_if_authorized_get(project_id)
         if (authorized):
             logger.debug(f'User is authorized to list instruments for site : ' + str(site_id))
             # List instruments for a given project and site id
-            result,msg = meta.list_instruments(project_id, site_id)
+            result,msg = meta.list_instruments(project_id, site_id,skip,limit)
             logger.debug(f'Site id' +str(site_id))
             '''
             #logic to filter instruments based on site id
@@ -508,14 +528,21 @@ class VariablesResource(Resource):
     # List variables: GET v3/streams/projects/{project_id}/sites/{site_id}/instruments/{instrument_id}/variables
     def get(self, project_id, site_id, instrument_id):
         logger.debug(f'In list variables')
+        skip=0
+        limit=100
+        if request.args.get('skip'):
+            skip = int(request.args.get('skip'))
+        if request.args.get('limit'):
+            limit=int(request.args.get('limit'))
         # Check if the user is authorized to list variables by checking if the user has project specific role
         authorized = sk.check_if_authorized_get(project_id)
         if (authorized):
             #result,msg = chords.list_variables()
             logger.debug(f'User is authorized to list variables for : ' + str(instrument_id))
             # List instruments
-            result, msg = meta.list_variables(project_id, site_id, instrument_id)
+            result, msg = meta.list_variables(project_id, site_id, instrument_id, skip, limit)
             logger.debug(instrument_id)
+            
             return utils.ok(result=result, msg=msg)
         else:
             logger.debug(f'User does not have any role on project')
