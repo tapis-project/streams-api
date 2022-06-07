@@ -51,7 +51,7 @@ def list_projects(skip, limit):
         try:
             logger.debug(skip)
             logger.debug(limit)
-            if skip >= 0:
+            if skip > 0:
                 logger.debug('in skip')
                 if limit > 0:
                     logger.debug('in limit')
@@ -186,7 +186,7 @@ def list_sites(project_id,skip,limit):
         try:
             logger.debug(skip)
             logger.debug(limit)
-            if skip >= 0:
+            if skip > 0:
                 logger.debug('in skip')
                 if limit > 0:
                     logger.debug('in limit')

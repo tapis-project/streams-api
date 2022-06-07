@@ -107,7 +107,7 @@ class ProjectsResource(Resource):
     def get(self):
             logger.debug(f'In list projects')
             skip=0
-            limit=0
+            limit=100
             if request.args.get('skip'):
                 skip = int(request.args.get('skip'))
             if request.args.get('limit'):
@@ -224,7 +224,7 @@ class SitesResource(Resource):
     def get(self, project_id):
         logger.debug(f'In list sites')
         skip=0
-        limit=0
+        limit=100
         if request.args.get('skip'):
             skip = int(request.args.get('skip'))
         if request.args.get('limit'):
