@@ -32,16 +32,47 @@ def strip_meta_list(meta_list):
 
 #List projects a user has permission to read
 #strip out id and _etag fields
-def list_projects():
+def list_projects(skip, limit):
     logger.debug('in META list project')
-    result= t.meta.listDocuments(_tapis_set_x_headers_from_service=True, db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_project_metadata',filter='{"permissions.users":"'+g.username+'","tapis_deleted":null}')
+    page=1
+    if skip >= 1000:
+        page=skip/1000 + 1
+        skip = skip - (page * 1000)
+    if limit > 1000:
+        raise errors.ResourceError(msg=f'Limit cannot exceed 1000')
+    result= t.meta.listDocuments(_tapis_set_x_headers_from_service=True, db=conf.tenant[g.tenant_id]['stream_db'],page=page,pagesize=1000, collection='streams_project_metadata',filter='{"permissions.users":"'+g.username+'","tapis_deleted":null}')
     logger.debug(result)
     if len(json.loads(result.decode('utf-8'))) > 0:
         message = "Projects found"
+        sub_result=json.loads(result.decode('utf-8'))
+        if skip + limit > 1000 and len(sub_result) == 1000:
+          result2= t.meta.listDocuments(_tapis_set_x_headers_from_service=True, db=conf.tenant[g.tenant_id]['stream_db'],page=page+1,pagesize=1000, collection='streams_project_metadata',filter='{"permissions.users":"'+g.username+'","tapis_deleted":null}')
+          sub_result.append(json.loads(result2.decode('utf-8')))
+        try:
+            logger.debug(skip)
+            logger.debug(limit)
+            if skip > 0:
+                logger.debug('in skip')
+                if limit > 0:
+                    logger.debug('in limit')
+                    end = int(skip)+int(limit)
+                    sub_result = sub_result[int(skip):int(end)]
+                else:
+                    sub_result = sub_result[int(skip):-1]  
+            else:
+                sub_result = sub_result[0:int(limit)]
+            logger.debug('before return')  
+            logger.debug(sub_result)
+            return sub_result, message  
+        except Exception as e:
+            logger.debug(e)
+            raise errors.ResourceError(msg=str(e))
     else:
+        logger.debug(result)
         raise errors.ResourceError(msg=f'No Projects found')
-    logger.debug(result)
-    return json.loads(result.decode('utf-8')), message
+        
+
+    
 
 #TODO add project get
 def get_project(project_id):
@@ -67,6 +98,8 @@ def create_project(body):
     #create project metadata record
     req_body = body
     req_body['project_id'] = body['project_name'].replace(" ", "")
+    req_body['created_at'] = str(datetime.datetime.now())
+    req_body['last_updated'] = str(datetime.datetime.now())
     req_body['permissions']={'users':[g.username]}
     logger.debug(req_body)
     #Check if project_id exists by creating collection - if so add something to id to unique it.
@@ -136,14 +169,43 @@ def delete_project(project_id):
     return result, message
 
 #strip out id and _etag fields
-def list_sites(project_id):
-    result = t.meta.listDocuments(_tapis_set_x_headers_from_service=True, db=conf.tenant[g.tenant_id]['stream_db'],collection=project_id,filter='{"tapis_deleted":{ "$exists" : false },"site_id":{ "$exists" : true }}')
+def list_sites(project_id,skip,limit):
+    page=1
+    if skip >= 1000:
+        page=skip/1000 + 1
+        skip = skip - (page * 1000)
+    if limit > 1000:
+        raise errors.ResourceError(msg=f'Limit cannot exceed 1000')
+    result = t.meta.listDocuments(_tapis_set_x_headers_from_service=True, page=page, pagesize=1000, db=conf.tenant[g.tenant_id]['stream_db'],collection=project_id,filter='{"tapis_deleted":{ "$exists" : false },"site_id":{ "$exists" : true }}')
     if len(json.loads(result)) > 0:
         message = "Sites found"
+        sub_result=json.loads(result.decode('utf-8'))
+        if skip + limit > 1000 and len(sub_result) == 1000:
+          result2 = t.meta.listDocuments(_tapis_set_x_headers_from_service=True, page=page+1, pagesize=1000, db=conf.tenant[g.tenant_id]['stream_db'],collection=project_id,filter='{"tapis_deleted":{ "$exists" : false },"site_id":{ "$exists" : true }}')
+          sub_result.append(json.loads(result2.decode('utf-8')))
+        try:
+            logger.debug(skip)
+            logger.debug(limit)
+            if skip > 0:
+                logger.debug('in skip')
+                if limit > 0:
+                    logger.debug('in limit')
+                    end = int(skip)+int(limit)
+                    sub_result = sub_result[int(skip):int(end)]
+                else:
+                    sub_result = sub_result[int(skip):-1]  
+            else:
+                sub_result = sub_result[0:int(limit)]
+            logger.debug('before return')  
+            logger.debug(sub_result)
+            return sub_result, message  
+        except Exception as e:
+            logger.debug(e)
+            raise errors.ResourceError(msg=str(e))
     else:
+        logger.debug(result)
         raise errors.ResourceError(msg='No Sites found')
-    logger.debug(result)
-    return json.loads(result.decode('utf-8')), message
+
 
 #strip out id and _etag fields
 def get_site(project_id, site_id):
@@ -169,6 +231,7 @@ def create_site(project_id, chords_site_id, body):
     req_body = body
     req_body['chords_id'] = chords_site_id
     req_body['created_at'] = str(datetime.datetime.now())
+    req_body['last_updated'] = str(datetime.datetime.now())
     req_body['location'] = {"type":"Point", "coordinates":[float(req_body['longitude']),float(req_body['latitude'])]}
     #TODO validate fields
     logger.debug(body)
@@ -262,7 +325,7 @@ def get_instrument_by_id(inst_id):
     else:
         return {},"Instrument ID not found"
 
-def list_instruments(project_id, site_id):
+def list_instruments(project_id, site_id,skip,limit):
     site_result, site_bug = get_site(project_id,site_id)
     if len(site_result) > 0:
         instruments = []
@@ -271,16 +334,40 @@ def list_instruments(project_id, site_id):
                 for inst in site_result['instruments']:
                     if 'tapis_deleted' not in inst:
                         instruments.append(inst)
-                result = instruments
-                message = "Instruments Found"
+                sub_result = instruments
+                if len(sub_result) > 0:
+                    message = "Instruments Found"
+                    try:
+                        logger.debug(skip)
+                        logger.debug(limit)
+                        if skip > 0:
+                            logger.debug('in skip')
+                            if limit > 0:
+                                logger.debug('in limit')
+                                end = int(skip)+int(limit)
+                                sub_result = sub_result[int(skip):int(end)]
+                            else:
+                                sub_result = sub_result[int(skip):-1]  
+                        else:
+                            if limit > 0:
+                                sub_result = sub_result[0:int(limit)]
+                        logger.debug('before return')  
+                        logger.debug(sub_result)
+                        result = sub_result
+                    except Exception as e:
+                        logger.debug(e)
+                        raise errors.ResourceError(msg=str(e))
+                else:
+                    result = {}
+                    message = "No Instruments Found"
             else:
                 result = {}
                 message = "No Instruments Found"
-                raise errors.ResourceError(msg=f'No Instruments Found for Site ID:' + str(site_id))
+                #raise errors.ResourceError(msg=f'No Instruments Found for Site ID:' + str(site_id))
         else:
             result = {}
             message = "No Instruments Found"
-            raise errors.ResourceError(msg=f'No Instruments Found for Site ID:'+str(site_id))
+            #raise errors.ResourceError(msg=f'No Instruments Found for Site ID:'+str(site_id))
     else:
         result = {}
         message ="Site Not Found - No Instruments Exist"
@@ -301,6 +388,7 @@ def create_instrument(project_id, site_id, post_body):
         if len(site_result) > 0:
             inst_body = post_body
             inst_body['created_at'] = str(datetime.datetime.now())
+            inst_body['last_updated'] = str(datetime.datetime.now())
             if 'instruments' in site_result:
                 site_result['instruments'].append(inst_body)
             else:
@@ -335,7 +423,7 @@ def update_instrument(project_id, site_id, instrument_id, put_body, remove_instr
     if len(site_result) > 0:
         logger.debug("IN IF")
         inst_body = put_body
-        inst_body['updated_at'] = str(datetime.datetime.now())
+        inst_body['last_updated'] = str(datetime.datetime.now())
         updated_instruments = []
         for inst in site_result['instruments']:
             logger.debug("IN LOOP")
@@ -349,6 +437,7 @@ def update_instrument(project_id, site_id, instrument_id, put_body, remove_instr
                         #add vars from current instrument so they are not removed
                         inst_body['inst_id'] = instrument_id
                         inst_body['chords_id'] = inst['chords_id']
+                        inst_body['last_updated'] = str(datetime.datetime.now())
                         if 'variables' in inst:
                             inst_body['variables'] = inst['variables']
                         updated_instruments.append(inst_body)
@@ -388,7 +477,7 @@ def update_instrument(project_id, site_id, instrument_id, put_body, remove_instr
     return result, message
 
 
-def list_variables(project_id, site_id, instrument_id):
+def list_variables(project_id, site_id, instrument_id,skip,limit):
     site_result, site_bug = get_site(project_id,site_id)
     logger.debug(site_result)
     inst_exists = False
@@ -406,12 +495,32 @@ def list_variables(project_id, site_id, instrument_id):
                         if 'tapis_deleted' not in variable:
                             variables.append(variable)
                         logger.debug(result)
-                    result = variables
+                    sub_result = variables
+                    try:
+                        logger.debug(skip)
+                        logger.debug(limit)
+                        if skip > 0:
+                            logger.debug('in skip')
+                            if limit > 0:
+                                logger.debug('in limit')
+                                end = int(skip)+int(limit)
+                                sub_result = sub_result[int(skip):int(end)]
+                            else:
+                                sub_result = sub_result[int(skip):-1]  
+                        else:
+                            if limit > 0:
+                              sub_result = sub_result[0:int(limit)]
+                        logger.debug('before return')  
+                        logger.debug(sub_result)
+                        result = sub_result
+                    except Exception as e:
+                        logger.debug(e)
+                        raise errors.ResourceError(msg=str(e))
                 if len(result) > 0 :
                     message = "Variables Found"
                 else:
                     message = "No Variables Found"
-                    raise errors.ResourceError(msg=f'" No Variables Found for Site ID:'+str(site_id))
+                    #raise errors.ResourceError(msg=f'" No Variables Found for Site ID:'+str(site_id))
         if inst_exists == False:
             result = []
             message = "Instrument Not Found - No Variables Exist"
@@ -457,7 +566,8 @@ def create_variable(project_id, site_id, instrument_id, post_body):
     result={}
     if len(site_result) > 0:
         var_body = post_body
-        var_body['updated_at'] = str(datetime.datetime.now())
+        var_body['created_at'] = str(datetime.datetime.now())
+        var_body['last_updated'] = str(datetime.datetime.now())
         updated_instruments = []
         for inst in site_result['instruments']:
             if 'inst_id' in inst:
@@ -502,7 +612,7 @@ def update_variable(project_id, site_id, instrument_id, variable_id, put_body, r
     if len(site_result) > 0:
         var_body = put_body
         var_body['var_id'] = variable_id
-        var_body['updated_at'] = str(datetime.datetime.now())
+        var_body['last_updated'] = str(datetime.datetime.now())
         updated_variables = []
         updated_instruments = []
         for inst in site_result['instruments']:
@@ -522,7 +632,7 @@ def update_variable(project_id, site_id, instrument_id, variable_id, put_body, r
                                 else:
                                     #soft delete variable
                                     variable['tapis_deleted'] =True;
-                                    variable['updated_at']=str(datetime.datetime.now())
+                                    var_body['last_updated'] = str(datetime.datetime.now())
                                     updated_variables.append(variable)
                             else:
                                 #keep variable

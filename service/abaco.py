@@ -76,7 +76,7 @@ def create_alert(channel, req_data):
     # send request to Abaco with the nonce
     try:
         logger.debug("SendMessage Try")
-        res, debug_msg = t.actors.sendMessage(actor_id=actor_id, message= json.dumps(message_data), request_body=message_data,headers={'X-Tapis-Tenant': g.tenant_id},_tapis_debug=True)
+        res, debug_msg = t.actors.send_message(actor_id=actor_id, message= json.dumps(message_data), request_body=message_data,headers={'X-Tapis-Tenant': g.tenant_id},_tapis_debug=True)
         logger.debug("SendMessage Success")
     except Exception as e:
         logger.debug("Failed SendMessage")
@@ -103,7 +103,7 @@ def create_alert(channel, req_data):
         alert['actor_id'] = actor_id
         alert['execution_id'] = execution_id
         alert['message'] =  message_data['message'] 
-        alert['create_time'] = str(datetime.datetime.utcnow())
+        alert['created_at'] = str(datetime.datetime.utcnow())
         logger.debug(alert)
         # send alert response data to Meta V3
         alert_result, msg = meta.create_alert(alert)
