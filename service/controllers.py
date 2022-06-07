@@ -223,12 +223,19 @@ class SitesResource(Resource):
     #TODO metadata integration - need to use query, limit and offset
     def get(self, project_id):
         logger.debug(f'In list sites')
+        skip=0
+        limit=0
+        if request.args.get('skip'):
+            skip = int(request.args.get('skip'))
+        if request.args.get('limit'):
+            limit=int(request.args.get('limit'))
+
         # Check if the user is authorized to access the site by checking if the user has project specific role
         authorized = sk.check_if_authorized_get(project_id)
         logger.debug(f'Authorization status: '+ str(authorized))
         if (authorized):
             logger.debug(f'User is authorized to list sites for project : ' + str(project_id))
-            site_result, msg = meta.list_sites(project_id)
+            site_result, msg = meta.list_sites(project_id=project_id,skip=skip,limit=limit)
             result = meta.strip_meta_list(site_result)
             return utils.ok(result=result,msg=msg)
         else:
