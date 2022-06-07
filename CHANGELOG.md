@@ -1,6 +1,20 @@
 # Change Log
 All notable changes to this project will be documented in this file.
-## 1.1.0- 2022-1-27 (target)
+## 1.2.0- 2022-6-7
+### Added
+- Support for newly created projects data written to individual buckets for security
+- Support for project,site,instrument,variable skip and limit parameters in listing
+- Alerts support added for Influx2 for Actors, Discord, Slack and generic webhooks
+- Alerts has default threshold template built in for users to access
+
+### Changed
+- Newly Created Projects data no longer written to central streams bucket, legacy projects will still use streams bucket
+- All resources have created_at field
+
+### Removed
+- nothing removed
+
+## 1.1.0- 2022-1-27 
 ### Added
 - nothing added
 
