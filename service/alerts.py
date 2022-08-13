@@ -198,7 +198,8 @@ def create_channel(req_body):
 
     #if req_body['triggers_with_actions'][0]['action']["method"] == "ACTOR":
     logger.debug("In Alert - before create  CHECK")
-    alert_url = conf.tenant[g.tenant_id]['tapis_base_url'] +'/v3/streams/alerts?tenant='+g.tenant_id
+    #alert_url = conf.tenant[g.tenant_id]['tapis_base_url'] +'/v3/streams/alerts?tenant='+g.tenant_id
+    alert_url = "http://192.168.166.113:5001"+'/v3/streams/alerts?tenant='+g.tenant_id
     notification_endpoint, ne_msg = checks.create_notification_endpoint_http(endpoint_name=channel_id+'_endpoint', 
                                                                      notification_url=alert_url)
     if ne_msg == "error":
@@ -531,6 +532,58 @@ def post_to_http(channel, body):
         raise errors.ResourceError(msg=msg)
 
     return response
+
+def post_to_job(channel, body):
+    # {
+    # "name": "test_job",
+    # "appId": "img-classify.jstubbs", 
+    # "appVersion": "0.1.0",
+    # "parameterSet": {"appArgs": [{"name": "input_file", 
+    #                               "arg": input_url}]        
+    #                 }
+    # }
+
+    job = channel['triggers_with_actions'][0]['action']["job_params"]
+    logger.debug(channel)
+    logger.debug(job)
+    res, debug_msg = t.jobs.submitJob(**job,headers={'X-Tapis-Tenant': g.tenant_id, 'X-Tapis-User':'testuser2',_tapis_debug=True)# channel['permissions']['users'][0]},_tapis_debug=True)
+    logger.debug(debug_msg.request.headers)
+    raise errors.BaseTapyException(msg=msg, request=res.request)
+    try:
+        logger.debug("Job Submit Try")
+        res, debug_msg = t.jobs.submitJob(**job,headers={'X-Tapis-Tenant': g.tenant_id, 'X-Tapis-User': channel['permissions']['users'][0]},_tapis_debug=True)
+        logger.debug("Job Submit Success")
+        logger.debug(debug_msg.request.headers)
+        logger.debug(res.uuid)
+    except Exception as e:
+        logger.debug("Failed Job Submission")
+        
+        logger.debug(e)
+        er = e
+        logger.debug(er.request.url)
+        logger.debug(er.request.headers)
+        logger.debug(er.response.json())
+        msg = f"Got exception trying to submit job: {job_id}; exception: {e}"
+        raise errors.BaseTapyException(msg=msg, request=res.request)
+    alert = {}
+    alert['alert_id'] = str(uuid.uuid4())
+    alert['type'] = 'JOB'
+    alert['channel_name'] = channel['channel_name']
+    alert['channel_id'] = channel['channel_id']
+    alert['job'] =  res
+    alert['job_params'] = job
+    alert['created_at'] = str(datetime.datetime.utcnow())
+    logger.debug(alert)
+    # send alert response data to Meta V3
+    alert_result, msg = meta.create_alert(alert)
+    if msg == "Alert Added":
+        logger.debug(alert_result)
+        result = meta.strip_meta(alert_result)
+        logger.debug(result)
+        return result, msg
+    else:
+        err_msg = f" Failed to add Alert for{channel['channel_id']} in Meta"
+        raise errors.ResourceError(msg=err_msg)
 ################### ALERT ############################################
 def create_alert():
     return True
