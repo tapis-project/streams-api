@@ -149,6 +149,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+### End of Healthcheck
 
 ### Begin of Projects
   /v3/streams/projects:
@@ -1915,7 +1916,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-#### End of Ontology
+### End of Ontology
 
 
 ### Begin of Channels
@@ -2248,10 +2249,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-#### End of Channels
+### End of Channels
 
 
-### Begin of alerts
+### Begin of Alerts
   /v3/streams/channels/{channel_id}/alerts:
     get:
       tags:
@@ -2305,10 +2306,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-#### End of alerts
+### End of Alerts
 
 
-### Begin of templates
+### Begin of Templates
   /v3/streams/templates:
     get:
       tags:
@@ -2517,8 +2518,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-#### End of templates
+### End of Templates
 
+### Begin of Units
   /units:
     get:
       tags:
@@ -2582,7 +2584,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+### End of Units
 
+### Begin of Measured Properties
   /measured_properties:
     get:
       tags:
@@ -2646,7 +2650,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-
+### End of Measured Properties
 
 ### Begin of Roles
   /v3/streams/roles:
@@ -2715,7 +2719,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-    #### End of roles
 
     post:
       tags:
@@ -2763,8 +2766,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+### End of Roles
 
-### Begin of revoke Role
+### Begin of Revoke Role
   /v3/streams/roles/revokeRole:
     post:
       tags:
@@ -2812,7 +2816,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-### Begin of archive
+### End of Revoke Role
+
+### Begin of Archives
   /v3/streams/projects/{project_id}/archives:
     post:
       tags:
@@ -2913,8 +2919,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+### End of Archives
 
-### Begin of transfers
+### Begin of Transfer
   /v3/streams/transfer:
     post:
       tags:
@@ -2962,6 +2969,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+### End of Transfer
+
+### Begin of Components
 components:
   schemas:
     BasicResponse:
@@ -3782,3 +3792,4 @@ components:
 
     Application:
      type: object
+### End of Components
