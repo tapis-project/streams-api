@@ -1341,8 +1341,8 @@ paths:
     delete:
       tags:
         - Variables
-      summary: Delete a variable (single or bulk)
-      description: Delete a variable (single or bulk)
+      summary: Delete a variable
+      description: Delete a variable
       operationId: delete_variable
       parameters:
         - name: project_id
