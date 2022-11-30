@@ -643,7 +643,7 @@ class VariableResource(Resource):
         if (authorized):
             logger.debug(f'User is authorized to delete variables details for variable : ' + str(variable_id))
             # Delete Variable in chords
-            result,msg = chords.delete_variable(variable_id)
+            # result,msg = chords.delete_variable(variable_id)
             result, msg = meta.update_variable(project_id, site_id, instrument_id, variable_id, {},True)
             logger.debug(f'Metadata delete variable result ' +str(result))
             return utils.ok(result=result, msg=msg)
