@@ -1976,7 +1976,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/NewChannel"
+              oneOf:
+                - $ref: "#/components/schemas/NewChannelDeadman"
+                - $ref: "#/components/schemas/NewChannelThreshold"
+              discriminator:
+                propertyName: type
+                mapping:
+                  deadman: "#/components/schemas/NewChannelDeadman"
+                  threshold: "#/components/schemas/NewChannelThreshold"
       responses:
         "201":
           description: Created
@@ -3492,6 +3499,25 @@ components:
         template_id:
           type: string
           description: Template id.
+        type:
+          type: string
+          description: Type of Checks (threshold or deadman)
+   
+    NewChannelThreshold:
+      type: object
+      properties:
+        channel_id:
+          type: string
+          description: User defined channel id.
+        channel_name:
+          type: string
+          description: User defined channel name.
+        template_id:
+          type: string
+          description: Template id.
+        type:
+          type: string
+          description: Type of Checks (default type is threshold)
         triggers_with_actions:
           type: array
           items:
@@ -3510,6 +3536,53 @@ components:
                     type: string
                   val:
                     type: number
+              action:
+                type: object
+                properties:
+                  method:
+                    type: string
+                  actor_id:
+                    type: string
+                  message:
+                    type: string
+    
+    NewChannelDeadman:
+      type: object
+      properties:
+        channel_id:
+          type: string
+          description: User defined channel id.
+        channel_name:
+          type: string
+          description: User defined channel name.
+        template_id:
+          type: string
+          description: Template id.
+        type:
+          type: string
+          description: Type of Checks (default type is threshold)
+        triggers_with_actions:
+          type: array
+          items:
+            type: object
+            properties:
+              inst_ids:
+                type: array
+                items:
+                  type: string
+              condition:
+                type: object
+                properties:
+                  key:
+                    type: string
+                  reportZero:
+                    type: boolean
+                  timeSince:
+                    type: string
+                    example: "15s"
+                  staleTime:
+                    type: string
+                    example: "10m"
               action:
                 type: object
                 properties:
