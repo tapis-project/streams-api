@@ -3536,6 +3536,7 @@ components:
                     type: string
                   val:
                     type: number
+                required: [key, operator, val]
               action:
                 type: object
                 properties:
@@ -3575,14 +3576,21 @@ components:
                 properties:
                   key:
                     type: string
-                  reportZero:
-                    type: boolean
-                  timeSince:
-                    type: string
-                    example: "15s"
-                  staleTime:
+                  every:
                     type: string
                     example: "10m"
+                  offset:
+                    type: string
+                    example: "15s"
+                  report_zero:
+                    type: boolean
+                  time_since:
+                    type: string
+                    example: "15s"
+                  stale_time:
+                    type: string
+                    example: "10m"
+                required: [key, time_since]
               action:
                 type: object
                 properties:
@@ -3592,6 +3600,7 @@ components:
                     type: string
                   message:
                     type: string
+
     Unit:
       type: object
       properties:
