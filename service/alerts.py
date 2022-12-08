@@ -130,6 +130,7 @@ def create_channel(req_body):
             raise common_errors.ResourceError(
                 msg=f'''INVALID channel_id: {req_body['channel_id']} already exists''')
             #raise errors.ResourceError(msg=f'''INVALID channel_id: {req_body['channel_id']} already exists''')
+        logger.debug(req_body)
     # validating actor_id
     if req_body['triggers_with_actions'][0]['action']["method"] == 'ACTOR':
         logger.debug("ACTOR is our method")
@@ -204,7 +205,7 @@ def create_channel(req_body):
 
     # Condition to check if we are making a threshold or deadman check
 
-    if req_body["type"] is None or req_body["type"] == 'threshold':
+    if "type" not in req_body or req_body["type"] == 'threshold':
 
         check_result, c_msg = checks.create_check(template_result,
                                                   site_id=vars['site_id'],
