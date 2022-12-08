@@ -159,7 +159,7 @@ def create_channel(req_body):
     if template_id == '':
         logger.debug(f'template_id cannot be blank')
         raise errors.ResourceError(
-            msg=f'template_id cannot be blank - you can use the public "default_threshold" for and id as an option. : {body}.')
+            msg=f'template_id cannot be blank - you can use the public "default_threshold" for and id as an option. : {req_body}.')
     elif template_id == 'default_threshold':
         template_result = {}
         template_result["script"] = f'''from(bucket:"{{bucket_name}}") 
