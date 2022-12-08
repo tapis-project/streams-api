@@ -1976,14 +1976,7 @@ paths:
         content:
           application/json:
             schema:
-              oneOf:
-                - $ref: "#/components/schemas/NewChannelDeadman"
-                - $ref: "#/components/schemas/NewChannelThreshold"
-              discriminator:
-                propertyName: type
-                mapping:
-                  deadman: "#/components/schemas/NewChannelDeadman"
-                  threshold: "#/components/schemas/NewChannelThreshold"
+              $ref: "#/components/schemas/NewChannel"
       responses:
         "201":
           description: Created
@@ -2090,7 +2083,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/NewChannel"
+              $ref: "#/components/schemas/UpdateChannel"
       responses:
         "201":
           description: Updated
@@ -3155,9 +3148,7 @@ components:
         metadata:
           type: object
           description: User defined metadata for the site
-      required:
-        [site_name, latitude, longitude, elevation, description]
-
+      required: [site_name, latitude, longitude, elevation, description]
 
     Instrument:
       type: object
@@ -3501,14 +3492,23 @@ components:
           description: Template id.
         type:
           type: string
+          enum:
+            - threshold
+            - deadman
+          default: threshold
           description: Type of Checks (threshold or deadman)
-   
-    NewChannelThreshold:
+        trigger_with_actions:
+          oneOf:
+            - $ref: "#/components/schemas/Threshold"
+            - $ref: "#/components/schemas/Deadman"
+      required:
+        - channel_id
+        - channel_name
+        - template_id
+
+    UpdateChannel:
       type: object
       properties:
-        channel_id:
-          type: string
-          description: User defined channel id.
         channel_name:
           type: string
           description: User defined channel name.
@@ -3517,89 +3517,85 @@ components:
           description: Template id.
         type:
           type: string
-          description: Type of Checks (default type is threshold)
-        triggers_with_actions:
-          type: array
-          items:
+          enum:
+            - threshold
+            - deadman
+          default: threshold
+          description: Type of Checks (threshold or deadman)
+        trigger_with_actions:
+          oneOf:
+            - $ref: "#/components/schemas/Threshold"
+            - $ref: "#/components/schemas/Deadman"
+      required:
+        - channel_name
+
+    Threshold:
+      type: array
+      items:
+        type: object
+        properties:
+          inst_ids:
+            type: array
+            items:
+              type: string
+          condition:
             type: object
             properties:
-              inst_ids:
-                type: array
-                items:
-                  type: string
-              condition:
-                type: object
-                properties:
-                  key:
-                    type: string
-                  operator:
-                    type: string
-                  val:
-                    type: number
-                required: [key, operator, val]
-              action:
-                type: object
-                properties:
-                  method:
-                    type: string
-                  actor_id:
-                    type: string
-                  message:
-                    type: string
-    
-    NewChannelDeadman:
-      type: object
-      properties:
-        channel_id:
-          type: string
-          description: User defined channel id.
-        channel_name:
-          type: string
-          description: User defined channel name.
-        template_id:
-          type: string
-          description: Template id.
-        type:
-          type: string
-          description: Type of Checks (default type is threshold)
-        triggers_with_actions:
-          type: array
-          items:
+              key:
+                type: string
+              operator:
+                type: string
+              val:
+                type: number
+            required: [key, operator, val]
+          action:
             type: object
             properties:
-              inst_ids:
-                type: array
-                items:
-                  type: string
-              condition:
-                type: object
-                properties:
-                  key:
-                    type: string
-                  every:
-                    type: string
-                    example: "10m"
-                  offset:
-                    type: string
-                    example: "15s"
-                  report_zero:
-                    type: boolean
-                  time_since:
-                    type: string
-                    example: "15s"
-                  stale_time:
-                    type: string
-                    example: "10m"
-                required: [key, time_since]
-              action:
-                type: object
-                properties:
-                  method:
-                    type: string
-                  actor_id:
-                    type: string
-                  message:
-                    type: string
+              method:
+                type: string
+              actor_id:
+                type: string
+              message:
+                type: string
+
+    Deadman:
+      type: array
+      items:
+        type: object
+        properties:
+          inst_ids:
+            type: array
+            items:
+              type: string
+          condition:
+            type: object
+            properties:
+              key:
+                type: string
+              every:
+                type: string
+                example: "10m"
+              offset:
+                type: string
+                example: "15s"
+              report_zero:
+                type: boolean
+              time_since:
+                type: string
+                example: "15s"
+              stale_time:
+                type: string
+                example: "10m"
+            required: [key, time_since]
+          action:
+            type: object
+            properties:
+              method:
+                type: string
+              actor_id:
+                type: string
+              message:
+                type: string
 
     Unit:
       type: object
