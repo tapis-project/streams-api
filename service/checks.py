@@ -24,6 +24,7 @@ import datetime
 import enum
 import requests
 import json
+import re
 from flask import g, Flask
 from tapisservice.config import conf
 app = Flask(__name__)
@@ -123,6 +124,31 @@ def create_deadmancheck(template, site_id, inst_id, var_id, check_name, time_sin
         logger.debug('Inside InfluxDBCLienct')
         #uniqueId = str(datetime.datetime.now())
 
+        # Doing error checking on parameters
+        regex = re.compile("(\\d*)(ns|us|ms|s|m|h|d|w|mo|y)$")
+
+        if not regex.match(time_since):
+            msg = f"Incorrect time_since format: {time_since} should be in the form of \"(\\d*)(ns|us|ms|s|m|h|d|w|mo|y)$\""
+            logger.debug(msg)
+            return errors.ResourceError(msg=msg), "error"
+
+        if not regex.match(stale_time):
+            msg = f"Incorrect stale_time format: {stale_time} should be in the form of \"(\\d*)(ns|us|ms|s|m|h|d|w|mo|y)$\""
+            logger.debug(msg)
+            return errors.ResourceError(msg=msg), "error"
+
+        if not regex.match(every):
+            msg = f"Incorrect every format: {every} should be in the form of \"(\\d*)(ns|us|ms|s|m|h|d|w|mo|y)$\""
+            logger.debug(msg)
+            return errors.ResourceError(msg=msg), "error"
+
+        if not regex.match(offset):
+            msg = f"Incorrect offset format: {offset} should be in the form of \"(\\d*)(ns|us|ms|s|m|h|d|w|mo|y)$\""
+            logger.debug(msg)
+            return errors.ResourceError(msg=msg), "error"
+
+
+
         # Find Organization ID by Organization API.
         org = client.organizations_api().find_organizations(org=org_name)[0]
 
@@ -154,9 +180,10 @@ def create_deadmancheck(template, site_id, inst_id, var_id, check_name, time_sin
 
         # Calculate stale_time to send a max of 20 notifs
         if stale_time is None:
-            if every.contains("ns") or every.contains("ms") or every.contains("us") or every.contains("mo"):
-                time_unit = every[-2]
-                time = int(every[0:-2])
+            regex = re.compile("(\\d*)(ns|ms|us|mo)$")
+            if regex.match(time_since):
+                time_unit = regex.group(2)
+                time = int(regex.group(1))
             else:
                 time_unit = every[-1]
                 time = int(every[0:-1])
