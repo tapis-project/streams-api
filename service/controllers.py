@@ -57,8 +57,10 @@ class ReadyResource(Resource):
             logger.debug(f'Check Influx status: '+str(status_influx))
 
             # Check if the all pings returned success, if so the streams service is ready otherwise not ready
-            if(status_chords == 200 and status_influx == 204):
+            if(status_chords == 200 and status_influx == 200):
                 return utils.ok(result='', msg=f'Streams Service ready')
+            else:
+                return errors.ResourceError(msg=f'Streams Service not ready')
         except:
             raise errors.ResourceError(msg=f'Streams Service not ready')
 
