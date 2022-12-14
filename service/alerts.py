@@ -138,7 +138,7 @@ def create_channel(req_body):
         if actor_id == '':
             logger.debug(f'actor_id cannot be blank')
             raise errors.ResourceError(
-                msg=f'actor_id cannot be blank : {body}.')
+                msg=f'actor_id cannot be blank : {req_body}.')
         try:
             logger.debug("trying to get_actor")
             res, debug_msg = t.actors.get_actor(actor_id=actor_id, headers={
@@ -232,15 +232,15 @@ def create_channel(req_body):
 
     if c_msg == "error":
         logger.debug(check_result)
-        e_msg = f'Error Channel Creation Failed to add check: ' + check_result
+        e_msg = f'Error Channel Creation Failed to add check: ' + check_result.message
+        logger.debug(e_msg)
         raise errors.BaseTapisError(msg=e_msg, code=400)
         #raise errors.ResourceError(f'Error Channel Creation Failed to add check: ' + check_result)
     logger.debug("Before create_notification")
 
     # if req_body['triggers_with_actions'][0]['action']["method"] == "ACTOR":
     logger.debug("In Alert - before create  CHECK")
-    # alert_url = conf.tenant[g.tenant_id]['tapis_base_url'] +'/v3/streams/alerts?tenant='+g.tenant_id
-    alert_url = 'http://192.168.200.15:5001/v3/streams/alerts?tenant='+g.tenant_id
+    alert_url = conf.tenant[g.tenant_id]['tapis_base_url'] +'/v3/streams/alerts?tenant='+g.tenant_id
 
     notification_endpoint, ne_msg = checks.create_notification_endpoint_http(endpoint_name=channel_id+'_endpoint',
                                                                              notification_url=alert_url)

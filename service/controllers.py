@@ -882,7 +882,12 @@ class ChannelsResource(Resource):
                 msg = f"Could not create channel"
                 return utils.error(result='null', msg=msg)
         except Exception as e:
-            msg = f"Could not create channel: " + str(e.msg)
+            logger.debug(e)
+            logger.debug(type(e))
+            if 'msg' in dir(e):
+                msg = f"Could not create channel: " + str(e.msg)
+            else:
+                msg = f"Could not create channel: " + str(e)
             logger.debug(msg)
             #return utils.error(result='null', msg=msg)
             raise common_errors.ResourceError(msg=msg)
