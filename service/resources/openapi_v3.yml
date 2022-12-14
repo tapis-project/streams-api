@@ -3452,17 +3452,9 @@ components:
                     type: string
                     description: Abaco nonces
               condition:
-                type: object
-                properties:
-                  key:
-                    type: string
-                    description: variable id
-                  operator:
-                    type: string
-                    description: logical operator
-                  val:
-                    type: number
-                    description: Value of measurement
+                oneOf:
+                  - $ref: "#/components/schemas/Threshold"
+                  - $ref: "#/components/schemas/Deadman"
               inst_ids:
                 type: array
                 items:
@@ -3498,9 +3490,27 @@ components:
           default: threshold
           description: Type of Checks (threshold or deadman)
         trigger_with_actions:
-          oneOf:
-            - $ref: "#/components/schemas/Threshold"
-            - $ref: "#/components/schemas/Deadman"
+          type: array
+          items:
+            type: object
+            properties:
+              inst_ids:
+                type: array
+                items:
+                  type: string
+              condition:
+                oneOf:
+                  - $ref: "#/components/schemas/Threshold"
+                  - $ref: "#/components/schemas/Deadman"
+              action:
+                type: object
+                properties:
+                  method:
+                    type: string
+                  actor_id:
+                    type: string
+                  message:
+                    type: string
       required:
         - channel_id
         - channel_name
@@ -3523,80 +3533,62 @@ components:
           default: threshold
           description: Type of Checks (threshold or deadman)
         trigger_with_actions:
-          oneOf:
-            - $ref: "#/components/schemas/Threshold"
-            - $ref: "#/components/schemas/Deadman"
+          type: array
+          items:
+            type: object
+            properties:
+              inst_ids:
+                type: array
+                items:
+                  type: string
+              condition:
+                oneOf:
+                  - $ref: "#/components/schemas/Threshold"
+                  - $ref: "#/components/schemas/Deadman"
+              action:
+                type: object
+                properties:
+                  method:
+                    type: string
+                  actor_id:
+                    type: string
+                  message:
+                    type: string
       required:
         - channel_name
 
     Threshold:
-      type: array
-      items:
-        type: object
-        properties:
-          inst_ids:
-            type: array
-            items:
-              type: string
-          condition:
-            type: object
-            properties:
-              key:
-                type: string
-              operator:
-                type: string
-              val:
-                type: number
-            required: [key, operator, val]
-          action:
-            type: object
-            properties:
-              method:
-                type: string
-              actor_id:
-                type: string
-              message:
-                type: string
+      type: object
+      properties:
+        key:
+          type: string
+        operator:
+          type: string
+        val:
+          type: number
+      required: [key, operator, val]
 
     Deadman:
-      type: array
-      items:
-        type: object
-        properties:
-          inst_ids:
-            type: array
-            items:
-              type: string
-          condition:
-            type: object
-            properties:
-              key:
-                type: string
-              every:
-                type: string
-                example: "10m"
-              offset:
-                type: string
-                example: "15s"
-              report_zero:
-                type: boolean
-              time_since:
-                type: string
-                example: "15s"
-              stale_time:
-                type: string
-                example: "10m"
-            required: [key, time_since]
-          action:
-            type: object
-            properties:
-              method:
-                type: string
-              actor_id:
-                type: string
-              message:
-                type: string
-
+      type: object
+      properties:
+        key:
+          type: string
+        every:
+          type: string
+          example: "10m"
+        offset:
+          type: string
+          example: "15s"
+        report_zero:
+          type: boolean
+        time_since:
+          type: string
+          example: "15s"
+        stale_time:
+          type: string
+          example: "10m"
+      required: [key, time_since]
+    
     Unit:
       type: object
       properties:

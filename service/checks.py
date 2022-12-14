@@ -132,17 +132,17 @@ def create_deadmancheck(template, site_id, inst_id, var_id, check_name, time_sin
             logger.debug(msg)
             return errors.ResourceError(msg=msg), "error"
 
-        if not regex.match(stale_time):
+        if stale_time is not None and not regex.match(stale_time):
             msg = f"Incorrect stale_time format: {stale_time} should be in the form of \"(\\d*)(ns|us|ms|s|m|h|d|w|mo|y)$\""
             logger.debug(msg)
             return errors.ResourceError(msg=msg), "error"
 
-        if not regex.match(every):
+        if every is not None and not regex.match(every):
             msg = f"Incorrect every format: {every} should be in the form of \"(\\d*)(ns|us|ms|s|m|h|d|w|mo|y)$\""
             logger.debug(msg)
             return errors.ResourceError(msg=msg), "error"
 
-        if not regex.match(offset):
+        if offset is not None and not regex.match(offset):
             msg = f"Incorrect offset format: {offset} should be in the form of \"(\\d*)(ns|us|ms|s|m|h|d|w|mo|y)$\""
             logger.debug(msg)
             return errors.ResourceError(msg=msg), "error"
@@ -181,9 +181,10 @@ def create_deadmancheck(template, site_id, inst_id, var_id, check_name, time_sin
         # Calculate stale_time to send a max of 20 notifs
         if stale_time is None:
             regex = re.compile("(\\d*)(ns|ms|us|mo)$")
-            if regex.match(time_since):
-                time_unit = regex.group(2)
-                time = int(regex.group(1))
+            result = regex.match(time_since)
+            if result:
+                time_unit = result.group(2)
+                time = int(result.group(1))
             else:
                 time_unit = every[-1]
                 time = int(every[0:-1])
