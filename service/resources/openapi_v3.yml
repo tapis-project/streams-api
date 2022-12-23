@@ -3481,7 +3481,7 @@ components:
           description: User defined channel name.
         template_id:
           type: string
-          description: Template id.
+          description: Template id. (public templates include default_threshold or default_deadman)
         type:
           type: string
           enum:
@@ -3524,7 +3524,7 @@ components:
           description: User defined channel name.
         template_id:
           type: string
-          description: Template id.
+          description: Template id. (public templates include default_threshold or default_deadman)
         type:
           type: string
           enum:
