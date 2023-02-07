@@ -54,7 +54,7 @@ def clean_template_script(template_script):
 
 def create_check(template, site_id, inst_id, var_id, check_name, threshold_type, threshold_value, check_message, bucket_name):
     logger.debug("Top of create_check")
-    with InfluxDBClient(url=url, token=token, org=org_name, debug=True) as client:
+    with InfluxDBClient(url=url, token=token, org=org_name) as client:
         logger.debug('Inside InfluxDBCLienct')
         #uniqueId = str(datetime.datetime.now())
 
@@ -120,7 +120,7 @@ def create_check(template, site_id, inst_id, var_id, check_name, threshold_type,
 
 def create_deadmancheck(template, site_id, inst_id, var_id, check_name, time_since, check_message, bucket_name, report_zero=False, stale_time=None, every=None, offset=None):
     logger.debug("Top of create_check")
-    with InfluxDBClient(url=url, token=token, org=org_name, debug=True) as client:
+    with InfluxDBClient(url=url, token=token, org=org_name) as client:
         logger.debug('Inside InfluxDBCLienct')
         #uniqueId = str(datetime.datetime.now())
 
@@ -217,7 +217,7 @@ def create_deadmancheck(template, site_id, inst_id, var_id, check_name, time_sin
 
 def create_notification_endpoint_http(endpoint_name, notification_url):
     logger.debug("Top of create_noftification_endpoint_http")
-    with InfluxDBClient(url=url, token=token, org=org_name, debug=True) as client:
+    with InfluxDBClient(url=url, token=token, org=org_name) as client:
         logger.debug("In InfluxDBclient")
         # Create HTTP Notification endpoint
         org = client.organizations_api().find_organizations(org=org_name)[0]
@@ -269,7 +269,7 @@ def create_http_notification_rule(rule_name, notification_endpoint, check_id):
 
 def create_slack_notification_endpoint(endpoint_name, notification_url):
     logger.debug("Top of  create_slack_notification_endpoint")
-    with InfluxDBClient(url=url, token=token, org=org_name, debug=True) as client:
+    with InfluxDBClient(url=url, token=token, org=org_name) as client:
         logger.debug("In InfluxDBclient")
         org = client.organizations_api().find_organizations(org=org_name)[0]
 
@@ -290,7 +290,7 @@ def create_slack_notification_endpoint(endpoint_name, notification_url):
 
 def create_slack_notification_rule(rule_name, notification_endpoint, check_id):
     logger.debug("Top of  create_slack_notification_rule")
-    with InfluxDBClient(url=url, token=token, org=org_name, debug=True) as client:
+    with InfluxDBClient(url=url, token=token, org=org_name) as client:
         logger.debug("In InfluxDBclient")
         org = client.organizations_api().find_organizations(org=org_name)[0]
         notification_rule = SlackNotificationRule(name=rule_name,
