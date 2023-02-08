@@ -5,13 +5,17 @@ import json
 from flask import g, Flask
 from tapisservice.config import conf
 app = Flask(__name__)
+import logging
+import sys
+import csv
+import time
 
 from tapisservice import errors
 # get the logger instance -
 from tapisservice.logs import get_logger
 logger = get_logger(__name__)
 
-from influxdb_client import InfluxDBClient
+from influxdb_client import InfluxDBClient, Dialect
 from influxdb_client.client.write_api import SYNCHRONOUS
 
 def create_project_bucket(bucket_name):
@@ -78,6 +82,7 @@ def compact_write_measurements(bucket_name, site_id, instrument, body):
 
 #expects a list of fields {key:value} to build and AND query to influxdb to fetch CHORDS measurments
 def query_measurments(bucket_name, query_field_list):
+    start_time = time.perf_counter()
     logger.debug("IN INFLUX QUERY: ")
     query_list=[]
     variable_list=[]
@@ -128,12 +133,97 @@ def query_measurments(bucket_name, query_field_list):
         query = query +'|> limit(offset: '+offset+')'
     logger.debug(query)
     with InfluxDBClient(url=conf.influxdb_host+':'+conf.influxdb_port, token=conf.influxdb_token, org=conf.influxdb_org) as client:
+        # for _, db_logger in client.conf.loggers.items():
+        #     db_logger.setLevel(logging.DEBUG)
+        #     db_logger.addHandler(logging.StreamHandler(sys.stdout))
         result = client.query_api().query_data_frame(query)
     logger.debug(result.to_string())
+    end_time = time.perf_counter()
+    logger.debug(f"Elapsed Time for query: ${end_time-start_time} seconds")
+    return result
+
+def query_measurements_csv(bucket_name, query_field_list):
+    start_time = time.perf_counter()
+    logger.debug("IN INFLUX QUERY: ")
+    query_list=[]
+    variable_list=[]
+    rename_list = {}
+    start=''
+    stop=''
+    limit=''
+    offset=''
+    for fields in query_field_list:
+        #fields = json.loads(itm)
+        logger.debug(fields)
+        for k in fields:
+            if k == "start_date":
+                if str(fields[k]) != 'None':
+                    start=str(fields[k])
+            elif k == "end_date":
+                if str(fields[k]) != 'None':
+                    stop=str(fields[k])
+            elif k == "limit":
+                if str(fields[k]) != 'None':
+                    limit=str(fields[k])
+            elif k == "offset":
+                if str(fields[k]) != 'None':
+                    offset=str(fields[k])
+            elif k == "var":
+                variable_list.append('r["'+k+'"]=="'+str(fields[k])+'"')
+            elif k == "rename":
+                rename_list = fields[k]
+                rename_list["_time"] = "time"
+            else:
+                query_list.append('r["'+k+'"]=="'+str(fields[k])+'"')
+    if len(variable_list) > 0:
+        query_filters = ' and '.join(query_list) + ' and ' + ' or '.join(variable_list)
+    else:
+        query_filters = ' and '.join(query_list)
+
+    query = 'from(bucket: "'+bucket_name+'")'
+    if start !='' and stop!='':
+        query = query + '\n|> range(start: '+start+', stop:'+ stop+' )'
+    elif start !='':
+        query = query + '\n|> range(start: '+start+' )'
+    elif stop!='':
+        query = query + '\n|> range(start: 0, stop:'+ stop+' )'
+    else:
+        query = query + '|> range(start: 0)'
+    query = query +'|> filter(fn: (r) => '+query_filters+') |> sort(columns: ["_time"], desc: false)'
+    if limit != '' and offset != '':
+        query = query +'|> limit(n: '+limit+', offset: '+offset+')'
+    elif limit != '':
+        query = query +'|> limit(n: '+limit+')'
+    elif offset !='':
+        query = query +'|> limit(offset: '+offset+')'
+    query = query + '|> pivot(rowKey: ["_time"], columnKey: ["var"], valueColumn: "_value")'
+    query = query + '|> drop(columns: ["_start", "_stop", "_measurement", "_field", "inst", "site"])'
+    query = query + '|> rename(columns: ' + str(rename_list).replace("\'", "\"") +')'
+    logger.debug(query)
+    with InfluxDBClient(url=conf.influxdb_host+':'+conf.influxdb_port, token=conf.influxdb_token, org=conf.influxdb_org) as client:
+        influx_result = client.query_api().query_csv(query, dialect=Dialect(header=True, annotations=[], delimiter=","))
+
+        lists = influx_result.to_values()
+        lists = [l[3:] for l in lists]
+
+        for l in lists[1:]:
+            l[0] = l[0].replace('T', ' ').replace('Z', '+00:00')
+
+        # Create csv output string
+        output = csv.StringIO()
+        writer = csv.writer(output)
+        writer.writerows(lists)
+
+        result = output.getvalue()
+    logger.debug(result)
+    end_time = time.perf_counter()
+
+    elapsed_string = str(end_time-start_time)
+    logger.debug("Elapsed Time for query: " + elapsed_string)
     return result
 
 def ping():
-    headers = {
+    headers = { 
         'content-type': "application/json"
     }
     res = requests.get(conf.influxdb_host + ':' + conf.influxdb_port +'/health',  verify=False)

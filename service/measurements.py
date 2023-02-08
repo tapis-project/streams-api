@@ -18,7 +18,7 @@ import sys
 from datetime import datetime
 from io import StringIO
 
-def fetch_measurement_dataframe(inst_chords_id, project, request, var_to_id):
+def fetch_measurement_dataframe(inst_chords_id, project, request, id_to_var):
     influx_query_input = [{"inst":str(inst_chords_id)}]
     if request.args.get('start_date'):
         influx_query_input.append({"start_date": request.args.get('start_date')})
@@ -30,8 +30,9 @@ def fetch_measurement_dataframe(inst_chords_id, project, request, var_to_id):
         influx_query_input.append({"limit": request.args.get('limit')})
     if request.args.get('offset'):
         influx_query_input.append({"offset": request.args.get('offset')})
-    if request.args.get('var_ids'):
-        variable_list = request.args.get('var_ids').split(",")
+    if request.args.get('variables'):
+        var_to_id = {value: key for key, value in id_to_var.items()}
+        variable_list = request.args.get('variables').split(",")
         for variable in variable_list:
             influx_query_input.append({"var": var_to_id[variable.strip()]})
             logger.debug({"var": var_to_id[variable.strip()]})
@@ -42,6 +43,32 @@ def fetch_measurement_dataframe(inst_chords_id, project, request, var_to_id):
         bucket_name=conf.influxdb_bucket
     return influx.query_measurments(bucket_name=bucket_name, query_field_list=influx_query_input)
 
+def fetch_measurement_csv(inst_chords_id, project, request, id_to_var):
+    influx_query_input = [{"inst":str(inst_chords_id)}]
+    if request.args.get('start_date'):
+        influx_query_input.append({"start_date": request.args.get('start_date')})
+    if request.args.get('end_date'):
+        influx_query_input.append({"end_date": request.args.get('end_date')})
+    if request.args.get('limit'):
+        influx_query_input.append({"limit": request.args.get('limit')})
+    if request.args.get('skip'):
+        influx_query_input.append({"limit": request.args.get('limit')})
+    if request.args.get('offset'):
+        influx_query_input.append({"offset": request.args.get('offset')})
+    if request.args.get('variables'):
+        var_to_id = {value: key for key, value in id_to_var.items()}
+        variable_list = request.args.get('variables').split(",")
+        for variable in variable_list:
+            influx_query_input.append({"var": var_to_id[variable.strip()]})
+            logger.debug({"var": var_to_id[variable.strip()]})
+    influx_query_input.append({"rename": id_to_var})
+    logger.debug(project)
+    if 'bucket' in project:
+        bucket_name=project['bucket']
+    else:
+        bucket_name=conf.influxdb_bucket
+    return influx.query_measurements_csv(bucket_name=bucket_name, query_field_list=influx_query_input)
+
 def create_csv_response(df1,project_id):
     logger.debug("CSV")
     logger.debug(f"CSV in Bytess: "+ str(sys.getsizeof(df1.to_csv)))
@@ -49,6 +76,17 @@ def create_csv_response(df1,project_id):
     output.headers["Content-Disposition"] = "attachment; filename=export.csv"
     output.headers["Content-type"] = "text/csv"
     metric = {'created_at':datetime.now().isoformat(),'type':'download','project_id':project_id,'username':g.username,'size': sys.getsizeof(df1.to_csv)}
+    metric_result, metric_bug =auth.t.meta.createDocument(db=conf.tenant[g.tenant_id]['stream_db'], collection='streams_metrics', request_body=metric, _tapis_debug=True)
+    logger.debug(f' Metric result: ' +str(metric_result))
+    return output
+
+def create_csv_response_2(csv_output,project_id):
+    logger.debug("CSV")
+    logger.debug(f"CSV in Bytess: "+ str(sys.getsizeof(csv_output)))
+    output = make_response(csv_output)
+    output.headers["Content-Disposition"] = "attachment; filename=export.csv"
+    output.headers["Content-type"] = "text/csv"
+    metric = {'created_at':datetime.now().isoformat(),'type':'download','project_id':project_id,'username':g.username,'size': sys.getsizeof(csv_output)}
     metric_result, metric_bug =auth.t.meta.createDocument(db=conf.tenant[g.tenant_id]['stream_db'], collection='streams_metrics', request_body=metric, _tapis_debug=True)
     logger.debug(f' Metric result: ' +str(metric_result))
     return output

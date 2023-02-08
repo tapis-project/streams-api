@@ -731,7 +731,7 @@ class MeasurementsResource(Resource):
             site,msg = meta.get_site(project_id,site_id)
             logger.debug(site)
             replace_cols = {}
-            var_to_id = {}
+            id_to_var = {}
             params = request.args
             logger.debug(params)
             for inst in site['instruments']:
@@ -742,26 +742,32 @@ class MeasurementsResource(Resource):
                     for v in inst['variables']:
                         logger.debug(v)
                         replace_cols[str(v['chords_id'])]=v['var_id']
-                        var_to_id[v['var_id']]=str(v['chords_id'])
+                        id_to_var[str(v['chords_id'])]=v['var_id']
             project, proj_mesg=meta.get_project(project_id=project_id)
-            df = measurements.fetch_measurement_dataframe(project=project, inst_chords_id=instrument['chords_id'],request=request, var_to_id=var_to_id)
-            if df.empty == False:
-                logger.debug(list(df.columns.values))
-                pv = df.pivot(index='_time', columns='var', values=['_value'])
-                df1 = pv
-                df1.columns = df1.columns.droplevel(0)
-                df1 = df1.reset_index().rename_axis(None, axis=1)
-                replace_cols['_time']='time'
-                df1.rename(columns=replace_cols,inplace=True)
-                df1.set_index('time',inplace=True)
-                msg="Measurements Found"
-            else:
-                df1 = df
-                msg="Measurements Not Found"
+
             if request.args.get('format') == "csv":
-                return measurements.create_csv_response(df1,project_id)
+                csv_output = measurements.fetch_measurement_csv(project=project, inst_chords_id=instrument['chords_id'],request=request, id_to_var=id_to_var)
+                return measurements.create_csv_response_2(csv_output,project_id)
             else:
-                return utils.ok(result=measurements.create_json_response(df1,project_id,instrument,params), msg=msg)
+                df = measurements.fetch_measurement_dataframe(project=project, inst_chords_id=instrument['chords_id'],request=request, id_to_var=id_to_var)
+                if df.empty == False:
+                    logger.debug(list(df.columns.values))
+                    logger.debug(df)
+                    pv = df.pivot(index='_time', columns='var', values=['_value'])
+                    logger.debug(pv)
+                    df1 = pv
+                    df1.columns = df1.columns.droplevel(0)
+                    logger.debug(df1)
+                    replace_cols["_time"] = "time"
+                    df1 = df1.reset_index().rename_axis(None, axis=1)
+                    logger.debug(df1)
+                    df1.rename(columns=replace_cols,inplace=True)
+                    df1.set_index('time',inplace=True)
+                    msg="Measurements Found"
+                else:
+                    df1 = df
+                    msg="Measurements Not Found"
+                    return utils.ok(result=measurements.create_json_response(df1,project_id,instrument,params), msg=msg)
         else:
             logger.debug('User does not have any role on project')
             raise common_errors.PermissionsError(msg=f'User not authorized to access the resource')
@@ -791,7 +797,6 @@ class MeasurementsReadResource(Resource):
             logger.debug(f' Authorized: ' +str(authorized))
             if (authorized):
                 replace_cols={}
-                var_to_id={}
                 for inst in site['instruments']:
                     logger.debug(inst)
                     if inst['inst_id'] == instrument_id:
@@ -800,8 +805,7 @@ class MeasurementsReadResource(Resource):
                         for v in inst['variables']:
                             logger.debug(v)
                             replace_cols[str(v['chords_id'])]=v['var_id']
-                            var_to_id[v['var_id']]=str(v['chords_id'])
-                df = measurements.fetch_measurement_dataframe(project=project, inst_chords_id=inst_index['chords_inst_id'],request=request, var_to_id=var_to_id)
+                df = measurements.fetch_measurement_dataframe(project=project, inst_chords_id=inst_index['chords_inst_id'],request=request)
                 logger.debug(f'User is authorized to download measurements')
                 logger.debug(df)
                 if df.empty == False:
