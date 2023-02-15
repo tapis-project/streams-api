@@ -785,7 +785,7 @@ class MeasurementsReadResource(Resource):
             logger.debug(inst_index['project_id'])
             site,msg = meta.get_site(inst_index['project_id'],inst_index['site_id'])
             project_id = inst_index['project_id']
-            project = meta.get_project(project_id)
+            project = meta.get_project(project_id)[0]
             logger.debug(project_id)
             authorized = sk.check_if_authorized_post(project_id)
             logger.debug(f' Authorized: ' +str(authorized))
