@@ -68,8 +68,9 @@ def list_projects(skip, limit):
             logger.debug(e)
             raise errors.ResourceError(msg=str(e))
     else:
+        message = "No Projects found"
         logger.debug(result)
-        raise errors.ResourceError(msg=f'No Projects found')
+        return [], message
         
 
     
