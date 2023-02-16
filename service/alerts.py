@@ -138,7 +138,7 @@ def create_channel(req_body):
         if actor_id == '':
             logger.debug(f'actor_id cannot be blank')
             raise errors.ResourceError(
-                msg=f'actor_id cannot be blank : {req_body}.')
+                msg=f'actor_id cannot be blank : {body}.')
         try:
             logger.debug("trying to get_actor")
             res, debug_msg = t.actors.get_actor(actor_id=actor_id, headers={
@@ -159,10 +159,9 @@ def create_channel(req_body):
     template_id = req_body['template_id']
     if template_id == '':
         logger.debug(f'template_id cannot be blank')
-        raise errors.ResourceError(
-            msg=f'template_id cannot be blank - you can use the public "default_threshold" for and id as an option. : {req_body}.')
-    elif template_id == 'default_threshold':
-        template_result = {}
+        raise errors.ResourceError(msg=f'template_id cannot be blank - you can use the public "default_threshold" or "default_deadman" as an option. : {body}.')
+    elif template_id == 'default_threshold' or template_id == 'default_deadman':
+        template_result={}
         template_result["script"] = f'''from(bucket:"{{bucket_name}}") 
                                         |> range(start: v.timeRangeStart, stop: v.timeRangeStop)
                                         |> filter(fn: (r) => r["_measurement"] == "tsdata")
