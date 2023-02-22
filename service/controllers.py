@@ -745,7 +745,7 @@ class MeasurementsResource(Resource):
                         id_to_var[str(v['chords_id'])]=v['var_id']
             project, proj_mesg=meta.get_project(project_id=project_id)
 
-            if request.args.get('format') == "csv":
+            if request.args.get('format') == "built_in_csv":
                 csv_output = measurements.fetch_measurement_csv(project=project, inst_chords_id=instrument['chords_id'],request=request, id_to_var=id_to_var)
                 return measurements.create_csv_response_2(csv_output,project_id)
             else:
@@ -767,6 +767,9 @@ class MeasurementsResource(Resource):
                 else:
                     df1 = df
                     msg="Measurements Not Found"
+                if request.args.get('format') == "csv":
+                    return measurements.create_csv_response(df1, project_id)
+                else:
                     return utils.ok(result=measurements.create_json_response(df1,project_id,instrument,params), msg=msg)
         else:
             logger.debug('User does not have any role on project')
