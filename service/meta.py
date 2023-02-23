@@ -68,8 +68,9 @@ def list_projects(skip, limit):
             logger.debug(e)
             raise errors.ResourceError(msg=str(e))
     else:
+        message = "No Projects found"
         logger.debug(result)
-        raise errors.ResourceError(msg=f'No Projects found')
+        return [], message
         
 
     
@@ -617,7 +618,7 @@ def update_variable(project_id, site_id, instrument_id, variable_id, put_body, r
         updated_instruments = []
         for inst in site_result['instruments']:
             if inst['inst_id'] == instrument_id:
-                inst_exists=True;
+                inst_exists=True
                 inst_body = inst
                 #add variable to current instrument
                 if 'variables' in inst_body:
@@ -631,7 +632,7 @@ def update_variable(project_id, site_id, instrument_id, variable_id, put_body, r
                                     updated_variables.append(var_body)
                                 else:
                                     #soft delete variable
-                                    variable['tapis_deleted'] =True;
+                                    variable['tapis_deleted'] =True
                                     var_body['last_updated'] = str(datetime.datetime.now())
                                     updated_variables.append(variable)
                             else:
