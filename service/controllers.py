@@ -1017,6 +1017,9 @@ class AlertsPostResource(Resource):
             result, message = abaco.create_alert(channel,req_data)
         elif channel['triggers_with_actions'][0]['action']["method"] == "HTTP":
             result, message = alerts.post_to_http(channel,req_data)
+        elif channel['triggers_with_actions'][0]['action']["method"] == "JOB":
+            logger.debug('POST TO JOB')
+            result, message = alerts.post_to_job(channel,req_data)
         else:
             logger.debug('Invalid actin method')
             raise errors.ResourceError(msg=f'Invalid action method: ' + channel['triggers_with_actions'][0]['action']["method"])

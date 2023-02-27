@@ -155,19 +155,19 @@ def create_deadmancheck(template, site_id, inst_id, var_id, check_name, time_sin
         logger.debug(query)
 
         # Create Check object
-        msg_template = '{"trigger_info":"For Channel- ${ r._check_name } the threshold alert triggered at ${r._time} value=${ r.value }.","value:"${ r.value }"}'
+        msg_template = '{"trigger_info":"For Channel- ${ r._check_name } the deadman alert triggered at ${r._time} value=${ r.value }.","value:"${ r.value }"}'
         if check_message != '':
             msg_template = check_message
 
         # Checks if every was given, otherwise defaults to be same as time_since
         if every is None:
-            every = time_since
+            every = "10s"
 
         # Default offset
         if offset is None:
-            offset = "15s"
+            offset = "0s"
 
-        # Calculate stale_time to send a max of 20 notifs
+        # Calculate stale_time to send a max of 20 notifs (needs work)
         if stale_time is None:
             regex = re.compile("(\\d*)(ns|ms|us|mo)$")
             result = regex.match(time_since)
@@ -175,8 +175,8 @@ def create_deadmancheck(template, site_id, inst_id, var_id, check_name, time_sin
                 time_unit = result.group(2)
                 time = int(result.group(1))
             else:
-                time_unit = every[-1]
-                time = int(every[0:-1])
+                time_unit = time_since[-1]
+                time = int(time_since[0:-1])
 
             time *= 20
             stale_time = str(time) + time_unit
