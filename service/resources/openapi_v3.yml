@@ -3489,7 +3489,7 @@ components:
             - deadman
           default: threshold
           description: Type of Checks (threshold or deadman)
-        trigger_with_actions:
+        triggers_with_actions:
           type: array
           items:
             type: object
@@ -3532,7 +3532,7 @@ components:
             - deadman
           default: threshold
           description: Type of Checks (threshold or deadman)
-        trigger_with_actions:
+        triggers_with_actions:
           type: array
           items:
             type: object
