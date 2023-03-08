@@ -694,7 +694,9 @@ def fetch_instrument_index(instrument_id):
 
 # create alert metadata
 def create_alert(alert):
+    logger.debug('In CREATE alert')
     alert_result,alert_bug = t.meta.createDocument(_tapis_set_x_headers_from_service=True, db=conf.tenant[g.tenant_id]['stream_db'], collection='streams_alerts_metadata', request_body=alert, _tapis_debug=True)
+    logger.debug(alert_bug)
     if str(alert_bug.response.status_code) == '201':
         logger.debug(alert_bug.response)
         logger.debug(alert_result)
@@ -705,6 +707,7 @@ def create_alert(alert):
         message = "Alert Failed to Create"
         result = ''
         logger.debug(message + " : Unable to connect to Tapis Meta Server: " + alert_bug)
+    logger.debug('Done CREATE alert')
     return result, message
 
 #strip out id and _etag fields
@@ -724,9 +727,9 @@ def get_alert(channel_id,alert_id):
 
 
 def list_alerts(channel_id):
-    logger.debug("Before")
+    logger.debug("Before LIST alerts")
     result = t.meta.listDocuments(_tapis_set_x_headers_from_service=True, db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_alerts_metadata',filter='{"channel_id":"'+ channel_id+'"}')
-    logger.debug("After")
+    logger.debug("After LIST alerts")
     if len(result) > 0 :
         message = "Alerts found"
         logger.debug(result)

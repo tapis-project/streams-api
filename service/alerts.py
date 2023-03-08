@@ -635,24 +635,27 @@ def post_to_job(channel, body):
         res, debug_msg = t.jobs.submitJob(**job, _x_tapis_tenant=g.tenant_id, _x_tapis_user=channel['permissions']['users'][0],_tapis_debug=True)
         logger.debug("Job Submit Success")
         logger.debug(debug_msg.request.headers)
-        logger.debug(res.uuid)
+        logger.debug(f"Job Id: {res.uuid}")
+        msg = f"Job Submit Success"
+        result = res.__dict__
     except Exception as e:
         logger.debug("Failed Job Submission")
-        
         logger.debug(e)
         er = e
         logger.debug(er.request.url)
         logger.debug(er.request.headers)
         logger.debug(er.response.json())
-        msg = f"Got exception trying to submit job: {job_id}; exception: {e}"
-        raise errors.BaseTapisError(msg=msg, request=res.request)
+        msg = f"Got exception trying to submit job; exception: {e}"
+        result = "Error"
+        
     alert = {}
     alert['alert_id'] = str(uuid.uuid4())
     alert['type'] = 'JOB'
     alert['channel_name'] = channel['channel_name']
     alert['channel_id'] = channel['channel_id']
-    alert['job'] =  res
+    alert['job'] = result
     alert['job_params'] = job
+    alert['job_status'] = msg
     alert['created_at'] = str(datetime.datetime.utcnow())
     logger.debug(alert)
     # send alert response data to Meta V3
