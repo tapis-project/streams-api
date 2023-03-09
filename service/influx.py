@@ -72,6 +72,7 @@ def compact_write_measurements(bucket_name, site_id, instrument, body):
         write_api = client.write_api(write_options=SYNCHRONOUS)
         logger.debug(bucket_name)
         result = write_api.write(bucket=bucket_name, record=json_body)
+        logger.debug(json_body)
         logger.debug(result)
     return {'resp':result,'msg':'','body':return_body}
 
