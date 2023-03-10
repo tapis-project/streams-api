@@ -57,8 +57,10 @@ class ReadyResource(Resource):
             logger.debug(f'Check Influx status: '+str(status_influx))
 
             # Check if the all pings returned success, if so the streams service is ready otherwise not ready
-            if(status_chords == 200 and status_influx == 204):
+            if(status_chords == 200 and status_influx == 200):
                 return utils.ok(result='', msg=f'Streams Service ready')
+            else:
+                return errors.ResourceError(msg=f'Streams Service not ready')
         except:
             raise errors.ResourceError(msg=f'Streams Service not ready')
 
@@ -643,7 +645,7 @@ class VariableResource(Resource):
         if (authorized):
             logger.debug(f'User is authorized to delete variables details for variable : ' + str(variable_id))
             # Delete Variable in chords
-            result,msg = chords.delete_variable(variable_id)
+            # result,msg = chords.delete_variable(variable_id)
             result, msg = meta.update_variable(project_id, site_id, instrument_id, variable_id, {},True)
             logger.debug(f'Metadata delete variable result ' +str(result))
             return utils.ok(result=result, msg=msg)
@@ -781,7 +783,7 @@ class MeasurementsReadResource(Resource):
             logger.debug(inst_index['project_id'])
             site,msg = meta.get_site(inst_index['project_id'],inst_index['site_id'])
             project_id = inst_index['project_id']
-            project = meta.get_project(project_id)
+            project = meta.get_project(project_id)[0]
             logger.debug(project_id)
             authorized = sk.check_if_authorized_post(project_id)
             logger.debug(f' Authorized: ' +str(authorized))
@@ -880,7 +882,12 @@ class ChannelsResource(Resource):
                 msg = f"Could not create channel"
                 return utils.error(result='null', msg=msg)
         except Exception as e:
-            msg = f"Could not create channel: " + str(e)
+            logger.debug(e)
+            logger.debug(type(e))
+            if 'msg' in dir(e):
+                msg = f"Could not create channel: " + str(e.msg)
+            else:
+                msg = f"Could not create channel: " + str(e)
             logger.debug(msg)
             #return utils.error(result='null', msg=msg)
             raise common_errors.ResourceError(msg=msg)
@@ -1010,6 +1017,9 @@ class AlertsPostResource(Resource):
             result, message = abaco.create_alert(channel,req_data)
         elif channel['triggers_with_actions'][0]['action']["method"] == "HTTP":
             result, message = alerts.post_to_http(channel,req_data)
+        elif channel['triggers_with_actions'][0]['action']["method"] == "JOB":
+            logger.debug('POST TO JOB')
+            result, message = alerts.post_to_job(channel,req_data)
         else:
             logger.debug('Invalid actin method')
             raise errors.ResourceError(msg=f'Invalid action method: ' + channel['triggers_with_actions'][0]['action']["method"])

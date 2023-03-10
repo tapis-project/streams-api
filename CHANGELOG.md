@@ -1,5 +1,18 @@
 # Change Log
 All notable changes to this project will be documented in this file.
+
+## 1.3.0 2023-03-10
+### Added
+- Alerts added Deadman checks for no data incoming for a set period
+- Alerts added support for Tapis Jobs as an action
+
+### Changed
+- fixed some issues with OpenAPI specification affecting tapipy and making it reflect resources better
+- fixed minor bugs with Variable resources
+
+### Removed
+- nothing removed 
+
 ## 1.2.0- 2022-6-7
 ### Added
 - Support for newly created projects data written to individual buckets for security
