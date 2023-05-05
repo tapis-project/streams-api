@@ -5,6 +5,7 @@ import requests
 import json
 import pandas as pd
 import sys
+import urllib.parse
 
 from flask import g, request, make_response
 from flask_restful import Resource
@@ -22,6 +23,7 @@ from service import alerts
 from service import measurements
 from service import abaco
 from service import sk
+from service import search
 from service.models import ChordsSite, ChordsIntrument, ChordsVariable
 from tapisservice.tapisflask import utils
 from tapisservice import errors
@@ -1448,3 +1450,24 @@ class PostItResource(Resource):
 #               msg = f"ERROR! Could not delete Post-It"
 #               return utils.error(result='null', msg=msg)
 #         return utils.error(result='null', msg=msg)
+
+## Search GET
+class SearchResource(Resource):
+     def get(self, resource_type):
+        logger.info("top of GET /search/{resource_type}")
+        if (resource_type == 'project'):
+            logger.info(f'resource type is project')    
+            result = search.project_search(request)   
+        elif (resource_type == 'site'):
+            logger.info(f'resource type is site')
+            #search.site_search(request)
+        elif (resource_type == 'instrument'):
+            logger.info(f'resource type is instrument')
+            #search.instrument_search(request)
+        elif (resource_type == 'variable'):
+            logger.info(f'resource type is variable')
+            #search.variable_search(request)
+        else:
+            raise errors.ResourceError(msg=f'Invalid resource type: {resource_type}.')
+        return utils.ok(result=result, msg=f'Streams Service search')
+
