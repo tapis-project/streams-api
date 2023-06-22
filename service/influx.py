@@ -42,6 +42,11 @@ def compact_write_measurements(bucket_name, site_id, instrument, body):
             if k != 'datetime':
                 logger.debug('not datetime')
                 if k in inst_vars and 'datetime' in itm:
+                    try:
+                        value = float(itm[k])
+                    except ValueError:
+                        value = itm[k]
+
                     json_body.append(
                         {
                             "measurement": "tsdata",
@@ -52,7 +57,7 @@ def compact_write_measurements(bucket_name, site_id, instrument, body):
                             },
                             "time": itm['datetime'],
                             "fields": {
-                                "value": float(itm[k])
+                                "value": itm[k]
                             }
                         }
                     )
