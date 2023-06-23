@@ -2,6 +2,7 @@ import datetime
 import enum
 import requests
 import json
+import pandas as pd
 from flask import g, Flask
 from tapisservice.config import conf
 app = Flask(__name__)
@@ -44,12 +45,14 @@ def compact_write_measurements(bucket_name, site_id, instrument, body):
                 if k in inst_vars and 'datetime' in itm:
                     try:
                         value = float(itm[k])
+                        measurement = "tsdata"
                     except ValueError:
-                        value = itm[k]
+                        value = str(itm[k])
+                        measurement = "nonfloat"
 
                     json_body.append(
                         {
-                            "measurement": "tsdata",
+                            "measurement": measurement,
                             "tags": {
                                 "site": site_id,
                                 "inst": instrument['chords_id'],
@@ -57,14 +60,14 @@ def compact_write_measurements(bucket_name, site_id, instrument, body):
                             },
                             "time": itm['datetime'],
                             "fields": {
-                                "value": itm[k]
+                                "value": value
                             }
                         }
                     )
                     if k in return_body:
-                        return_body[k].append({itm['datetime']: float(itm[k])})
+                        return_body[k].append({itm['datetime']: value})
                     else:
-                        return_body[k] = [{itm['datetime']: float(itm[k])}]
+                        return_body[k] = [{itm['datetime']: value}]
 
                 else:
                     msg = 'Datetime field required and it is missing!'
@@ -76,8 +79,8 @@ def compact_write_measurements(bucket_name, site_id, instrument, body):
     with InfluxDBClient(url=conf.influxdb_host+':'+conf.influxdb_port, token=conf.influxdb_token, org=conf.influxdb_org) as client:
         write_api = client.write_api(write_options=SYNCHRONOUS)
         logger.debug(bucket_name)
-        result = write_api.write(bucket=bucket_name, record=json_body)
         logger.debug(json_body)
+        result = write_api.write(bucket=bucket_name, record=json_body)
         logger.debug(result)
     return {'resp':result,'msg':'','body':return_body}
 
@@ -134,7 +137,13 @@ def query_measurments(bucket_name, query_field_list):
     logger.debug(query)
     with InfluxDBClient(url=conf.influxdb_host+':'+conf.influxdb_port, token=conf.influxdb_token, org=conf.influxdb_org) as client:
         result = client.query_api().query_data_frame(query)
-    logger.debug(result.to_string())
+    logger.debug(result)
+
+    if isinstance(result, list):
+        for i in result:
+            i.drop("_measurement", axis=1, inplace=True)
+        merged_df = pd.concat([result[0], result[1]], axis=0)
+        return merged_df
     return result
 
 def ping():
