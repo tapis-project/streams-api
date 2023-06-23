@@ -137,13 +137,16 @@ def query_measurments(bucket_name, query_field_list):
     logger.debug(query)
     with InfluxDBClient(url=conf.influxdb_host+':'+conf.influxdb_port, token=conf.influxdb_token, org=conf.influxdb_org) as client:
         result = client.query_api().query_data_frame(query)
-    logger.debug(result)
 
+    # if influx measurements include value that are stored as strings
     if isinstance(result, list):
         for i in result:
             i.drop("_measurement", axis=1, inplace=True)
         merged_df = pd.concat([result[0], result[1]], axis=0)
+        logger.debug(merged_df)
         return merged_df
+
+    logger.debug(result)
     return result
 
 def ping():
