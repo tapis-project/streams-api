@@ -1475,6 +1475,11 @@ paths:
           description: a formated query string for measurements.
           schema:
             type: string
+        - name: var_ids
+          in: query
+          description: a comma seperated list of variable ids
+          schema:
+            type: string
         - name: limit
           in: query
           description: limit the number of records returned.
@@ -1567,6 +1572,11 @@ paths:
         - name: query
           in: query
           description: a formated query string for measurements.
+          schema:
+            type: string
+        - name: var_ids
+          in: query
+          description: a comma seperated list of variable ids
           schema:
             type: string
         - name: limit

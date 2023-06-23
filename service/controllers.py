@@ -731,6 +731,7 @@ class MeasurementsResource(Resource):
             site,msg = meta.get_site(project_id,site_id)
             logger.debug(site)
             replace_cols = {}
+            var_to_id = {}
             params = request.args
             logger.debug(params)
             for inst in site['instruments']:
@@ -741,8 +742,9 @@ class MeasurementsResource(Resource):
                     for v in inst['variables']:
                         logger.debug(v)
                         replace_cols[str(v['chords_id'])]=v['var_id']
+                        var_to_id[v['var_id']]=str(v['chords_id'])
             project, proj_mesg=meta.get_project(project_id=project_id)
-            df = measurements.fetch_measurement_dataframe(project=project, inst_chords_id=instrument['chords_id'],request=request)
+            df = measurements.fetch_measurement_dataframe(project=project, inst_chords_id=instrument['chords_id'],request=request, var_to_id=var_to_id)
             if df.empty == False:
                 logger.debug(list(df.columns.values))
                 pv = df.pivot(index='_time', columns='var', values=['_value'])
@@ -789,6 +791,7 @@ class MeasurementsReadResource(Resource):
             logger.debug(f' Authorized: ' +str(authorized))
             if (authorized):
                 replace_cols={}
+                var_to_id={}
                 for inst in site['instruments']:
                     logger.debug(inst)
                     if inst['inst_id'] == instrument_id:
@@ -797,7 +800,8 @@ class MeasurementsReadResource(Resource):
                         for v in inst['variables']:
                             logger.debug(v)
                             replace_cols[str(v['chords_id'])]=v['var_id']
-                df = measurements.fetch_measurement_dataframe(project=project, inst_chords_id=inst_index['chords_inst_id'],request=request)
+                            var_to_id[v['var_id']]=str(v['chords_id'])
+                df = measurements.fetch_measurement_dataframe(project=project, inst_chords_id=inst_index['chords_inst_id'],request=request, var_to_id=var_to_id)
                 logger.debug(f'User is authorized to download measurements')
                 logger.debug(df)
                 if df.empty == False:

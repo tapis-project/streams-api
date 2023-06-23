@@ -85,6 +85,7 @@ def compact_write_measurements(bucket_name, site_id, instrument, body):
 def query_measurments(bucket_name, query_field_list):
     logger.debug("IN INFLUX QUERY: ")
     query_list=[]
+    variable_list=[]
     start=''
     stop=''
     limit=''
@@ -105,9 +106,15 @@ def query_measurments(bucket_name, query_field_list):
             elif k == "offset":
                 if str(fields[k]) != 'None':
                     offset=str(fields[k])
+            elif k == "var":
+                variable_list.append('r["'+k+'"]=="'+str(fields[k])+'"')
             else:
                 query_list.append('r["'+k+'"]=="'+str(fields[k])+'"')
-    query_filters = ' and '.join(query_list)
+    if len(variable_list) > 0:
+        query_filters = ' and '.join(query_list) + ' and ' + ' or '.join(variable_list)
+    else:
+        query_filters = ' and '.join(query_list)
+
     query = 'from(bucket: "'+bucket_name+'")'
     if start !='' and stop!='':
         query = query + '\n|> range(start: '+start+', stop:'+ stop+' )'
