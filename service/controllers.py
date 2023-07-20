@@ -694,7 +694,7 @@ class MeasurementsWriteResource(Resource):
                         logger.debug(bucket_name)
                         resp = influx.compact_write_measurements(bucket_name=bucket_name,site_id=site_result['chords_id'],instrument=instrument,body=body)
                         logger.debug(resp)
-                        if 'resp' in resp:
+                        if resp != False:
                             metric = {'created_at':datetime.now().isoformat(),'type':'upload','project_id':result['project_id'],'username':g.username,'size':request.headers['content_length'],'var_count':len(body['vars'])}
                             metric_result, metric_bug =auth.t.meta.createDocument(db=conf.tenant[g.tenant_id]['stream_db'], collection='streams_metrics', request_body=metric, _tapis_debug=True)
                             logger.debug(metric_result)
