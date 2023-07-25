@@ -1,6 +1,10 @@
 # Change Log
 All notable changes to this project will be documented in this file.
 
+## 1.4.0 2023-07-14
+### Added
+- nothing added
+
 ## 1.3.0 2023-03-10
 ### Added
 - Alerts added Deadman checks for no data incoming for a set period
