@@ -2969,11 +2969,6 @@ paths:
           required: true
           schema: 
             enum: [project,site,instrument,variable]
-        - name: select
-          in: query 
-          description: Search conditions as a single query parameter. 
-          schema:
-            type: string
         - name: listType
           in: query
           description: Determines additional filtering of results based on ownership, permissions and sharing. Default is to only see items owned by requester.

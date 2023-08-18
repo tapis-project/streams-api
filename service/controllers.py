@@ -1455,9 +1455,15 @@ class PostItResource(Resource):
 class SearchResource(Resource):
      def get(self, resource_type):
         logger.info("top of GET /search/{resource_type}")
+        skip=0
+        limit=100
+        if request.args.get('skip'):
+            skip = int(request.args.get('skip'))
+        if request.args.get('limit'):
+            limit=int(request.args.get('limit'))
         if (resource_type == 'project'):
             logger.info(f'resource type is project')    
-            result = search.project_search(request)   
+            result = search.project_search(request, skip, limit)   
         elif (resource_type == 'site'):
             logger.info(f'resource type is site')
             #search.site_search(request)

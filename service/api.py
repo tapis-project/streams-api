@@ -1,6 +1,6 @@
 from flask_migrate import Migrate
 from tapisservice.tapisflask.utils import TapisApi, handle_error, flask_errors_dict
-from  tapisservice.tapisflask.auth import authn_and_authz
+from tapisservice.tapisflask.auth import authn_and_authz
 from service.controllers import ProjectsResource, ProjectResource, SitesResource, SiteResource, InstrumentsResource, InstrumentResource, VariablesResource, \
     VariableResource, MeasurementsWriteResource, MeasurementsReadResource, MeasurementsResource, MeasurementResource, ChannelsResource, ChannelResource, AlertsResource, \
     AlertsPostResource, TemplatesResource, TemplateResource, InfluxResource, HelloResource, ReadyResource, HealthcheckResource, MetricsResource, PemsResource, PemsRevokeResource, \
