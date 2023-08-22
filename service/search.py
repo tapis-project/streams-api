@@ -82,7 +82,7 @@ def build_mongo_search_query(mongo_find, param, operator,search_value):
  pi, funding_resource, project_url, active, created_at, last_updated
 
 '''
-def project_search(request):
+def project_search(request, skip, limit):
     logger.info(f'Inside project_search')
     args_list = args_parse(request)
     logger.info(args_list)
@@ -111,4 +111,30 @@ def project_search(request):
     result = t.meta.listDocuments(_tapis_set_x_headers_from_service=True, db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_project_metadata', filter= mongo_find )
     logger.info(result)
     sub_result=json.loads(result.decode('utf-8'))
-    return sub_result
+    if skip + limit > 1000 and len(sub_result) == 1000:
+          result2= t.meta.listDocuments(_tapis_set_x_headers_from_service=True, db=conf.tenant[g.tenant_id]['stream_db'],page=page+1,pagesize=1000, collection='streams_project_metadata',filter='{"permissions.users":"'+g.username+'","tapis_deleted":null}')
+          sub_result.append(json.loads(result2.decode('utf-8')))
+          try:
+            logger.debug(skip)
+            logger.debug(limit)
+            if skip > 0:
+                logger.debug('in skip')
+                if limit > 0:
+                    logger.debug('in limit')
+                    end = int(skip)+int(limit)
+                    sub_result = sub_result[int(skip):int(end)]
+                else:
+                    sub_result = sub_result[int(skip):-1]  
+            else:
+                sub_result = sub_result[0:int(limit)]
+            logger.debug('before return')  
+            logger.debug(sub_result)
+            return sub_result, message  
+         except Exception as e:
+            logger.debug(e)
+            raise errors.ResourceError(msg=str(e))
+    else:
+        message = "No Projects found"
+        logger.debug(result)
+        return [], message
+    #return sub_result
