@@ -1463,7 +1463,7 @@ class SearchResource(Resource):
             limit=int(request.args.get('limit'))
         if (resource_type == 'project'):
             logger.info(f'resource type is project')    
-            result = search.project_search(request, skip, limit)
+            result, message = search.project_search(request, skip, limit)
         elif (resource_type == 'site'):
             logger.info(f'resource type is site')
             #search.site_search(request)
@@ -1477,5 +1477,6 @@ class SearchResource(Resource):
             raise errors.ResourceError(msg=f'Invalid resource type: {resource_type}.')
         
         result = meta.strip_meta_list(result)
-        return utils.ok(result=result, msg=f'Streams Service search')
+        logger.info(result)
+        return utils.ok(result=result, msg=message)
 

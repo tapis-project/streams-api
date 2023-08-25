@@ -1,6 +1,6 @@
 import requests
 import json
-import datetime
+from datetime import datetime
 import re
 from flask import g, Flask
 from tapisservice.config import conf
@@ -30,6 +30,10 @@ def args_parse(request, resource_type):
         'instrument': ['inst_name', 'inst_id', 'inst_description', 'owner', 'site_id', 'project_id', 'created_at', 'last_updated', 'metadata'],
         'variable': ['var_name', 'var_id', 'owner', 'inst_id', 'shortname', 'unit', 'unit_abbrev', 'measured_property', 'created_at', 'last_updated', 'metadata']}
     # [(['project_id', 'in'], ['test']), (['owner', 'neq'], ['test1'])]
+    query.pop("skip", None)
+    query.pop("limit", None)
+    query.pop("computeTotal", None)
+    query.pop("listType", None)
     search_list = [(k.split('.'), v) for k, v in query.items()]
     logger.info(search_list)
     logger.info(len(search_list))
@@ -87,18 +91,65 @@ def build_mongo_search_query(mongo_find, param, operator,search_value):
             mongo_find = mongo_find + '"' + param + \
             '":' + '{$nin:[\'' + search_on + '\']}}' 
     elif(operator == "gt"):
+        isDate = False
         try:
             float(search_on)
         except Exception as e:
+            logger.debug("Not a float, checking if its a date")
             try:
-                datetime.strptime(search_on, "%Y-%m-%d")
+                datetime.strptime(str(search_on), "%Y-%m-%d")
             except Exception as e:
-                raise errors.ResourceError(msg="Error: Not a number or incorrect time string format (YYYY-mm-dd)")
-            
+                logger.debug("Not a date: %s", str(e))
+                raise Exception(f"Not a number or incorrect time string format (YYYY-mm-dd): {search_on}") from e
+        if isDate:
+            search_on += " 24:00:00.00000"
+
         mongo_find = mongo_find + '"' + param + \
-        '":' + '{$gt:\'' + search_on + '\'}}'
-    logger.info(mongo_find) 
-    return mongo_find   
+        '":' + '{$gt:\"' + search_on + '\"}}'
+    elif(operator == "gte"):
+        try:
+            float(search_on)
+        except Exception as e:
+            logger.debug("Not a float, checking if its a date")
+            try:
+                datetime.strptime(str(search_on), "%Y-%m-%d")
+            except Exception as e:
+                logger.debug("Not a date: %s", str(e))
+                raise Exception(f"Not a number or incorrect time string format (YYYY-mm-dd): {search_on}") from e
+        mongo_find = mongo_find + '"' + param + \
+        '":' + '{$gte:\"' + search_on + '\"}}'
+    elif(operator == "lt"):
+        try:
+            float(search_on)
+        except Exception as e:
+            logger.debug("Not a float, checking if its a date")
+            try:
+                datetime.strptime(str(search_on), "%Y-%m-%d")
+            except Exception as e:
+                logger.debug("Not a date: %s", str(e))
+                raise Exception(f"Not a number or incorrect time string format (YYYY-mm-dd): {search_on}") from e
+        
+        mongo_find = mongo_find + '"' + param + \
+        '":' + '{$lt:\"' + search_on + '\"}}'
+    elif(operator == "lte"):
+        isDate = False
+        try:
+            float(search_on)
+        except Exception as e:
+            logger.debug("Not a float, checking if its a date")
+            try:
+                datetime.strptime(str(search_on), "%Y-%m-%d")
+                isDate = True
+            except Exception as e:
+                logger.debug("Not a date: %s", str(e))
+                raise Exception(f"Not a number or incorrect time string format (YYYY-mm-dd): {search_on}") from e
+
+        if isDate:
+            search_on += " 24:00:00.00000"
+        mongo_find = mongo_find + '"' + param + \
+        '":' + '{$lte:\"' + search_on + '\"}}'
+    logger.info(mongo_find)
+    return mongo_find
 
 
 #Example: curl -H "X-Tapis-Token:$jwt" http://localhost:5000/v3/streams/search/project?'project_id.eq=test_project2023-03-06T11:33:52.178730&owner.eq=testuser2'
@@ -109,11 +160,14 @@ def build_mongo_search_query(mongo_find, param, operator,search_value):
 '''
 def project_search(request, skip, limit):
     logger.info(f'Inside project_search')
+    page = 1
+    if skip >= 1000:
+        page=skip/1000 + 1
+        skip = skip - (page * 1000)
+    if limit > 1000:
+        raise errors.ResourceError(msg=f'Limit cannot exceed 1000')
     args_list = args_parse(request, "project")
     logger.info(args_list)
-    #all_projects= meta.list_projects(100,0)
-    #logger.info(all_projects)
-   # project_data=json.dumps(all_projects[0])
     if (len(args_list) > 0):
         try:
             mongo_find = '{'
@@ -128,20 +182,22 @@ def project_search(request, skip, limit):
                 mongo_find=mongo_find + ','
                 logger.info(mongo_find)
            # mongo_find = mongo_find[-1]
-            mongo_find = mongo_find + '\"tapis_deleted\":null}'
+            mongo_find = mongo_find + '\"permissions.users\": \"' + g.username + '\",\"tapis_deleted\":null}'
             logger.info(mongo_find)
         except Exception as e:
-                logger.debug(e)
-                raise errors.ResourceError(msg=str(e))
-    result = t.meta.listDocuments(_tapis_set_x_headers_from_service=True, db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_project_metadata', filter= mongo_find )
-    logger.info(result)
+            logger.debug(e)
+            raise errors.ResourceError(msg=str(e))
+    result = t.meta.listDocuments(_tapis_set_x_headers_from_service=True, db=conf.tenant[g.tenant_id]['stream_db'],page=page, pagesize=1000, collection='streams_project_metadata', filter= mongo_find)
+    logger.debug(result)
     sub_result=json.loads(result.decode('utf-8'))
-    if skip + limit > 1000 and len(sub_result) == 1000:
-          result2= t.meta.listDocuments(_tapis_set_x_headers_from_service=True, db=conf.tenant[g.tenant_id]['stream_db'],page=page+1,pagesize=1000, collection='streams_project_metadata',filter='{"permissions.users":"'+g.username+'","tapis_deleted":null}')
-          sub_result.append(json.loads(result2.decode('utf-8')))
-          try:
-            logger.debug(skip)
-            logger.debug(limit)
+    if len(sub_result) > 0:
+        message = "Filtered Projects found"
+        if skip + limit > 1000 and len(sub_result) == 1000:
+            result2= t.meta.listDocuments(_tapis_set_x_headers_from_service=True, db=conf.tenant[g.tenant_id]['stream_db'],page=page+1,pagesize=1000, collection='streams_project_metadata',filter=mongo_find)
+            sub_result.append(json.loads(result2.decode('utf-8')))
+        try:
+            logger.debug("skip: %d", skip)
+            logger.debug("limit: %d", limit)
             if skip > 0:
                 logger.debug('in skip')
                 if limit > 0:
@@ -149,13 +205,13 @@ def project_search(request, skip, limit):
                     end = int(skip)+int(limit)
                     sub_result = sub_result[int(skip):int(end)]
                 else:
-                    sub_result = sub_result[int(skip):-1]  
+                    sub_result = sub_result[int(skip):-1]
             else:
                 sub_result = sub_result[0:int(limit)]
-            logger.debug('before return')  
+            logger.debug('before return')
             logger.debug(sub_result)
             return sub_result, message
-          except Exception as e:
+        except Exception as e:
             logger.debug(e)
             raise errors.ResourceError(msg=str(e))
     else:
