@@ -1,10 +1,10 @@
 from flask_migrate import Migrate
 from tapisservice.tapisflask.utils import TapisApi, handle_error, flask_errors_dict
-from  tapisservice.tapisflask.auth import authn_and_authz
+from tapisservice.tapisflask.auth import authn_and_authz
 from service.controllers import ProjectsResource, ProjectResource, SitesResource, SiteResource, InstrumentsResource, InstrumentResource, VariablesResource, \
     VariableResource, MeasurementsWriteResource, MeasurementsReadResource, MeasurementsResource, MeasurementResource, ChannelsResource, ChannelResource, AlertsResource, \
     AlertsPostResource, TemplatesResource, TemplateResource, InfluxResource, HelloResource, ReadyResource, HealthcheckResource, MetricsResource, PemsResource, PemsRevokeResource, \
-    ArchivesResource, ArchiveResource, TransferResource, PostItsResource, PostItResource
+    ArchivesResource, ArchiveResource, TransferResource, PostItsResource, PostItResource, SearchResource
 
 
 from service.models import app
@@ -84,6 +84,10 @@ api.add_resource(ArchivesResource, '/v3/streams/projects/<project_id>/archives')
 api.add_resource(ArchiveResource, '/v3/streams/projects/<project_id>/archives/<archive_id>')
 # Transfer
 api.add_resource(TransferResource, '/v3/streams/transfer')
+
+# Search
+api.add_resource(SearchResource, '/v3/streams/search/<resource_type>')
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', debug=True)
