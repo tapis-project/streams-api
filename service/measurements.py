@@ -18,18 +18,23 @@ import sys
 from datetime import datetime
 from io import StringIO
 
-def fetch_measurement_dataframe(inst_chords_id, project, request):
+def fetch_measurement_dataframe(inst_chords_id, project, request, var_to_id):
     influx_query_input = [{"inst":str(inst_chords_id)}]
     if request.args.get('start_date'):
         influx_query_input.append({"start_date": request.args.get('start_date')})
     if request.args.get('end_date'):
-        influx_query_input.append({"end_date": request.args.get('end_date')})    
+        influx_query_input.append({"end_date": request.args.get('end_date')})
     if request.args.get('limit'):
-        influx_query_input.append({"limit": request.args.get('limit')}) 
+        influx_query_input.append({"limit": request.args.get('limit')})
     if request.args.get('skip'):
-        influx_query_input.append({"limit": request.args.get('limit')}) 
+        influx_query_input.append({"limit": request.args.get('limit')})
     if request.args.get('offset'):
-        influx_query_input.append({"offset": request.args.get('offset')}) 
+        influx_query_input.append({"offset": request.args.get('offset')})
+    if request.args.get('var_ids'):
+        variable_list = request.args.get('var_ids').split(",")
+        for variable in variable_list:
+            influx_query_input.append({"var": var_to_id[variable.strip()]})
+            logger.debug({"var": var_to_id[variable.strip()]})
     logger.debug(project)
     if 'bucket' in project:
         bucket_name=project['bucket']

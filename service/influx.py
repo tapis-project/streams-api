@@ -2,6 +2,7 @@ import datetime
 import enum
 import requests
 import json
+import pandas as pd
 from flask import g, Flask
 from tapisservice.config import conf
 app = Flask(__name__)
@@ -42,9 +43,16 @@ def compact_write_measurements(bucket_name, site_id, instrument, body):
             if k != 'datetime':
                 logger.debug('not datetime')
                 if k in inst_vars and 'datetime' in itm:
+                    try:
+                        value = float(itm[k])
+                        measurement = "tsdata"
+                    except ValueError:
+                        value = str(itm[k])
+                        measurement = "nonfloat"
+
                     json_body.append(
                         {
-                            "measurement": "tsdata",
+                            "measurement": measurement,
                             "tags": {
                                 "site": site_id,
                                 "inst": instrument['chords_id'],
@@ -52,14 +60,14 @@ def compact_write_measurements(bucket_name, site_id, instrument, body):
                             },
                             "time": itm['datetime'],
                             "fields": {
-                                "value": float(itm[k])
+                                "value": value
                             }
                         }
                     )
                     if k in return_body:
-                        return_body[k].append({itm['datetime']: float(itm[k])})
+                        return_body[k].append({itm['datetime']: value})
                     else:
-                        return_body[k] = [{itm['datetime']: float(itm[k])}]
+                        return_body[k] = [{itm['datetime']: value}]
 
                 else:
                     msg = 'Datetime field required and it is missing!'
@@ -71,8 +79,8 @@ def compact_write_measurements(bucket_name, site_id, instrument, body):
     with InfluxDBClient(url=conf.influxdb_host+':'+conf.influxdb_port, token=conf.influxdb_token, org=conf.influxdb_org) as client:
         write_api = client.write_api(write_options=SYNCHRONOUS)
         logger.debug(bucket_name)
-        result = write_api.write(bucket=bucket_name, record=json_body)
         logger.debug(json_body)
+        result = write_api.write(bucket=bucket_name, record=json_body)
         logger.debug(result)
     return {'resp':result,'msg':'','body':return_body}
 
@@ -80,6 +88,7 @@ def compact_write_measurements(bucket_name, site_id, instrument, body):
 def query_measurments(bucket_name, query_field_list):
     logger.debug("IN INFLUX QUERY: ")
     query_list=[]
+    variable_list=[]
     start=''
     stop=''
     limit=''
@@ -100,9 +109,15 @@ def query_measurments(bucket_name, query_field_list):
             elif k == "offset":
                 if str(fields[k]) != 'None':
                     offset=str(fields[k])
+            elif k == "var":
+                variable_list.append('r["'+k+'"]=="'+str(fields[k])+'"')
             else:
                 query_list.append('r["'+k+'"]=="'+str(fields[k])+'"')
-    query_filters = ' and '.join(query_list)
+    if len(variable_list) > 0:
+        query_filters = ' and '.join(query_list) + ' and ' + ' or '.join(variable_list)
+    else:
+        query_filters = ' and '.join(query_list)
+
     query = 'from(bucket: "'+bucket_name+'")'
     if start !='' and stop!='':
         query = query + '\n|> range(start: '+start+', stop:'+ stop+' )'
@@ -122,7 +137,16 @@ def query_measurments(bucket_name, query_field_list):
     logger.debug(query)
     with InfluxDBClient(url=conf.influxdb_host+':'+conf.influxdb_port, token=conf.influxdb_token, org=conf.influxdb_org) as client:
         result = client.query_api().query_data_frame(query)
-    logger.debug(result.to_string())
+
+    # if influx measurements include value that are stored as strings
+    if isinstance(result, list):
+        for i in result:
+            i.drop("_measurement", axis=1, inplace=True)
+        merged_df = pd.concat([result[0], result[1]], axis=0)
+        logger.debug(merged_df)
+        return merged_df
+
+    logger.debug(result)
     return result
 
 def ping():
