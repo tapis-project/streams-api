@@ -1158,6 +1158,34 @@ class MetricsResource(Resource):
       logger.debug(json.loads(result.decode('utf-8')))
       return json.loads(result.decode('utf-8'))
 
+class MetricsUploadsResource(Resource):
+     def get(self):
+      #todo parse a start and end date for a query
+      result = auth.t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_metrics',filter='{"type":"upload"}')
+      logger.debug(json.loads(result.decode('utf-8')))
+      return json.loads(result.decode('utf-8'))
+    
+class MetricsDownloadsResource(Resource):
+     def get(self):
+      #todo parse a start and end date for a query
+      result = auth.t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_metrics',filter='{"type":"download"}')
+      logger.debug(json.loads(result.decode('utf-8')))
+      return json.loads(result.decode('utf-8'))
+
+class MetricsProjectsResource(Resource):
+     def get(self):
+      #todo parse a start and end date for a query
+      result = auth.t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_metrics',filter='{"type":"upload"}')
+      logger.debug(json.loads(result.decode('utf-8')))
+      return json.loads(result.decode('utf-8'))
+
+class MetricsTransfersResource(Resource):
+     def get(self):
+      #todo parse a start and end date for a query
+      result = auth.t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_metrics',filter='{"type":"transfer"}')
+      logger.debug(json.loads(result.decode('utf-8')))
+      return json.loads(result.decode('utf-8'))
+
 # Role management for different resource
 class PemsResource(Resource):
     def get(self):
