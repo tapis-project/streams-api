@@ -557,7 +557,7 @@ class VariablesResource(Resource):
         logger.debug(f'In create variables')
         # Check if the user is authorized to create variables by checking if the user has project specific role
         result=[]
-        msg="Variable Created Successfully."
+        msg=""
         authorized = sk.check_if_authorized_post(project_id)
         if (authorized):
             logger.debug(f'User is authorized to create variables for : ' + str(instrument_id))
@@ -568,22 +568,28 @@ class VariablesResource(Resource):
             inst_result, bug = meta.get_instrument(project_id, site_id, instrument_id)
             # id, name, instrument_id, shortname, commit
             for body in req_body:
-                logger.debug("***********CREATE VARIABLE")
-                postInst = ChordsVariable("test",inst_result['chords_id'],
-                                            body['var_name'],
-                                            body['var_id'],
-                                            "")
-                logger.debug(postInst)
-                # Create variable in chords
-                chord_result, chord_msg = chords.create_variable(postInst)
-                if chord_msg == "Variable created":
-                    body['chords_id'] = chord_result['id']
-                    # Create a variable in mongo
-                    var_result, msg = meta.create_variable(project_id, site_id, instrument_id, body)
-                    result.append(var_result)
+                #check if variable exists
+                var_exist_result, var_exist_msg = meta.get_variable(project_id, site_id, instrument_id, body['var_id'])
+                if var_exist_msg != "Variable Found":
+                    logger.debug("***********CREATE VARIABLE")
+                    postInst = ChordsVariable("test",inst_result['chords_id'],
+                                                body['var_name'],
+                                                body['var_id'],
+                                                "")
+                    logger.debug(postInst)
+                    # Create variable in chords
+                    chord_result, chord_msg = chords.create_variable(postInst)
+                    if chord_msg == "Variable created":
+                        body['chords_id'] = chord_result['id']
+                        # Create a variable in mongo
+                        var_result, var_msg = meta.create_variable(project_id, site_id, instrument_id, body)
+                        result.append(var_result)
+                        msg=msg+"Variable "+ body['var_id'] +" Created Successfully."
+                    else:
+                        raise errors.ResourceError(msg=f'Chords variable not created due to '+ str(chord_msg))
+                    logger.debug(f' Variable creation meta result: ' + str(result))
                 else:
-                    raise errors.ResourceError(msg=f'Chords variable not created due to '+ str(chord_msg))
-                logger.debug(f' Variable creation meta result: ' + str(result))
+                  msg = msg + " Variable "+body['var_id'] + " already exists for Instrument " + instrument_id +" skipping creation to avoid a duplicate."
             return utils.ok(result=result, msg=msg)
 
         else:
@@ -1155,6 +1161,34 @@ class MetricsResource(Resource):
     def get(self):
       #todo parse a start and end date for a query
       result = auth.t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_metrics',filter='{"type":"upload"}')
+      logger.debug(json.loads(result.decode('utf-8')))
+      return json.loads(result.decode('utf-8'))
+
+class MetricsUploadsResource(Resource):
+     def get(self):
+      #todo parse a start and end date for a query
+      result = auth.t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_metrics',filter='{"type":"upload"}')
+      logger.debug(json.loads(result.decode('utf-8')))
+      return json.loads(result.decode('utf-8'))
+    
+class MetricsDownloadsResource(Resource):
+     def get(self):
+      #todo parse a start and end date for a query
+      result = auth.t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_metrics',filter='{"type":"download"}')
+      logger.debug(json.loads(result.decode('utf-8')))
+      return json.loads(result.decode('utf-8'))
+
+class MetricsProjectsResource(Resource):
+     def get(self):
+      #todo parse a start and end date for a query
+      result = auth.t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_metrics',filter='{"type":"upload"}')
+      logger.debug(json.loads(result.decode('utf-8')))
+      return json.loads(result.decode('utf-8'))
+
+class MetricsTransfersResource(Resource):
+     def get(self):
+      #todo parse a start and end date for a query
+      result = auth.t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_metrics',filter='{"type":"transfer"}')
       logger.debug(json.loads(result.decode('utf-8')))
       return json.loads(result.decode('utf-8'))
 

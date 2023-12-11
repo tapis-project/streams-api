@@ -4,7 +4,8 @@ from tapisservice.tapisflask.auth import authn_and_authz
 from service.controllers import ProjectsResource, ProjectResource, SitesResource, SiteResource, InstrumentsResource, InstrumentResource, VariablesResource, \
     VariableResource, MeasurementsWriteResource, MeasurementsReadResource, MeasurementsResource, MeasurementResource, ChannelsResource, ChannelResource, AlertsResource, \
     AlertsPostResource, TemplatesResource, TemplateResource, InfluxResource, HelloResource, ReadyResource, HealthcheckResource, MetricsResource, PemsResource, PemsRevokeResource, \
-    ArchivesResource, ArchiveResource, TransferResource, PostItsResource, PostItResource, SearchResource
+    ArchivesResource, ArchiveResource, TransferResource, PostItsResource, PostItResource, SearchResource, MetricsUploadsResource, MetricsDownloadsResource, MetricsProjectsResource,MetricsTransfersResource
+
 
 
 from service.models import app
@@ -67,6 +68,10 @@ api.add_resource(TemplateResource, '/v3/streams/templates/<template_id>')
 
 ## Metrics resources
 api.add_resource(MetricsResource, '/v3/streams/metrics')
+api.add_resource(MetricsUploadsResource, '/v3/streams/metrics/uploads')
+api.add_resource(MetricsDownloadsResource, '/v3/streams/metrics/downloads')
+api.add_resource(MetricsProjectsResource, '/v3/streams/metrics/projects')
+api.add_resource(MetricsTransfersResource, '/v3/streams/metrics/transfers')
 
 # Influx resources
 api.add_resource(InfluxResource, '/influx')

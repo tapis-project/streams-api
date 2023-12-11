@@ -1,5 +1,5 @@
 # inherit from the flaskbase
-FROM tapis/flaskbase
+FROM tapis/flaskbase-plugins
 
 # set the name of the api, for use by
 ENV TAPIS_API streams
