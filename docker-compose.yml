@@ -133,7 +133,7 @@ services:
 
   influxdb2.1.1:
     container_name: chords_influxdb2.1.1
-    image: influxdb:latest
+    image: influxdb:2.1.1
     volumes:
       - influxdb-data2.1.1:/var/lib/influxdb
       - influxdb-log2.1.1:/var/log/influxdb

@@ -5,6 +5,7 @@ import requests
 import json
 import pandas as pd
 import sys
+import urllib.parse
 
 from flask import g, request, make_response
 from flask_restful import Resource
@@ -22,6 +23,7 @@ from service import alerts
 from service import measurements
 from service import abaco
 from service import sk
+from service import search
 from service.models import ChordsSite, ChordsIntrument, ChordsVariable
 from tapisservice.tapisflask import utils
 from tapisservice import errors
@@ -555,7 +557,7 @@ class VariablesResource(Resource):
         logger.debug(f'In create variables')
         # Check if the user is authorized to create variables by checking if the user has project specific role
         result=[]
-        msg="Variable Created Successfully."
+        msg=""
         authorized = sk.check_if_authorized_post(project_id)
         if (authorized):
             logger.debug(f'User is authorized to create variables for : ' + str(instrument_id))
@@ -566,22 +568,28 @@ class VariablesResource(Resource):
             inst_result, bug = meta.get_instrument(project_id, site_id, instrument_id)
             # id, name, instrument_id, shortname, commit
             for body in req_body:
-                logger.debug("***********CREATE VARIABLE")
-                postInst = ChordsVariable("test",inst_result['chords_id'],
-                                            body['var_name'],
-                                            body['var_id'],
-                                            "")
-                logger.debug(postInst)
-                # Create variable in chords
-                chord_result, chord_msg = chords.create_variable(postInst)
-                if chord_msg == "Variable created":
-                    body['chords_id'] = chord_result['id']
-                    # Create a variable in mongo
-                    var_result, msg = meta.create_variable(project_id, site_id, instrument_id, body)
-                    result.append(var_result)
+                #check if variable exists
+                var_exist_result, var_exist_msg = meta.get_variable(project_id, site_id, instrument_id, body['var_id'])
+                if var_exist_msg != "Variable Found":
+                    logger.debug("***********CREATE VARIABLE")
+                    postInst = ChordsVariable("test",inst_result['chords_id'],
+                                                body['var_name'],
+                                                body['var_id'],
+                                                "")
+                    logger.debug(postInst)
+                    # Create variable in chords
+                    chord_result, chord_msg = chords.create_variable(postInst)
+                    if chord_msg == "Variable created":
+                        body['chords_id'] = chord_result['id']
+                        # Create a variable in mongo
+                        var_result, var_msg = meta.create_variable(project_id, site_id, instrument_id, body)
+                        result.append(var_result)
+                        msg=msg+"Variable "+ body['var_id'] +" Created Successfully."
+                    else:
+                        raise errors.ResourceError(msg=f'Chords variable not created due to '+ str(chord_msg))
+                    logger.debug(f' Variable creation meta result: ' + str(result))
                 else:
-                    raise errors.ResourceError(msg=f'Chords variable not created due to '+ str(chord_msg))
-                logger.debug(f' Variable creation meta result: ' + str(result))
+                  msg = msg + " Variable "+body['var_id'] + " already exists for Instrument " + instrument_id +" skipping creation to avoid a duplicate."
             return utils.ok(result=result, msg=msg)
 
         else:
@@ -694,7 +702,7 @@ class MeasurementsWriteResource(Resource):
                         logger.debug(bucket_name)
                         resp = influx.compact_write_measurements(bucket_name=bucket_name,site_id=site_result['chords_id'],instrument=instrument,body=body)
                         logger.debug(resp)
-                        if 'resp' in resp:
+                        if resp != False:
                             metric = {'created_at':datetime.now().isoformat(),'type':'upload','project_id':result['project_id'],'username':g.username,'size':request.headers['content_length'],'var_count':len(body['vars'])}
                             metric_result, metric_bug =auth.t.meta.createDocument(db=conf.tenant[g.tenant_id]['stream_db'], collection='streams_metrics', request_body=metric, _tapis_debug=True)
                             logger.debug(metric_result)
@@ -731,6 +739,7 @@ class MeasurementsResource(Resource):
             site,msg = meta.get_site(project_id,site_id)
             logger.debug(site)
             replace_cols = {}
+            var_to_id = {}
             params = request.args
             logger.debug(params)
             for inst in site['instruments']:
@@ -741,8 +750,9 @@ class MeasurementsResource(Resource):
                     for v in inst['variables']:
                         logger.debug(v)
                         replace_cols[str(v['chords_id'])]=v['var_id']
+                        var_to_id[v['var_id']]=str(v['chords_id'])
             project, proj_mesg=meta.get_project(project_id=project_id)
-            df = measurements.fetch_measurement_dataframe(project=project, inst_chords_id=instrument['chords_id'],request=request)
+            df = measurements.fetch_measurement_dataframe(project=project, inst_chords_id=instrument['chords_id'],request=request, var_to_id=var_to_id)
             if df.empty == False:
                 logger.debug(list(df.columns.values))
                 pv = df.pivot(index='_time', columns='var', values=['_value'])
@@ -789,6 +799,7 @@ class MeasurementsReadResource(Resource):
             logger.debug(f' Authorized: ' +str(authorized))
             if (authorized):
                 replace_cols={}
+                var_to_id={}
                 for inst in site['instruments']:
                     logger.debug(inst)
                     if inst['inst_id'] == instrument_id:
@@ -797,7 +808,8 @@ class MeasurementsReadResource(Resource):
                         for v in inst['variables']:
                             logger.debug(v)
                             replace_cols[str(v['chords_id'])]=v['var_id']
-                df = measurements.fetch_measurement_dataframe(project=project, inst_chords_id=inst_index['chords_inst_id'],request=request)
+                            var_to_id[v['var_id']]=str(v['chords_id'])
+                df = measurements.fetch_measurement_dataframe(project=project, inst_chords_id=inst_index['chords_inst_id'],request=request, var_to_id=var_to_id)
                 logger.debug(f'User is authorized to download measurements')
                 logger.debug(df)
                 if df.empty == False:
@@ -1152,6 +1164,34 @@ class MetricsResource(Resource):
       logger.debug(json.loads(result.decode('utf-8')))
       return json.loads(result.decode('utf-8'))
 
+class MetricsUploadsResource(Resource):
+     def get(self):
+      #todo parse a start and end date for a query
+      result = auth.t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_metrics',filter='{"type":"upload"}')
+      logger.debug(json.loads(result.decode('utf-8')))
+      return json.loads(result.decode('utf-8'))
+    
+class MetricsDownloadsResource(Resource):
+     def get(self):
+      #todo parse a start and end date for a query
+      result = auth.t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_metrics',filter='{"type":"download"}')
+      logger.debug(json.loads(result.decode('utf-8')))
+      return json.loads(result.decode('utf-8'))
+
+class MetricsProjectsResource(Resource):
+     def get(self):
+      #todo parse a start and end date for a query
+      result = auth.t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_metrics',filter='{"type":"upload"}')
+      logger.debug(json.loads(result.decode('utf-8')))
+      return json.loads(result.decode('utf-8'))
+
+class MetricsTransfersResource(Resource):
+     def get(self):
+      #todo parse a start and end date for a query
+      result = auth.t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_metrics',filter='{"type":"transfer"}')
+      logger.debug(json.loads(result.decode('utf-8')))
+      return json.loads(result.decode('utf-8'))
+
 # Role management for different resource
 class PemsResource(Resource):
     def get(self):
@@ -1448,3 +1488,33 @@ class PostItResource(Resource):
 #               msg = f"ERROR! Could not delete Post-It"
 #               return utils.error(result='null', msg=msg)
 #         return utils.error(result='null', msg=msg)
+
+## Search GET
+class SearchResource(Resource):
+     def get(self, resource_type):
+        logger.info("top of GET /search/{resource_type}")
+        skip=0
+        limit=100
+        if request.args.get('skip'):
+            skip = int(request.args.get('skip'))
+        if request.args.get('limit'):
+            limit=int(request.args.get('limit'))
+        if (resource_type == 'project'):
+            logger.info(f'resource type is project')    
+            result, message = search.project_search(request, skip, limit)
+        elif (resource_type == 'site'):
+            logger.info(f'resource type is site')
+            #search.site_search(request)
+        elif (resource_type == 'instrument'):
+            logger.info(f'resource type is instrument')
+            #search.instrument_search(request)
+        elif (resource_type == 'variable'):
+            logger.info(f'resource type is variable')
+            #search.variable_search(request)
+        else:
+            raise errors.ResourceError(msg=f'Invalid resource type: {resource_type}.')
+        
+        result = meta.strip_meta_list(result)
+        logger.info(result)
+        return utils.ok(result=result, msg=message)
+
