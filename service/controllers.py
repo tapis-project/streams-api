@@ -9,8 +9,8 @@ import urllib.parse
 
 from flask import g, request, make_response
 from flask_restful import Resource
-from openapi_core.shortcuts import RequestValidator
-from openapi_core.wrappers.flask import FlaskOpenAPIRequest
+#from openapi_core.shortcuts import RequestValidator
+#from openapi_core.wrappers.flask import FlaskOpenAPIRequest
 
 
 from service import archive
