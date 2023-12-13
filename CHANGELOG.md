@@ -1,6 +1,11 @@
 # Change Log
 All notable changes to this project will be documented in this file.
 
+## 1.5.1 2023-12-13
+### Added
+- Search API for Projects
+- Bug fix for duplicate variable ids
+
 ## 1.5.0 2023-08-16
 ### Added
 - nothing added
