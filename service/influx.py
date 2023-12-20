@@ -149,7 +149,7 @@ def query_measurments(bucket_name, query_field_list):
     import csv
 
     # Define the InfluxDB2 API URL, token, organization, and bucket
-    url = "http://"+conf.influxdb_host+":"+conf.influxdb_port+"/api/v2/query"
+    url = conf.influxdb_host+":"+conf.influxdb_port+"/api/v2/query"
     org = "tapis"
     bucket = bucket_name
 
