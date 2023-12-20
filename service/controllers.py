@@ -9,8 +9,8 @@ import urllib.parse
 
 from flask import g, request, make_response
 from flask_restful import Resource
-from openapi_core.validation.request.validators import RequestValidator
-from openapi_core.contrib.flask import FlaskOpenAPIRequest
+#from openapi_core.shortcuts import RequestValidator
+#from openapi_core.wrappers.flask import FlaskOpenAPIRequest
 
 
 from service import archive
@@ -755,22 +755,21 @@ class MeasurementsResource(Resource):
             df = measurements.fetch_measurement_dataframe(project=project, inst_chords_id=instrument['chords_id'],request=request, var_to_id=var_to_id)
             if df.empty == False:
                 logger.debug(list(df.columns.values))
-                #df.pivot(index='_time', columns='var', values=['_value'])
-                #df1.columns = df1.columns.droplevel(0)
-                #df1 = df1.reset_index().rename_axis(None, axis=1)
+                pv = df.pivot(index='_time', columns='var', values=['_value'])
+                df1 = pv
+                df1.columns = df1.columns.droplevel(0)
+                df1 = df1.reset_index().rename_axis(None, axis=1)
                 replace_cols['_time']='time'
-                df.rename(columns=replace_cols,inplace=True)
-                #df1.index.names['time']
-                df.set_index('time',inplace=True)
-                df.drop(["result","table"], axis=1, inplace=True)
+                df1.rename(columns=replace_cols,inplace=True)
+                df1.set_index('time',inplace=True)
                 msg="Measurements Found"
             else:
                 df1 = df
                 msg="Measurements Not Found"
             if request.args.get('format') == "csv":
-                return measurements.create_csv_response(df,project_id)
+                return measurements.create_csv_response(df1,project_id)
             else:
-                return utils.ok(result=measurements.create_json_response(df,project_id,instrument,params), msg=msg)
+                return utils.ok(result=measurements.create_json_response(df1,project_id,instrument,params), msg=msg)
         else:
             logger.debug('User does not have any role on project')
             raise common_errors.PermissionsError(msg=f'User not authorized to access the resource')
@@ -815,14 +814,13 @@ class MeasurementsReadResource(Resource):
                 logger.debug(df)
                 if df.empty == False:
                     logger.debug(list(df.columns.values))
-                    #pv = df.pivot(index='_time', columns='var', values=['_value'])
-                    df1 = df
-                    #df1.columns = df1.columns.droplevel(0)
-                    #df1 = df1.reset_index().rename_axis(None, axis=1)
-                    #replace_cols['_time']='time'
-                    df1.index.names['time']
-                    df1.rename(indecolumns=replace_cols,inplace=True)
-                    #df1.set_index('time',inplace=True)
+                    pv = df.pivot(index='_time', columns='var', values=['_value'])
+                    df1 = pv
+                    df1.columns = df1.columns.droplevel(0)
+                    df1 = df1.reset_index().rename_axis(None, axis=1)
+                    replace_cols['_time']='time'
+                    df1.rename(columns=replace_cols,inplace=True)
+                    df1.set_index('time',inplace=True)
                     msg="Measurements Found"
                 else:
                     df1 = df

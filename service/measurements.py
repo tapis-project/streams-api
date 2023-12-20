@@ -19,7 +19,6 @@ from datetime import datetime
 from io import StringIO
 
 def fetch_measurement_dataframe(inst_chords_id, project, request, var_to_id):
-    logger.debug("******REQUEST:"+str(request.args))
     influx_query_input = [{"inst":str(inst_chords_id)}]
     if request.args.get('start_date'):
         influx_query_input.append({"start_date": request.args.get('start_date')})
@@ -32,7 +31,6 @@ def fetch_measurement_dataframe(inst_chords_id, project, request, var_to_id):
     if request.args.get('offset'):
         influx_query_input.append({"offset": request.args.get('offset')})
     if request.args.get('var_ids'):
-        logger.debug('VAR IDS'+ request.args.get('var_ids'))
         variable_list = request.args.get('var_ids').split(",")
         for variable in variable_list:
             influx_query_input.append({"var": var_to_id[variable.strip()]})
