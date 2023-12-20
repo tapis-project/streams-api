@@ -139,11 +139,28 @@ def query_measurments(bucket_name, query_field_list):
     from time import process_time 
     import requests
     tic = time.perf_counter()
+
     import csv
     # Define the InfluxDB2 API URL, token, organization, and bucket
     url = conf.influxdb_host+":"+conf.influxdb_port+"/api/v2/query"
     org = "tapis"
     bucket = bucket_name
+
+
+
+#     url --request -G http://localhost:8086/query?orgID=INFLUX_ORG_ID&database=MyDB&retention_policy=MyRP \
+#   --header 'Authorization: Token INFLUX_TOKEN' \
+#   --header 'Accept: application/csv' \
+#   --header 'Content-type: application/json' \
+#   --header 'Accept-Encoding: gzip' \
+#   --data-urlencode "q=SELECT used_percent FROM example-db.example-rp.example-measurement WHERE host=host1"
+    import csv
+
+    # Define the InfluxDB2 API URL, token, organization, and bucket
+    url = "http://"+conf.influxdb_host+":"+conf.influxdb_port+"/api/v2/query"
+    org = "tapis"
+    bucket = bucket_name
+
 
     # Define the Flux query to get data from the bucket
     #query = f'from(bucket: "{bucket}") |> range(start: -1h)'
