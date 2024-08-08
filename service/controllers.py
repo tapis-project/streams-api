@@ -1162,38 +1162,102 @@ class MetricsResource(Resource):
     # GET /v3/streams/metrics
     def get(self):
       #todo parse a start and end date for a query
-      result = auth.t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_metrics',filter='{"type":"upload"}')
+      result = auth.t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_metrics',pagesize=1000,filter='{"type":"upload"}')
       logger.debug(json.loads(result.decode('utf-8')))
       return json.loads(result.decode('utf-8'))
 
 class MetricsUploadsResource(Resource):
+     # GET /v3/streams/metrics/uploads
      def get(self):
       #todo parse a start and end date for a query
-      result = auth.t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_metrics',filter='{"type":"upload"}')
+      page= 1
+      if request.args.get('page'):
+        page = request.args.get('page')
+      pagesize = 1000
+      if request.args.get('pagesize'):
+        pagesize=request.args.get('pagesize')
+      result = auth.t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_metrics',page=page,pagesize=pagesize,filter='{"type":"upload"}')
       logger.debug(json.loads(result.decode('utf-8')))
       return json.loads(result.decode('utf-8'))
     
 class MetricsDownloadsResource(Resource):
      def get(self):
       #todo parse a start and end date for a query
-      result = auth.t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_metrics',filter='{"type":"download"}')
+      page= 1
+      if request.args.get('page'):
+        page = request.args.get('page')
+      pagesize = 1000
+      if request.args.get('pagesize'):
+        pagesize=request.args.get('pagesize')
+      result = auth.t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_metrics',page=page,pagesize=1000,filter='{"type":"download"}')
       logger.debug(json.loads(result.decode('utf-8')))
       return json.loads(result.decode('utf-8'))
 
 class MetricsProjectsResource(Resource):
      def get(self):
       #todo parse a start and end date for a query
-      result = auth.t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_metrics',filter='{"type":"upload"}')
+      page= 1
+      if request.args.get('page'):
+        page = request.args.get('page')
+      pagesize = 1000
+      if request.args.get('pagesize'):
+        pagesize=request.args.get('pagesize')
+      result = auth.t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_project_metadata',page=page,pagesize=1000,filter={})
       logger.debug(json.loads(result.decode('utf-8')))
       return json.loads(result.decode('utf-8'))
 
 class MetricsTransfersResource(Resource):
      def get(self):
       #todo parse a start and end date for a query
-      result = auth.t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_metrics',filter='{"type":"transfer"}')
+      page= 1
+      if request.args.get('page'):
+        page = request.args.get('page')
+      pagesize = 1000
+      if request.args.get('pagesize'):
+        pagesize=request.args.get('pagesize')
+      result = auth.t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_metrics',page=page,pagesize=1000,filter='{"type":"transfer"}')
       logger.debug(json.loads(result.decode('utf-8')))
       return json.loads(result.decode('utf-8'))
 
+class MetricsArchivesResource(Resource):
+     def get(self):
+      #todo parse a start and end date for a query
+      page= 1
+      if request.args.get('page'):
+        page = request.args.get('page')
+      pagesize = 1000
+      if request.args.get('pagesize'):
+        pagesize=request.args.get('pagesize')
+      result = auth.t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_metrics',page=page,pagesize=1000,filter='{"type":"archive"}')
+      logger.debug(json.loads(result.decode('utf-8')))
+      return json.loads(result.decode('utf-8'))
+
+class MetricsAlertsResource(Resource):
+     def get(self):
+      #todo parse a start and end date for a query
+      page= 1
+      if request.args.get('page'):
+        page = request.args.get('page')
+      pagesize = 1000
+      if request.args.get('pagesize'):
+        pagesize=request.args.get('pagesize')
+      result = auth.t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_alerts_metadata',page=page,pagesize=1000)
+      logger.debug(json.loads(result.decode('utf-8')))
+      return json.loads(result.decode('utf-8'))
+
+class MetricsChannelsResource(Resource):
+     def get(self):
+      #todo parse a start and end date for a query
+      page= 1
+      if request.args.get('page'):
+        page = request.args.get('page')
+      pagesize = 1000
+      if request.args.get('pagesize'):
+        pagesize=request.args.get('pagesize')
+      result = auth.t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_channel_metadata',page=page,pagesize=1000)
+      logger.debug(json.loads(result.decode('utf-8')))
+      return json.loads(result.decode('utf-8'))
+     
 # Role management for different resource
 class PemsResource(Resource):
     def get(self):
