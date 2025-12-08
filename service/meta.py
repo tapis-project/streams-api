@@ -370,7 +370,7 @@ def list_instruments(project_id, site_id,skip,limit):
     else:
         result = {}
         message ="Site Not Found - No Instruments Exist"
-        raise errors.ResourceError(msg=f'Site Not Found With Site ID:'+str(site_id))
+        #raise errors.ResourceError(msg=f'Site Not Found With Site ID:'+str(site_id))
     return result, message
 
 def create_instrument(project_id, site_id, post_body):
@@ -596,7 +596,7 @@ def create_variable(project_id, site_id, instrument_id, post_body):
         else:
             raise errors.ResourceError(msg=f'Instrument Not Found For This Site. Variable Create Failed')
     else:
-        raise errors.ResourceError(msg=f'Site Not Found - Cannote Create Variable')
+        raise errors.ResourceError(msg=f'Site Not Found - Cannot Create Variable')
 
     return result, message
 
