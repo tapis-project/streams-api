@@ -205,7 +205,7 @@ def list_sites(project_id,skip,limit):
             raise errors.ResourceError(msg=str(e))
     else:
         logger.debug(result)
-        raise errors.ResourceError(msg='No Sites found')
+        return json.loads(result), 'No Sites found'
 
 
 #strip out id and _etag fields
