@@ -317,6 +317,48 @@ def get_postit(postit_id):
         logger.error(f'Exception getting PostIt: {str(e)}')
         return {}, f'Exception getting PostIt: {str(e)}'
 
+def list_postits(project_id):
+    """
+    List all PostIt documents for a given project_id from the streams_project_metadata collection.
+    
+    Args:
+        project_id (str): The ID of the project to search for PostIts
+        
+    Returns:
+        tuple: A tuple containing the result and message
+    """
+    logger.debug("IN LIST POSTITS META")
+    
+    try:
+        # Search for PostIt documents with matching project_id
+        filter_str = f'{{"project_id":"{project_id}", "tapis_deleted": {{"$exists": false}}}}'
+        result, bug = t.meta.listDocuments(
+            _tapis_set_x_headers_from_service=True, 
+            db=conf.tenant[g.tenant_id]['stream_db'], 
+            collection='streams_project_metadata', 
+            filter=filter_str
+        )
+        
+        logger.debug(f"Search result: {result}")
+        logger.debug(f"Search status: {bug.response.status_code}")
+        
+        if bug.response.status_code == 200:
+            # Parse the results
+            postits = json.loads(result.decode('utf-8'))
+            logger.debug(f'Found {len(postits)} PostIts for project {project_id}')
+            
+            if len(postits) > 0:
+                return postits, f'Found {len(postits)} PostIts for project {project_id}'
+            else:
+                return [], f'No PostIts found for project {project_id}'
+        else:
+            logger.error(f'Failed to search PostIts: {bug.response.text}')
+            return [], f'Failed to search PostIts: {bug.response.text}'
+            
+    except Exception as e:
+        logger.error(f'Exception listing PostIts: {str(e)}')
+        return [], f'Exception listing PostIts: {str(e)}'
+
 #TODO delete project metadata document if collection creation fails
 def create_project(body):
     logger.debug("IN CREATE PROJECT META")

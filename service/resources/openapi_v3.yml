@@ -1487,9 +1487,16 @@ paths:
       tags:
         - PostIts
       summary: List PostIts
-      description: List all PostIts
+      description: List all PostIts for a given project
       operationId: list_postits
       x-swagger-router-controller: connexContr
+      parameters:
+        - name: project_id
+          in: query
+          description: The ID of the project to list PostIts for
+          required: true
+          schema:
+            type: string
       responses:
         "200":
           description: OK
@@ -1503,6 +1510,7 @@ paths:
                     type: array
                     items:
                       type: object
+                      description: Array of PostIt objects
         "400":
           description: Input error.
           content:

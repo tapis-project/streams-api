@@ -1525,17 +1525,32 @@ class TransferResource(Resource):
 # Post Its resource : LIST, CREATE
 class PostItsResource(Resource):
     """
-    Work with Project objects
+    Work with PostIt objects
     """
-    # Get post-its listings: GET v3/streams/projects/post-its
+    # Get post-its listings: GET v3/streams/post-its?project_id={project_id}
     def get(self):
-        logger.debug(f'In list projects')
+        logger.debug(f'In list PostIts')
         try:
-            logger.debug(f'In list projects')
+            # Get project_id from query parameters
+            project_id = request.args.get('project_id')
+            
+            if not project_id:
+                return utils.error(result='null', msg='Missing required parameter: project_id')
+            
+            logger.debug(f'Listing PostIts for project: {project_id}')
+            
+            # Call meta.list_postits function
+            result, msg = meta.list_postits(project_id)
+            
+            if 'Found' in msg or 'No PostIts found' in msg:
+                return utils.ok(result=result, msg=msg)
+            else:
+                return utils.error(result=result, msg=msg)
+                
         except Exception as e:
-              msg = f"ERROR! Could not list Post-Its"
-              return utils.error(result='null', msg=msg)
-        return utils.error(result='null', msg=msg)
+            msg = f"ERROR! Could not list Post-Its: {str(e)}"
+            logger.error(msg)
+            return utils.error(result='null', msg=msg)
 #
 #     # Create post-it: POST v3/streams/post-its
     def post(self):
