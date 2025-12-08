@@ -221,8 +221,7 @@ def get_site(project_id, site_id):
         logger.debug("SITE FOUND")
     else:
         logger.debug("NO SITE FOUND")
-        raise errors.ResourceError(msg='No Site Found Matching Site ID: '+site_id+' In Project: '+project_id)
-        #result = ''
+        message = 'No Site Found Matching Site ID: '+site_id+' In Project: '+project_id
     return result, message
 
 #TODO need to validate required fields and GEOJSON field
