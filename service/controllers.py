@@ -351,7 +351,33 @@ class SiteResource(Resource):
         else:
             logger.debug(f'User does not have Admin role on the project')
             raise common_errors.PermissionsError(msg=f'User not authorized to access the resource')
-
+class SiteSearchResource(Resource):
+    # Search Site:   v3/streams/projects/{project_id}/sites/search?boundingbox=[[x,y],[x1,y1][x2,y2],[x3,y3]]
+    def get(self,project_id):
+        logger.debug(f'In search sites ****************************************************** for project: '+project_id)
+        skip=0
+        limit=100
+        boundingbox=''
+        if request.args.get('skip'):
+            skip = int(request.args.get('skip'))
+        if request.args.get('limit'):
+            limit=int(request.args.get('limit'))
+        if request.args.get('boundingbox'):
+            boundingbox=request.args.get('boundingbox')
+            print("BOUNDINGBOX: "+boundingbox)
+        # Check if the user is authorized to access the site by checking if the user has project specific role
+        authorized = sk.check_if_authorized_get(project_id)
+        logger.debug(f'Authorization status: '+ str(authorized))
+        if (authorized):
+            logger.debug(f'User is authorized to search sites for project : ' + str(project_id))
+            site_result, msg = meta.search_sites(project_id=project_id,skip=skip,limit=limit,boundingbox=boundingbox)
+            #result = meta.strip_meta(site_result)
+            logger.debug(site_result)
+            return utils.ok(result=site_result,msg=msg)
+        else:
+            logger.debug(f'Authorization failed. User does not have role any role on the project')
+            raise common_errors.PermissionsError(msg=f'User not authorized to access the resource')
+        
 # Instrument resources: LIST, CREATE
 class InstrumentsResource(Resource):
     """

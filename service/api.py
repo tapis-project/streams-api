@@ -5,7 +5,7 @@ from service.controllers import ProjectsResource, ProjectResource, SitesResource
     VariableResource, MeasurementsWriteResource, MeasurementsReadResource, MeasurementsResource, MeasurementResource, ChannelsResource, ChannelResource, AlertsResource, \
     AlertsPostResource, TemplatesResource, TemplateResource, InfluxResource, HelloResource, ReadyResource, HealthcheckResource, MetricsResource, PemsResource, PemsRevokeResource, \
     ArchivesResource, ArchiveResource, TransferResource, PostItsResource, PostItResource, SearchResource, MetricsUploadsResource, MetricsDownloadsResource, MetricsProjectsResource, \
-    MetricsTransfersResource, MetricsArchivesResource, MetricsAlertsResource, MetricsChannelsResource
+    MetricsTransfersResource, MetricsArchivesResource, MetricsAlertsResource, MetricsChannelsResource, SiteSearchResource
 
 
 
@@ -42,6 +42,7 @@ api.add_resource(ProjectResource, '/v3/streams/projects/<project_id>')
 ## Sites resources
 api.add_resource(SitesResource, '/v3/streams/projects/<project_id>/sites')
 api.add_resource(SiteResource, '/v3/streams/projects/<project_id>/sites/<site_id>')
+api.add_resource(SiteSearchResource, '/v3/streams/projects/<project_id>/sites/search')
 
 ## Instruments resources
 api.add_resource(InstrumentsResource, '/v3/streams/projects/<project_id>/sites/<site_id>/instruments')

@@ -77,7 +77,9 @@ def list_projects(skip, limit):
 
 #TODO add project get
 def get_project(project_id):
-    logger.debug('In GET Project')
+    logger.debug('In GET Project ********************************')
+    logger.debug("PROJECT ID: "+project_id)
+    logger.debug("TENANT: "+g.tenant_id)
     result = t.meta.listDocuments(_tapis_set_x_headers_from_service=True, db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_project_metadata', filter='{"project_id":"'+project_id+'","tapis_deleted":null}')
     logger.debug(result)
     logger.debug(len(result.decode('utf-8')))
@@ -252,6 +254,20 @@ def create_site(project_id, chords_site_id, body):
 #TODO validate field
 #DO WE STRIP OUT Instruments field from put_body?
 def update_site(project_id, site_id, put_body):
+    """
+    Update the metadata of a site.
+
+    Args:
+        project_id (str): The ID of the project.
+        site_id (str): The ID of the site.
+        put_body (dict): The updated fields and values for the site.
+
+    Returns:
+        tuple: A tuple containing the updated site document and a message indicating the status of the update.
+
+    Raises:
+        errors.ResourceError: If the site does not exist for the given site ID.
+    """
     logger.debug("IN Update SITE META")
     #fetch site first and then replace existing fields/add fields to current site document
     site_result, site_bug = get_site(project_id, site_id)
@@ -282,6 +298,22 @@ def delete_site(project_id, site_id):
     if up_message == 'Site Updated':
         message = 'Site Deleted'
     return {},message
+
+#{"coordinates": {$geoWithin: {$geometry: {type: "Polygon",coordinates: [[[-80.0, 10.00], [ -80.0, 9.00], [ -79.0, 9.0], [ -79.0, 10.00 ], [ -80.0, 10.0 ]]]}}}}
+def search_sites(project_id,skip,limit,boundingbox):
+    logger.debug('In Search Sites********************************************************')
+    result={}
+    spatial_result = t.meta.listDocuments(_tapis_set_x_headers_from_service=True, db=conf.tenant[g.tenant_id]['stream_db'],collection=project_id,filter='{"coordinates": {$geoWithin: {$geometry: {type: "Polygon",coordinates: ['+boundingbox+']}}}},{"tapis_deleted":{ "$exists" : false }}]}')
+    logger.debug(spatial_result)
+    if len(json.loads(spatial_result)) > 0:
+        message = "Sites found."
+        site_result = json.loads(spatial_result.decode('utf-8'))[0]
+        result = site_result
+        logger.debug("SITES FOUND")
+    else:
+        message = "NO SITES FOUND"
+        logger.debug("NO SITES FOUND")
+    return result, message
 
 def get_instrument(project_id, site_id, instrument_id):
     result = {}
