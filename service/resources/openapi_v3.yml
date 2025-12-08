@@ -1481,6 +1481,301 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
   ### End of Variables
 
+  ### Begin of PostIts
+  /v3/streams/post-its:
+    get:
+      tags:
+        - PostIts
+      summary: List PostIts
+      description: List all PostIts
+      operationId: list_postits
+      x-swagger-router-controller: connexContr
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/BasicResponse"
+                properties:
+                  result:
+                    type: array
+                    items:
+                      type: object
+        "400":
+          description: Input error.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Not authorized.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    post:
+      tags:
+        - PostIts
+      summary: Create a PostIt
+      description: Create a new PostIt for sharing data access
+      operationId: create_postit
+      x-swagger-router-controller: connexContr
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - postit_id
+                - project_id
+                - site_id
+                - inst_id
+                - start_date
+                - end_date
+                - expire_date
+              properties:
+                postit_id:
+                  type: string
+                  description: The ID for the PostIt
+                project_id:
+                  type: string
+                  description: The ID of the project
+                site_id:
+                  type: string
+                  description: The ID of the site
+                inst_id:
+                  type: string
+                  description: The ID of the instrument
+                start_date:
+                  type: string
+                  description: Start date for the PostIt (ISO8601 format)
+                end_date:
+                  type: string
+                  description: End date for the PostIt (ISO8601 format)
+                expire_date:
+                  type: string
+                  description: Expiration date for the PostIt (ISO8601 format)
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/BasicResponse"
+                properties:
+                  result:
+                    type: object
+                    description: The created PostIt object
+        "400":
+          description: Input error.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Not authorized.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v3/streams/post-its/{postit_id}:
+    get:
+      tags:
+        - PostIts
+      summary: Get PostIt details
+      description: Get details of a specific PostIt
+      operationId: get_postit
+      x-swagger-router-controller: connexContr
+      parameters:
+        - name: postit_id
+          in: path
+          description: Unique ID of the PostIt
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/BasicResponse"
+                properties:
+                  result:
+                    type: object
+                    description: The PostIt object
+        "400":
+          description: Input error.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Not authorized.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: PostIt not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    put:
+      tags:
+        - PostIts
+      summary: Update a PostIt
+      description: Update a PostIt with new field values
+      operationId: update_postit
+      x-swagger-router-controller: connexContr
+      parameters:
+        - name: postit_id
+          in: path
+          description: Unique ID of the PostIt
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                project_id:
+                  type: string
+                  description: The ID of the project
+                site_id:
+                  type: string
+                  description: The ID of the site
+                inst_id:
+                  type: string
+                  description: The ID of the instrument
+                start_date:
+                  type: string
+                  description: Start date for the PostIt (ISO8601 format)
+                end_date:
+                  type: string
+                  description: End date for the PostIt (ISO8601 format)
+                expire_date:
+                  type: string
+                  description: Expiration date for the PostIt (ISO8601 format)
+      responses:
+        "200":
+          description: PostIt updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/BasicResponse"
+                properties:
+                  result:
+                    type: object
+                    description: The updated PostIt object
+        "400":
+          description: Input error.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Not authorized.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: PostIt not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    delete:
+      tags:
+        - PostIts
+      summary: Delete a PostIt
+      description: Delete a PostIt by setting tapis_deleted field to true
+      operationId: delete_postit
+      x-swagger-router-controller: connexContr
+      parameters:
+        - name: postit_id
+          in: path
+          description: Unique ID of the PostIt
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: PostIt deleted successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/BasicResponse"
+                properties:
+                  result:
+                    type: object
+                    description: Empty result object
+        "400":
+          description: Input error.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Not authorized.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: PostIt not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Server error.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  ### End of PostIts
+
   ### Begin of Measurements
   /v3/streams/measurements:
     post:

@@ -94,6 +94,229 @@ def get_project(project_id):
         result = ''
     return result, message
 
+def create_postit(postit_id, project_id, site_id, inst_id, start_date, end_date, expire_date):
+    """
+    Create a PostIt document in the streams_project_metadata collection.
+    
+    Args:
+        postit_id (str): The ID for the PostIt
+        project_id (str): The ID of the project
+        site_id (str): The ID of the site
+        inst_id (str): The ID of the instrument
+        start_date (str): Start date for the PostIt
+        end_date (str): End date for the PostIt
+        expire_date (str): Expiration date for the PostIt
+        
+    Returns:
+        tuple: A tuple containing the result and message
+    """
+    logger.debug("IN CREATE POSTIT META")
+    
+    # Create the PostIt document
+    postit_body = {
+        '_id': postit_id,
+        'postit_id': postit_id,
+        'project_id': project_id,
+        'site_id': site_id,
+        'inst_id': inst_id,
+        'start_date': start_date,
+        'end_date': end_date,
+        'expire_date': expire_date,
+        'created_at': str(datetime.datetime.now()),
+        'last_updated': str(datetime.datetime.now()),
+        'permissions': {'users': [g.username]},
+        'tapis_deleted': None
+    }
+    
+    logger.debug(f"PostIt body: {postit_body}")
+    
+    try:
+        # Create PostIt document in streams_project_metadata collection
+        result, bug = t.meta.createDocument(
+            _tapis_set_x_headers_from_service=True, 
+            db=conf.tenant[g.tenant_id]['stream_db'], 
+            collection='streams_project_metadata', 
+            request_body=postit_body, 
+            _tapis_debug=True
+        )
+        
+        logger.debug(f"Status_Code: {bug.response.status_code}")
+        
+        if bug.response.status_code == 201:
+            logger.debug('Created PostIt metadata')
+            return json.loads(result.decode('utf-8')), 'PostIt created successfully'
+        else:
+            logger.error(f'Failed to create PostIt: {bug.response.text}')
+            return {}, f'Failed to create PostIt: {bug.response.text}'
+            
+    except Exception as e:
+        logger.error(f'Exception creating PostIt: {str(e)}')
+        return {}, f'Exception creating PostIt: {str(e)}'
+
+def delete_postit(postit_id):
+    """
+    Delete a PostIt by setting tapis_deleted field to true.
+    
+    Args:
+        postit_id (str): The ID of the PostIt to delete
+        
+    Returns:
+        tuple: A tuple containing the result and message
+    """
+    logger.debug("IN DELETE POSTIT META")
+    
+    try:
+        # First, find the PostIt document
+        filter_str = f'{{"_id":"{postit_id}", "tapis_deleted": {{"$exists": false}}}}'
+        result, bug = t.meta.listDocuments(
+            _tapis_set_x_headers_from_service=True, 
+            db=conf.tenant[g.tenant_id]['stream_db'], 
+            collection='streams_project_metadata', 
+            filter=filter_str
+        )
+        
+        logger.debug(f"Search result: {result}")
+        logger.debug(f"Search status: {bug.response.status_code}")
+        
+        if len(json.loads(result)) > 0:
+            # PostIt found, now update it to set tapis_deleted to true
+            postit_doc = json.loads(result.decode('utf-8'))[0]
+            
+            # Prepare update body - merge existing doc with deletion flag
+            update_body = postit_doc.copy()
+            update_body['tapis_deleted'] = True
+            update_body['last_updated'] = str(datetime.datetime.now())
+            
+            # Update the document
+            update_result, update_bug = t.meta.replaceDocument(
+                _tapis_set_x_headers_from_service=True,
+                db=conf.tenant[g.tenant_id]['stream_db'],
+                collection='streams_project_metadata',
+                doc_id=postit_id,
+                request_body=update_body
+            )
+            
+            logger.debug(f"Update status: {update_bug.response.status_code}")
+            
+            if update_bug.response.status_code == 200:
+                logger.debug('PostIt marked as deleted')
+                return {}, 'PostIt deleted successfully'
+            else:
+                logger.error(f'Failed to update PostIt: {update_bug.response.text}')
+                return {}, f'Failed to update PostIt: {update_bug.response.text}'
+        else:
+            logger.debug('PostIt not found or already deleted')
+            return {}, 'PostIt not found or already deleted'
+            
+    except Exception as e:
+        logger.error(f'Exception deleting PostIt: {str(e)}')
+        return {}, f'Exception deleting PostIt: {str(e)}'
+
+def update_postit(postit_id, update_body):
+    """
+    Update a PostIt document in the streams_project_metadata collection.
+    
+    Args:
+        postit_id (str): The ID of the PostIt to update
+        update_body (dict): The fields to update
+        
+    Returns:
+        tuple: A tuple containing the result and message
+    """
+    logger.debug("IN UPDATE POSTIT META")
+    
+    try:
+        # First, find the PostIt document to ensure it exists and is not deleted
+        filter_str = f'{{"_id":"{postit_id}", "tapis_deleted": {{"$exists": false}}}}'
+        result, bug = t.meta.listDocuments(
+            _tapis_set_x_headers_from_service=True, 
+            db=conf.tenant[g.tenant_id]['stream_db'], 
+            collection='streams_project_metadata', 
+            filter=filter_str
+        )
+        
+        logger.debug(f"Search result: {result}")
+        logger.debug(f"Search status: {bug.response.status_code}")
+        
+        if bug.response.status_code == 200 and len(json.loads(result)) > 0:
+            # PostIt found, now update it
+            postit_doc = json.loads(result.decode('utf-8'))[0]
+            
+            # Prepare update body - merge existing doc with updates
+            updated_body = postit_doc.copy()
+            
+            # Update allowed fields
+            allowed_fields = ['project_id', 'site_id', 'inst_id', 'start_date', 'end_date', 'expire_date']
+            for field in allowed_fields:
+                if field in update_body:
+                    updated_body[field] = update_body[field]
+            
+            # Update timestamps
+            updated_body['last_updated'] = str(datetime.datetime.now())
+            
+            # Update the document
+            update_result, update_bug = t.meta.replaceDocument(
+                _tapis_set_x_headers_from_service=True,
+                db=conf.tenant[g.tenant_id]['stream_db'],
+                collection='streams_project_metadata',
+                doc_id=postit_id,
+                request_body=updated_body
+            )
+            
+            logger.debug(f"Update status: {update_bug.response.status_code}")
+            
+            if update_bug.response.status_code == 200:
+                logger.debug('PostIt updated successfully')
+                return json.loads(update_result.decode('utf-8')), 'PostIt updated successfully'
+            else:
+                logger.error(f'Failed to update PostIt: {update_bug.response.text}')
+                return {}, f'Failed to update PostIt: {update_bug.response.text}'
+        else:
+            logger.debug('PostIt not found')
+            return {}, 'PostIt not found'
+            
+    except Exception as e:
+        logger.error(f'Exception updating PostIt: {str(e)}')
+        return {}, f'Exception updating PostIt: {str(e)}'
+
+def get_postit(postit_id):
+    """
+    Get a PostIt document from the streams_project_metadata collection.
+    
+    Args:
+        postit_id (str): The ID of the PostIt to retrieve
+        
+    Returns:
+        tuple: A tuple containing the result and message
+    """
+    logger.debug("IN GET POSTIT META")
+    
+    try:
+        # Search for the PostIt document
+        filter_str = f'{{"_id":"{postit_id}", "tapis_deleted": {{"$exists": false}}}}'
+        result, bug = t.meta.listDocuments(
+            _tapis_set_x_headers_from_service=True, 
+            db=conf.tenant[g.tenant_id]['stream_db'], 
+            collection='streams_project_metadata', 
+            filter=filter_str
+        )
+        
+        logger.debug(f"Search result: {result}")
+        logger.debug(f"Search status: {bug.response.status_code}")
+        
+        if bug.response.status_code == 200 and len(json.loads(result)) > 0:
+            # PostIt found
+            postit_doc = json.loads(result.decode('utf-8'))[0]
+            logger.debug('PostIt found')
+            return postit_doc, 'PostIt found'
+        else:
+            logger.debug('PostIt not found')
+            return {}, 'PostIt not found'
+            
+    except Exception as e:
+        logger.error(f'Exception getting PostIt: {str(e)}')
+        return {}, f'Exception getting PostIt: {str(e)}'
+
 #TODO delete project metadata document if collection creation fails
 def create_project(body):
     logger.debug("IN CREATE PROJECT META")

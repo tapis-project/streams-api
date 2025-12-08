@@ -1538,48 +1538,186 @@ class PostItsResource(Resource):
         return utils.error(result='null', msg=msg)
 #
 #     # Create post-it: POST v3/streams/post-its
-#     def post(self):
-#         logger.debug(f'IN CREATE POST-IT')
-#         logger.debug(f'Request body: '+str(request.json))
-#         body = request.json
-#         try:
-#
-#         except Exception as e:
-#               msg = f"ERROR! Could not create Post-It"
-#               return utils.error(result='null', msg=msg)
+    def post(self):
+        logger.debug(f'IN CREATE POST-IT')
+        logger.debug(f'Request body: '+str(request.json))
+        body = request.json
+        try:
+            # Validate required fields
+            required_fields = ['postit_id', 'project_id', 'site_id', 'inst_id', 'start_date', 'end_date', 'expire_date']
+            for field in required_fields:
+                if field not in body:
+                    msg = f"Missing required field: {field}"
+                    return utils.error(result='null', msg=msg)
+            
+            # Extract fields from request body
+            postit_id = body['postit_id']
+            project_id = body['project_id']
+            site_id = body['site_id']
+            inst_id = body['inst_id']
+            start_date = body['start_date']
+            end_date = body['end_date']
+            expire_date = body['expire_date']
+            
+            # Call meta.create_postit function
+            result, msg = meta.create_postit(postit_id, project_id, site_id, inst_id, start_date, end_date, expire_date)
+            
+            if 'created successfully' in msg:
+                return utils.ok(result=result, msg=msg)
+            else:
+                return utils.error(result=result, msg=msg)
+                
+        except Exception as e:
+            msg = f"ERROR! Could not create Post-It: {str(e)}"
+            logger.error(msg)
+            return utils.error(result='null', msg=msg)
 #         return utils.error(result='null', msg=msg)
 #
 # # Post It Resource: GET, UPDATE, DELETE
 class PostItResource(Resource):
 #     #create post-it url
-    def get(self):
+    def get(self, postit_id):
         logger.debug("IN POST-IT GET")
         try:
-            logger.debug(f'In list projects')
+            logger.debug(f'Getting PostIt with ID: {postit_id}')
+            
+            # Get the PostIt document
+            postit_doc, msg = meta.get_postit(postit_id)
+            
+            if 'PostIt found' in msg:
+                # Extract PostIt attributes
+                project_id = postit_doc['project_id']
+                site_id = postit_doc['site_id']
+                inst_id = postit_doc['inst_id']
+                start_date = postit_doc['start_date']
+                end_date = postit_doc['end_date']
+                
+                logger.debug(f'PostIt attributes - Project: {project_id}, Site: {site_id}, Instrument: {inst_id}')
+                logger.debug(f'Date range: {start_date} to {end_date}')
+                logger.debug(f'Expiration date: {postit_doc["expire_date"]}')
+                
+                # Check if PostIt has expired
+                from datetime import datetime
+                current_date = datetime.now()
+                expire_date = datetime.fromisoformat(postit_doc['expire_date'].replace('Z', '+00:00') if postit_doc['expire_date'].endswith('Z') else postit_doc['expire_date'])
+                
+                if current_date < expire_date:
+                    logger.debug('PostIt is still valid')
+                    from io import StringIO
+                    result = []
+                    msg = ""
+                    logger.debug(f"In get measurements via PostIt")
+                    
+                    # Get site information
+                    site, site_msg = meta.get_site(project_id, site_id)
+                    logger.debug(site)
+                    
+                    replace_cols = {}
+                    var_to_id = {}
+                    
+                    # Find the instrument in the site
+                    instrument = None
+                    for inst in site['instruments']:
+                        logger.debug(inst)
+                        if inst['inst_id'] == inst_id:
+                            instrument = inst
+                            logger.debug(inst)
+                            for v in inst['variables']:
+                                logger.debug(v)
+                                replace_cols[str(v['chords_id'])] = v['var_id']
+                                var_to_id[v['var_id']] = str(v['chords_id'])
+                            break
+                    
+                    if instrument is None:
+                        return utils.error(result='', msg=f'Instrument {inst_id} not found in site {site_id}')
+                    
+                    # Get project information
+                    project, proj_mesg = meta.get_project(project_id=project_id)
+                    
+                    # Set date range parameters from PostIt
+                    params = request.args.copy()
+                    params['start_date'] = start_date
+                    params['end_date'] = end_date
+                    
+                    logger.debug(f'Parameters for measurements: {params}')
+                    
+                    
+                    # Fetch measurements
+                    df = measurements.fetch_measurement_dataframe(
+                        inst_chords_id=instrument['chords_id'], 
+                        project=project, 
+                        request=params,  
+                        var_to_id=var_to_id
+                    )
+                    
+                    if df.empty == False:
+                        logger.debug(list(df.columns.values))
+                        replace_cols['_time'] = 'time'
+                        df.rename(columns=replace_cols, inplace=True)
+                        df.set_index('time', inplace=True)
+                        df.drop(["result", "table"], axis=1, inplace=True)
+                        msg = "Measurements Found via PostIt"
+                    else:
+                        df1 = df
+                        msg = "Measurements Not Found for PostIt date range"
+                    
+                    if request.args.get('format') == "csv":
+                        return measurements.create_csv_response(df, project_id)
+                    else:
+                        return utils.ok(
+                            result=measurements.create_json_response(df, project_id, instrument, params), 
+                            msg=msg
+                        )
+                else:
+                    logger.debug(f'PostIt has expired on {postit_doc["expire_date"]}')
+                    return utils.error(result='', msg=f'PostIt has expired on {postit_doc["expire_date"]}')
+            else:
+                return utils.error(result='', msg=msg)
+                
         except Exception as e:
-              msg = f"ERROR! Could not get Post-It"
-              return utils.error(result='null', msg=msg)
-        return utils.error(result='null', msg=msg)
+            msg = f"ERROR! Could not get Post-It measurements: {str(e)}"
+            logger.error(msg)
+            return utils.error(result='null', msg=msg)
 #
 #     #update post-it url
-#     def put(self):
-#         logger.debug("IN POST-IT UPDATE")
-#         try:
-#
-#         except Exception as e:
-#               msg = f"ERROR! Could not update Post-It"
-#               return utils.error(result='null', msg=msg)
-#         return utils.error(result='null', msg=msg)
+    def put(self, postit_id):
+        logger.debug("IN POST-IT UPDATE")
+        try:
+            logger.debug(f'Updating PostIt with ID: {postit_id}')
+            logger.debug(f'Request body: {str(request.json)}')
+            body = request.json
+            
+            # Call meta.update_postit function
+            result, msg = meta.update_postit(postit_id, body)
+            
+            if 'updated successfully' in msg:
+                return utils.ok(result=result, msg=msg)
+            else:
+                return utils.error(result=result, msg=msg)
+                
+        except Exception as e:
+            msg = f"ERROR! Could not update Post-It: {str(e)}"
+            logger.error(msg)
+            return utils.error(result='null', msg=msg)
 #
 #     #delete post-it url
-#     def delete(self):
-#         logger.debug("IN POST-IT DELETE")
-#         try:
-#
-#         except Exception as e:
-#               msg = f"ERROR! Could not delete Post-It"
-#               return utils.error(result='null', msg=msg)
-#         return utils.error(result='null', msg=msg)
+    def delete(self, postit_id):
+        logger.debug("IN POST-IT DELETE")
+        try:
+            logger.debug(f'Deleting PostIt with ID: {postit_id}')
+            
+            # Call meta.delete_postit function
+            result, msg = meta.delete_postit(postit_id)
+            
+            if 'deleted successfully' in msg:
+                return utils.ok(result=result, msg=msg)
+            else:
+                return utils.error(result=result, msg=msg)
+                
+        except Exception as e:
+            msg = f"ERROR! Could not delete Post-It: {str(e)}"
+            logger.error(msg)
+            return utils.error(result='null', msg=msg)
 
 ## Search GET
 class SearchResource(Resource):
