@@ -308,7 +308,7 @@ def get_instrument(project_id, site_id, instrument_id):
                         result = inst
                         message = "Instrument Found"
         if len(result) == 0:
-            message = f'Instrument Not Found With Instrument ID: '+instrument_id)
+            message = f'Instrument Not Found With Instrument ID: '+instrument_id
     else:
         message ="Site Not Found - Instrument Does Not Exist"
     return result, message
