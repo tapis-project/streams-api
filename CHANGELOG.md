@@ -1,5 +1,8 @@
 # Change Log
 All notable changes to this project will be documented in this file.
+## 26Q2.0 2026-06-16
+### Added
+- nothing added
 
 ## 1.5.1 2023-12-13
 ### Added
