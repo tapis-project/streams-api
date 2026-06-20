@@ -2,6 +2,7 @@ import datetime
 import enum
 import requests
 import json
+import time
 import pandas as pd
 from flask import g, Flask
 from tapisservice.config import conf
@@ -135,18 +136,59 @@ def query_measurments(bucket_name, query_field_list):
     elif offset !='':
         query = query +'|> limit(offset: '+offset+')'
     logger.debug(query)
-    with InfluxDBClient(url=conf.influxdb_host+':'+conf.influxdb_port, token=conf.influxdb_token, org=conf.influxdb_org) as client:
-        result = client.query_api().query_data_frame(query)
+    from time import process_time 
+    import requests
+    tic = time.perf_counter()
 
+#     url --request -G http://localhost:8086/query?orgID=INFLUX_ORG_ID&database=MyDB&retention_policy=MyRP \
+#   --header 'Authorization: Token INFLUX_TOKEN' \
+#   --header 'Accept: application/csv' \
+#   --header 'Content-type: application/json' \
+#   --header 'Accept-Encoding: gzip' \
+#   --data-urlencode "q=SELECT used_percent FROM example-db.example-rp.example-measurement WHERE host=host1"
+    import csv
+
+    # Define the InfluxDB2 API URL, token, organization, and bucket
+    url = conf.influxdb_host+":"+conf.influxdb_port+"/api/v2/query"
+    org = "tapis"
+    bucket = bucket_name
+
+    # Define the Flux query to get data from the bucket
+    #query = f'from(bucket: "{bucket}") |> range(start: -1h)'
+    query= query + '|> drop(columns: ["_start", "_stop", "_field","_measurement","inst","site","result","table"])|> pivot(rowKey:["_time"], columnKey: ["var"], valueColumn: "_value")'
+
+    # Define the headers for the API request, including the token and the content type
+    headers = {
+        "Authorization": f"Token {conf.influxdb_token}",
+        "Content-type": "application/vnd.flux",
+        "Accept": "text/csv"
+    }
+    params ={"org":org}
+
+    # Send a POST request to the API with the query and the headers
+    response = requests.post(url, data=query, headers=headers,params=params)
+    logger.debug(response)
+    toc = time.perf_counter()
+    logger.debug(f"Downloaded  in {toc - tic:0.4f} seconds")
+    import pandas as pd
+    from io import StringIO
+    input = StringIO(response.text)
+    result = pd.read_csv(input, index_col=0)
+    # with InfluxDBClient(url=conf.influxdb_host+':'+conf.influxdb_port, token=conf.influxdb_token, org=conf.influxdb_org) as client:
+    #     result = client.query_api().query(query=query)#,data_frame_index=['_time'])
+    # toc = time.perf_counter()
+    # logger.debug(f"Downloaded  in {toc - tic:0.4f} seconds")
+    # logger.debug(result)
+    # #logger.debug(result.to_values())    
     # if influx measurements include value that are stored as strings
-    if isinstance(result, list):
-        for i in result:
-            i.drop("_measurement", axis=1, inplace=True)
-        merged_df = pd.concat([result[0], result[1]], axis=0)
-        logger.debug(merged_df)
-        return merged_df
+    # if isinstance(result, list):
+    #     for i in result:
+    #         i.drop("_measurement", axis=1, inplace=True)
+    #     merged_df = pd.concat([result[0], result[1]], axis=0)
+    #     #logger.debug(merged_df)
+    #     return merged_df
 
-    logger.debug(result)
+    #logger.debug(result)
     return result
 
 def ping():

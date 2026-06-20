@@ -9,8 +9,8 @@ import urllib.parse
 
 from flask import g, request, make_response
 from flask_restful import Resource
-#from openapi_core.shortcuts import RequestValidator
-#from openapi_core.wrappers.flask import FlaskOpenAPIRequest
+from openapi_core.validation.request.validators import RequestValidator
+from openapi_core.contrib.flask import FlaskOpenAPIRequest
 
 
 from service import archive
@@ -351,7 +351,33 @@ class SiteResource(Resource):
         else:
             logger.debug(f'User does not have Admin role on the project')
             raise common_errors.PermissionsError(msg=f'User not authorized to access the resource')
-
+class SiteSearchResource(Resource):
+    # Search Site:   v3/streams/projects/{project_id}/sites/search?boundingbox=[[x,y],[x1,y1][x2,y2],[x3,y3]]
+    def get(self,project_id):
+        logger.debug(f'In search sites ****************************************************** for project: '+project_id)
+        skip=0
+        limit=100
+        boundingbox=''
+        if request.args.get('skip'):
+            skip = int(request.args.get('skip'))
+        if request.args.get('limit'):
+            limit=int(request.args.get('limit'))
+        if request.args.get('boundingbox'):
+            boundingbox=request.args.get('boundingbox')
+            print("BOUNDINGBOX: "+boundingbox)
+        # Check if the user is authorized to access the site by checking if the user has project specific role
+        authorized = sk.check_if_authorized_get(project_id)
+        logger.debug(f'Authorization status: '+ str(authorized))
+        if (authorized):
+            logger.debug(f'User is authorized to search sites for project : ' + str(project_id))
+            site_result, msg = meta.search_sites(project_id=project_id,skip=skip,limit=limit,boundingbox=boundingbox)
+            #result = meta.strip_meta(site_result)
+            logger.debug(site_result)
+            return utils.ok(result=site_result,msg=msg)
+        else:
+            logger.debug(f'Authorization failed. User does not have role any role on the project')
+            raise common_errors.PermissionsError(msg=f'User not authorized to access the resource')
+        
 # Instrument resources: LIST, CREATE
 class InstrumentsResource(Resource):
     """
@@ -755,21 +781,22 @@ class MeasurementsResource(Resource):
             df = measurements.fetch_measurement_dataframe(project=project, inst_chords_id=instrument['chords_id'],request=request, var_to_id=var_to_id)
             if df.empty == False:
                 logger.debug(list(df.columns.values))
-                pv = df.pivot(index='_time', columns='var', values=['_value'])
-                df1 = pv
-                df1.columns = df1.columns.droplevel(0)
-                df1 = df1.reset_index().rename_axis(None, axis=1)
+                #df.pivot(index='_time', columns='var', values=['_value'])
+                #df1.columns = df1.columns.droplevel(0)
+                #df1 = df1.reset_index().rename_axis(None, axis=1)
                 replace_cols['_time']='time'
-                df1.rename(columns=replace_cols,inplace=True)
-                df1.set_index('time',inplace=True)
+                df.rename(columns=replace_cols,inplace=True)
+                #df1.index.names['time']
+                df.set_index('time',inplace=True)
+                df.drop(["result","table"], axis=1, inplace=True)
                 msg="Measurements Found"
             else:
                 df1 = df
                 msg="Measurements Not Found"
             if request.args.get('format') == "csv":
-                return measurements.create_csv_response(df1,project_id)
+                return measurements.create_csv_response(df,project_id)
             else:
-                return utils.ok(result=measurements.create_json_response(df1,project_id,instrument,params), msg=msg)
+                return utils.ok(result=measurements.create_json_response(df,project_id,instrument,params), msg=msg)
         else:
             logger.debug('User does not have any role on project')
             raise common_errors.PermissionsError(msg=f'User not authorized to access the resource')
@@ -814,13 +841,14 @@ class MeasurementsReadResource(Resource):
                 logger.debug(df)
                 if df.empty == False:
                     logger.debug(list(df.columns.values))
-                    pv = df.pivot(index='_time', columns='var', values=['_value'])
-                    df1 = pv
-                    df1.columns = df1.columns.droplevel(0)
-                    df1 = df1.reset_index().rename_axis(None, axis=1)
-                    replace_cols['_time']='time'
-                    df1.rename(columns=replace_cols,inplace=True)
-                    df1.set_index('time',inplace=True)
+                    #pv = df.pivot(index='_time', columns='var', values=['_value'])
+                    df1 = df
+                    #df1.columns = df1.columns.droplevel(0)
+                    #df1 = df1.reset_index().rename_axis(None, axis=1)
+                    #replace_cols['_time']='time'
+                    df1.index.names['time']
+                    df1.rename(indecolumns=replace_cols,inplace=True)
+                    #df1.set_index('time',inplace=True)
                     msg="Measurements Found"
                 else:
                     df1 = df
@@ -1160,38 +1188,102 @@ class MetricsResource(Resource):
     # GET /v3/streams/metrics
     def get(self):
       #todo parse a start and end date for a query
-      result = auth.t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_metrics',filter='{"type":"upload"}')
+      result = auth.t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_metrics',pagesize=1000,filter='{"type":"upload"}')
       logger.debug(json.loads(result.decode('utf-8')))
       return json.loads(result.decode('utf-8'))
 
 class MetricsUploadsResource(Resource):
+     # GET /v3/streams/metrics/uploads
      def get(self):
       #todo parse a start and end date for a query
-      result = auth.t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_metrics',filter='{"type":"upload"}')
+      page= 1
+      if request.args.get('page'):
+        page = request.args.get('page')
+      pagesize = 1000
+      if request.args.get('pagesize'):
+        pagesize=request.args.get('pagesize')
+      result = auth.t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_metrics',page=page,pagesize=pagesize,filter='{"type":"upload"}')
       logger.debug(json.loads(result.decode('utf-8')))
       return json.loads(result.decode('utf-8'))
     
 class MetricsDownloadsResource(Resource):
      def get(self):
       #todo parse a start and end date for a query
-      result = auth.t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_metrics',filter='{"type":"download"}')
+      page= 1
+      if request.args.get('page'):
+        page = request.args.get('page')
+      pagesize = 1000
+      if request.args.get('pagesize'):
+        pagesize=request.args.get('pagesize')
+      result = auth.t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_metrics',page=page,pagesize=1000,filter='{"type":"download"}')
       logger.debug(json.loads(result.decode('utf-8')))
       return json.loads(result.decode('utf-8'))
 
 class MetricsProjectsResource(Resource):
      def get(self):
       #todo parse a start and end date for a query
-      result = auth.t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_metrics',filter='{"type":"upload"}')
+      page= 1
+      if request.args.get('page'):
+        page = request.args.get('page')
+      pagesize = 1000
+      if request.args.get('pagesize'):
+        pagesize=request.args.get('pagesize')
+      result = auth.t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_project_metadata',page=page,pagesize=1000,filter={})
       logger.debug(json.loads(result.decode('utf-8')))
       return json.loads(result.decode('utf-8'))
 
 class MetricsTransfersResource(Resource):
      def get(self):
       #todo parse a start and end date for a query
-      result = auth.t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_metrics',filter='{"type":"transfer"}')
+      page= 1
+      if request.args.get('page'):
+        page = request.args.get('page')
+      pagesize = 1000
+      if request.args.get('pagesize'):
+        pagesize=request.args.get('pagesize')
+      result = auth.t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_metrics',page=page,pagesize=1000,filter='{"type":"transfer"}')
       logger.debug(json.loads(result.decode('utf-8')))
       return json.loads(result.decode('utf-8'))
 
+class MetricsArchivesResource(Resource):
+     def get(self):
+      #todo parse a start and end date for a query
+      page= 1
+      if request.args.get('page'):
+        page = request.args.get('page')
+      pagesize = 1000
+      if request.args.get('pagesize'):
+        pagesize=request.args.get('pagesize')
+      result = auth.t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_metrics',page=page,pagesize=1000,filter='{"type":"archive"}')
+      logger.debug(json.loads(result.decode('utf-8')))
+      return json.loads(result.decode('utf-8'))
+
+class MetricsAlertsResource(Resource):
+     def get(self):
+      #todo parse a start and end date for a query
+      page= 1
+      if request.args.get('page'):
+        page = request.args.get('page')
+      pagesize = 1000
+      if request.args.get('pagesize'):
+        pagesize=request.args.get('pagesize')
+      result = auth.t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_alerts_metadata',page=page,pagesize=1000)
+      logger.debug(json.loads(result.decode('utf-8')))
+      return json.loads(result.decode('utf-8'))
+
+class MetricsChannelsResource(Resource):
+     def get(self):
+      #todo parse a start and end date for a query
+      page= 1
+      if request.args.get('page'):
+        page = request.args.get('page')
+      pagesize = 1000
+      if request.args.get('pagesize'):
+        pagesize=request.args.get('pagesize')
+      result = auth.t.meta.listDocuments(db=conf.tenant[g.tenant_id]['stream_db'],collection='streams_channel_metadata',page=page,pagesize=1000)
+      logger.debug(json.loads(result.decode('utf-8')))
+      return json.loads(result.decode('utf-8'))
+     
 # Role management for different resource
 class PemsResource(Resource):
     def get(self):
